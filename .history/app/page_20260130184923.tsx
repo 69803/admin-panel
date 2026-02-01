@@ -13,9 +13,11 @@ function normalizeApiUrl(raw?: string) {
   if (!raw) return null;
 
   let url = raw.trim();
+
   if (url.startsWith("//")) url = `https:${url}`;
   url = url.replace(/^http:\/\//i, "https://");
   url = url.replace(/\/+$/, "");
+
   return url;
 }
 
@@ -113,6 +115,7 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
+
     let items = menu;
 
     // ✅ filtro por categoría
@@ -135,10 +138,9 @@ export default function Home() {
     return items;
   }, [menu, q, order, catFilter]);
 
-  // ✅ si cambia buscar/categoría/orden, volver a página 1
   useEffect(() => {
     setPage(1);
-  }, [q, catFilter, order]);
+  }, [q, order, catFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
@@ -263,11 +265,12 @@ export default function Home() {
     }
   }
 
-  // ✅ "Eliminar categoría" (seguro): mueve todo a OTROS
+  // ✅ NUEVO: "Eliminar categoría" (seguro)
+  // Acción: todos los platos de esa categoría pasan a OTROS (NO se borran platos)
   async function deleteCategory() {
     if (!baseUrl) return;
-    if (catFilter === "ALL") return;
 
+    if (catFilter === "ALL") return;
     const categoryToRemove = catFilter;
 
     const ok = confirm(
@@ -279,6 +282,7 @@ export default function Home() {
     setError(null);
 
     try {
+      // Tomamos los items de esa categoría (según DB actual)
       const itemsInCategory = menu.filter(
         (it) => normalizeCategoriaFree(it.categoria) === categoryToRemove
       );
@@ -289,6 +293,7 @@ export default function Home() {
         return;
       }
 
+      // Actualizamos uno por uno a OTROS (sin tocar nombre/precio)
       for (const it of itemsInCategory) {
         const res = await fetch(`${baseUrl}/menu/${it.id}`, {
           method: "PUT",
@@ -308,6 +313,7 @@ export default function Home() {
         }
       }
 
+      // Reset filtro y refrescar
       setCatFilter("ALL");
       fetchMenu();
     } catch (e: any) {
@@ -317,284 +323,293 @@ export default function Home() {
     }
   }
 
-  // ---------- UI STYLES (solo presentación) ----------
-  const s = {
-    input: {
-      padding: 10,
-      border: "1px solid #e5e7eb",
-      borderRadius: 12,
-      outline: "none",
-      background: "white",
-      fontSize: 14,
-    } as React.CSSProperties,
-    select: {
-      padding: 10,
-      border: "1px solid #e5e7eb",
-      borderRadius: 12,
-      outline: "none",
-      background: "white",
-      fontSize: 14,
-    } as React.CSSProperties,
-    btn: {
-      padding: "10px 14px",
-      borderRadius: 12,
-      border: "1px solid #e5e7eb",
-      background: "white",
-      cursor: "pointer",
-      fontWeight: 600,
-      fontSize: 14,
-    } as React.CSSProperties,
-    btnPrimary: {
-      padding: "10px 14px",
-      borderRadius: 12,
-      border: "1px solid #7c3aed",
-      background: "#7c3aed",
-      color: "white",
-      cursor: "pointer",
-      fontWeight: 700,
-      fontSize: 14,
-    } as React.CSSProperties,
-    btnDanger: {
-      padding: "8px 12px",
-      borderRadius: 12,
-      border: "1px solid #fecaca",
-      background: "#fff1f2",
-      color: "#be123c",
-      cursor: "pointer",
-      fontWeight: 700,
-      fontSize: 13,
-    } as React.CSSProperties,
-    btnMuted: {
-      padding: "10px 14px",
-      borderRadius: 12,
-      border: "1px solid #e5e7eb",
-      background: "#f3f4f6",
-      cursor: "not-allowed",
-      fontWeight: 600,
-      fontSize: 14,
-      color: "#6b7280",
-    } as React.CSSProperties,
-    badge: {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "4px 10px",
-      borderRadius: 999,
-      background: "#f3f4f6",
-      border: "1px solid #e5e7eb",
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#111827",
-    } as React.CSSProperties,
-    priceBadge: {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "4px 10px",
-      borderRadius: 999,
-      background: "#ecfdf5",
-      border: "1px solid #bbf7d0",
-      fontSize: 12,
-      fontWeight: 800,
-      color: "#065f46",
-    } as React.CSSProperties,
-  };
-
+  // ---------- UI ----------
   return (
-    <main
-      style={{
-        background: "#f4f6f8",
-        minHeight: "100vh",
-        padding: 32,
-        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
-      }}
-    >
+    <main style={{ padding: 24, fontFamily: "sans-serif" }}>
+      <h1 style={{ fontSize: 28, marginBottom: 12 }}>Menú (CRUD)</h1>
+
+      <p style={{ marginBottom: 16 }}>
+        API: <b>{baseUrl ?? "(no definido)"}</b>
+      </p>
+
+      {/* CREATE */}
       <div
         style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          background: "white",
-          borderRadius: 20,
-          padding: 26,
-          boxShadow: "0 18px 40px rgba(0,0,0,.08)",
-          border: "1px solid #eef2f7",
+          border: "1px solid #eee",
+          borderRadius: 12,
+          padding: 12,
+          maxWidth: 700,
+          marginBottom: 16,
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-            marginBottom: 18,
-          }}
-        >
-          <div>
-            <h1 style={{ fontSize: 26, margin: 0 }}>🍽️ Panel de Menú</h1>
-            <div style={{ marginTop: 6, color: "#6b7280", fontSize: 13 }}>
-              API:{" "}
-              <span style={{ fontWeight: 700, color: "#111827" }}>
-                {baseUrl ?? "(no definido)"}
-              </span>
-            </div>
-          </div>
+        <h2 style={{ margin: 0, marginBottom: 10, fontSize: 18 }}>
+          Crear nuevo plato
+        </h2>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <span style={s.badge}>Items DB: {menu.length}</span>
-            {busy ? (
-              <span style={s.badge}>Procesando…</span>
-            ) : (
-              <span style={{ ...s.badge, background: "#eef2ff", borderColor: "#c7d2fe", color: "#3730a3" }}>
-                Listo
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input
+            value={newNombre}
+            onChange={(e) => setNewNombre(e.target.value)}
+            placeholder="Nombre (ej: Pizza Margarita)"
             style={{
-              padding: 12,
-              borderRadius: 14,
-              background: "#fff1f2",
-              border: "1px solid #fecaca",
-              color: "#9f1239",
-              marginBottom: 16,
-              fontWeight: 700,
+              padding: 10,
+              width: "100%",
+              maxWidth: 380,
+              border: "1px solid #ddd",
+              borderRadius: 8,
             }}
-          >
-            ❌ {error}
-          </div>
-        )}
+          />
 
-        {/* CREATE card */}
-        <div
-          style={{
-            border: "1px solid #eef2f7",
-            borderRadius: 18,
-            padding: 16,
-            background: "#fbfcfe",
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ fontWeight: 800, marginBottom: 10, color: "#111827" }}>
-            Crear nuevo plato
-          </div>
+          <input
+            value={newPrecio}
+            onChange={(e) => setNewPrecio(e.target.value)}
+            placeholder="Precio (ej: 10.5)"
+            inputMode="decimal"
+            style={{
+              padding: 10,
+              width: "100%",
+              maxWidth: 160,
+              border: "1px solid #ddd",
+              borderRadius: 8,
+            }}
+          />
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <input
-              value={newNombre}
-              onChange={(e) => setNewNombre(e.target.value)}
-              placeholder="Nombre (ej: Pizza Margarita)"
-              style={{ ...s.input, width: "100%", maxWidth: 360 }}
-            />
-
-            <input
-              value={newPrecio}
-              onChange={(e) => setNewPrecio(e.target.value)}
-              placeholder="Precio (ej: 10.5)"
-              inputMode="decimal"
-              style={{ ...s.input, width: "100%", maxWidth: 160 }}
-            />
-
+          {/* ✅ categoría libre con sugerencias */}
+          <div style={{ width: "100%", maxWidth: 220 }}>
             <input
               value={newCategoria}
               onChange={(e) => setNewCategoria(e.target.value)}
               placeholder="Categoría (ej: SOPAS)"
               list="cat-suggestions"
-              style={{ ...s.input, width: "100%", maxWidth: 220 }}
+              style={{
+                padding: 10,
+                width: "100%",
+                border: "1px solid #ddd",
+                borderRadius: 8,
+              }}
             />
-
-            <button
-              onClick={createItem}
-              disabled={busy}
-              style={busy ? s.btnMuted : s.btnPrimary}
-            >
-              ➕ Crear
-            </button>
           </div>
-        </div>
 
-        {/* datalist sugerencias */}
-        <datalist id="cat-suggestions">
-          {categorySuggestions.map((c) => (
-            <option key={c} value={c} />
+          <button
+            onClick={createItem}
+            disabled={busy}
+            style={{
+              padding: "10px 14px",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              background: busy ? "#f3f3f3" : "white",
+              cursor: busy ? "not-allowed" : "pointer",
+            }}
+          >
+            {busy ? "..." : "Crear"}
+          </button>
+        </div>
+      </div>
+
+      {/* datalist sugerencias */}
+      <datalist id="cat-suggestions">
+        {categorySuggestions.map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
+
+      {/* Controles lista */}
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+          alignItems: "center",
+          marginBottom: 16,
+          maxWidth: 700,
+        }}
+      >
+        {/* ✅ filtro por categoría */}
+        <select
+          value={catFilter}
+          onChange={(e) => setCatFilter(e.target.value)}
+          style={{
+            padding: 10,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+          }}
+        >
+          <option value="ALL">Categoría: TODAS</option>
+          {categoriesFromDb.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
-        </datalist>
+        </select>
 
-        {/* Controls */}
-        <div
+        <button
+          onClick={deleteCategory}
+          disabled={busy || catFilter === "ALL"}
           style={{
-            display: "flex",
-            gap: 10,
-            flexWrap: "wrap",
-            alignItems: "center",
-            marginBottom: 14,
+            padding: "10px 14px",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            background: busy || catFilter === "ALL" ? "#f3f3f3" : "white",
+            cursor: busy || catFilter === "ALL" ? "not-allowed" : "pointer",
           }}
         >
-          <select
-            value={catFilter}
-            onChange={(e) => setCatFilter(e.target.value)}
-            style={{ ...s.select, minWidth: 200 }}
-          >
-            <option value="ALL">Todas las categorías</option>
-            {categoriesFromDb.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          Eliminar categoría
+        </button>
 
-          <button
-            onClick={deleteCategory}
-            disabled={busy || catFilter === "ALL"}
-            style={busy || catFilter === "ALL" ? s.btnMuted : s.btn}
-          >
-            🗂️ Eliminar categoría
-          </button>
-
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar plato…"
-            style={{ ...s.input, width: "100%", maxWidth: 260 }}
-          />
-
-          <select
-            value={order}
-            onChange={(e) => setOrder(e.target.value as "asc" | "desc")}
-            style={{ ...s.select, minWidth: 210 }}
-          >
-            <option value="asc">Precio: menor a mayor</option>
-            <option value="desc">Precio: mayor a menor</option>
-          </select>
-
-          <button
-            onClick={fetchMenu}
-            disabled={loading || busy}
-            style={loading || busy ? s.btnMuted : s.btn}
-          >
-            {loading ? "Cargando…" : "Refrescar"}
-          </button>
-        </div>
-
-        {/* Table */}
-        <div
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar plato..."
           style={{
-            border: "1px solid #eef2f7",
-            borderRadius: 18,
-            overflow: "hidden",
+            padding: 10,
+            width: "100%",
+            maxWidth: 280,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+          }}
+        />
+
+        <select
+          value={order}
+          onChange={(e) => setOrder(e.target.value as "asc" | "desc")}
+          style={{
+            padding: 10,
+            border: "1px solid #ddd",
+            borderRadius: 8,
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <option value="asc">Precio: menor a mayor</option>
+          <option value="desc">Precio: mayor a menor</option>
+        </select>
+
+        <button
+          onClick={fetchMenu}
+          disabled={loading || busy}
+          style={{
+            padding: "10px 14px",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            background: loading || busy ? "#f3f3f3" : "white",
+            cursor: loading || busy ? "not-allowed" : "pointer",
+          }}
+        >
+          {loading ? "Cargando..." : "Refrescar"}
+        </button>
+      </div>
+
+      {error && (
+        <p style={{ color: "crimson", maxWidth: 700 }}>
+          Error: <b>{error}</b>
+        </p>
+      )}
+
+      {loading && <p>Cargando menú...</p>}
+
+      {!loading && !error && (
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              maxWidth: 700,
+              marginBottom: 10,
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              Mostrando <b>{pagedItems.length}</b> de <b>{filtered.length}</b>{" "}
+              (total DB: <b>{menu.length}</b>)
+            </p>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={!canPrev}
+                style={{
+                  padding: "6px 10px",
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  background: !canPrev ? "#f3f3f3" : "white",
+                  cursor: !canPrev ? "not-allowed" : "pointer",
+                }}
+              >
+                ←
+              </button>
+
+              <span>
+                Página <b>{page}</b> / <b>{totalPages}</b>
+              </span>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={!canNext}
+                style={{
+                  padding: "6px 10px",
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  background: !canNext ? "#f3f3f3" : "white",
+                  cursor: !canNext ? "not-allowed" : "pointer",
+                }}
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              maxWidth: 700,
+            }}
+          >
             <thead>
-              <tr style={{ background: "#f8fafc" }}>
-                <th style={{ textAlign: "left", padding: 12, fontSize: 13, color: "#475569" }}>ID</th>
-                <th style={{ textAlign: "left", padding: 12, fontSize: 13, color: "#475569" }}>Nombre</th>
-                <th style={{ textAlign: "left", padding: 12, fontSize: 13, color: "#475569" }}>Precio</th>
-                <th style={{ textAlign: "left", padding: 12, fontSize: 13, color: "#475569" }}>Categoría</th>
-                <th style={{ textAlign: "left", padding: 12, fontSize: 13, color: "#475569" }}>Acciones</th>
+              <tr>
+                <th
+                  style={{
+                    textAlign: "left",
+                    borderBottom: "1px solid #ddd",
+                    padding: 8,
+                  }}
+                >
+                  ID
+                </th>
+                <th
+                  style={{
+                    textAlign: "left",
+                    borderBottom: "1px solid #ddd",
+                    padding: 8,
+                  }}
+                >
+                  Nombre
+                </th>
+                <th
+                  style={{
+                    textAlign: "left",
+                    borderBottom: "1px solid #ddd",
+                    padding: 8,
+                  }}
+                >
+                  Precio
+                </th>
+                <th
+                  style={{
+                    textAlign: "left",
+                    borderBottom: "1px solid #ddd",
+                    padding: 8,
+                  }}
+                >
+                  Categoría
+                </th>
+                <th
+                  style={{
+                    textAlign: "left",
+                    borderBottom: "1px solid #ddd",
+                    padding: 8,
+                  }}
+                >
+                  Acciones
+                </th>
               </tr>
             </thead>
 
@@ -604,85 +619,134 @@ export default function Home() {
                 const shownCategoria = normalizeCategoriaFree(item.categoria);
 
                 return (
-                  <tr key={item.id} style={{ borderTop: "1px solid #eef2f7" }}>
-                    <td style={{ padding: 12, fontWeight: 800, color: "#111827" }}>
+                  <tr key={item.id}>
+                    <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
                       {item.id}
                     </td>
 
-                    <td style={{ padding: 12 }}>
+                    <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
                       {isEditing ? (
                         <input
                           value={editNombre}
                           onChange={(e) => setEditNombre(e.target.value)}
-                          style={{ ...s.input, width: "100%", maxWidth: 420 }}
+                          style={{
+                            padding: 8,
+                            width: "100%",
+                            border: "1px solid #ddd",
+                            borderRadius: 8,
+                          }}
                         />
                       ) : (
-                        <span style={{ fontWeight: 700, color: "#111827" }}>
-                          {item.nombre}
-                        </span>
+                        item.nombre
                       )}
                     </td>
 
-                    <td style={{ padding: 12 }}>
+                    <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
                       {isEditing ? (
                         <input
                           value={editPrecio}
                           onChange={(e) => setEditPrecio(e.target.value)}
                           inputMode="decimal"
-                          style={{ ...s.input, width: 140 }}
+                          style={{
+                            padding: 8,
+                            width: 120,
+                            border: "1px solid #ddd",
+                            borderRadius: 8,
+                          }}
                         />
                       ) : (
-                        <span style={s.priceBadge}>${item.precio}</span>
+                        `$${item.precio}`
                       )}
                     </td>
 
-                    <td style={{ padding: 12 }}>
+                    <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
                       {isEditing ? (
                         <input
                           value={editCategoria}
                           onChange={(e) => setEditCategoria(e.target.value)}
                           placeholder="Categoría (ej: SOPAS)"
                           list="cat-suggestions"
-                          style={{ ...s.input, width: 240 }}
+                          style={{
+                            padding: 8,
+                            width: 220,
+                            border: "1px solid #ddd",
+                            borderRadius: 8,
+                          }}
                         />
                       ) : (
-                        <span style={s.badge}>{shownCategoria}</span>
+                        shownCategoria
                       )}
                     </td>
 
-                    <td style={{ padding: 12 }}>
+                    <td style={{ borderBottom: "1px solid #eee", padding: 8 }}>
                       {!isEditing ? (
-                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
                           <button
                             onClick={() => startEdit(item)}
                             disabled={busy}
-                            style={busy ? s.btnMuted : s.btn}
+                            style={{
+                              padding: "6px 10px",
+                              border: "1px solid #ddd",
+                              borderRadius: 8,
+                              background: "white",
+                              cursor: busy ? "not-allowed" : "pointer",
+                            }}
                           >
-                            ✏️ Editar
+                            Editar
                           </button>
 
                           <button
                             onClick={() => deleteItem(item.id)}
                             disabled={busy}
-                            style={busy ? s.btnMuted : s.btnDanger}
+                            style={{
+                              padding: "6px 10px",
+                              border: "1px solid #ddd",
+                              borderRadius: 8,
+                              background: "white",
+                              cursor: busy ? "not-allowed" : "pointer",
+                            }}
                           >
-                            ✖ Borrar
+                            Borrar
                           </button>
                         </div>
                       ) : (
-                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
                           <button
                             onClick={() => saveEdit(item.id)}
                             disabled={busy}
-                            style={busy ? s.btnMuted : s.btnPrimary}
+                            style={{
+                              padding: "6px 10px",
+                              border: "1px solid #ddd",
+                              borderRadius: 8,
+                              background: "white",
+                              cursor: busy ? "not-allowed" : "pointer",
+                            }}
                           >
-                            💾 Guardar
+                            Guardar
                           </button>
 
                           <button
                             onClick={cancelEdit}
                             disabled={busy}
-                            style={busy ? s.btnMuted : s.btn}
+                            style={{
+                              padding: "6px 10px",
+                              border: "1px solid #ddd",
+                              borderRadius: 8,
+                              background: "white",
+                              cursor: busy ? "not-allowed" : "pointer",
+                            }}
                           >
                             Cancelar
                           </button>
@@ -692,57 +756,10 @@ export default function Home() {
                   </tr>
                 );
               })}
-
-              {pagedItems.length === 0 && (
-                <tr>
-                  <td colSpan={5} style={{ padding: 18, color: "#6b7280" }}>
-                    No hay resultados con esos filtros.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
-        </div>
-
-        {/* Pagination */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 14,
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ color: "#6b7280", fontSize: 14 }}>
-            Mostrando <b>{pagedItems.length}</b> de <b>{filtered.length}</b> (total DB:{" "}
-            <b>{menu.length}</b>)
-          </div>
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={!canPrev}
-              style={!canPrev ? s.btnMuted : s.btn}
-            >
-              ←
-            </button>
-
-            <span style={{ fontSize: 14, color: "#374151" }}>
-              Página <b>{page}</b> / <b>{totalPages}</b>
-            </span>
-
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={!canNext}
-              style={!canNext ? s.btnMuted : s.btn}
-            >
-              →
-            </button>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </main>
   );
 }
