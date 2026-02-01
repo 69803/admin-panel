@@ -22,7 +22,7 @@ type ReporteResumen = {
 };
 
 const API_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NEXT_PUBLIC_API_URL ||
     "https://restaurante-backend-q43k.onrender.com"
   ).replace(/\/$/, "");
 

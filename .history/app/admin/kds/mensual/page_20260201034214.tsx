@@ -22,7 +22,7 @@ type Pedido = {
 type MenuItem = { id: number; nombre?: string; precio: number };
 
 const API_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE_URL || "https://restaurante-backend-q43k.onrender.com").replace(/\/$/, "");
+  (process.env.NEXT_PUBLIC_API_URL || "https://restaurante-backend-q43k.onrender.com").replace(/\/$/, "");
 
 const ESTADOS = ["pendiente", "preparando", "listo", "entregado", "cancelado"] as const;
 type Estado = (typeof ESTADOS)[number];

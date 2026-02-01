@@ -18,7 +18,7 @@ type MenuItem = { id: number; nombre: string; precio: number; categoria?: string
 type Granularity = "diario" | "semanal" | "mensual" | "anual";
 type Metric = "monto" | "items" | "pedidos" | "ticket";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://restaurante-backend-q43k.onrender.com").replace(
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://restaurante-backend-q43k.onrender.com").replace(
   /\/$/,
   ""
 );
