@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * ✅ Admin Dashboard (app/admin/page.tsx)
- * - FIX: normaliza NEXT_PUBLIC_API_URL para evitar "//dominio" y forzar HTTPS (quita CORS/redirect)
- * - De aquí salen los tiles (KDS, Reportes, Contabilidad, etc.)
- */
-
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -23,35 +17,10 @@ type MenuItem = {
   categoria?: string | null;
 };
 
-// ✅ Normaliza URL (SIEMPRE https) y arregla cuando viene sin protocolo o como //dominio
-function normalizeApiUrl(raw?: string) {
-  if (!raw) return null;
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || "https://restaurante-backend-q43k.onrender.com"
+).replace(/\/$/, "");
 
-  let url = raw.trim();
-
-  // Si viene como "dominio.com" (sin http/https) -> poner https://
-  if (!/^https?:\/\//i.test(url) && !url.startsWith("//")) {
-    url = `https://${url}`;
-  }
-
-  // Si viene como //dominio -> https://dominio
-  if (url.startsWith("//")) url = `https:${url}`;
-
-  // Forzar https
-  url = url.replace(/^http:\/\//i, "https://");
-
-  // Quitar slash final
-  url = url.replace(/\/+$/, "");
-
-  return url;
-}
-
-const API_BASE =
-  normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL) ||
-  "https://restaurante-backend-q43k.onrender.com";
-
-// (debug opcional) abre consola y mira qué URL usa de verdad
-console.log("ADMIN DASHBOARD API_BASE =", API_BASE);
 
 async function fetchMenu(): Promise<MenuItem[]> {
   const res = await fetch(`${API_BASE}/menu`, { cache: "no-store" });
@@ -339,17 +308,22 @@ export default function AdminDashboardPage() {
             badge={<div style={pill("rgba(245,158,11,0.18)", "#FBBF24")}>RESUMEN</div>}
           />
         </div>
+{/* CONTABILIDAD 👇 */}
 
-        {/* ✅ CONTABILIDAD (tile) */}
         <div style={{ gridColumn: "span 6" }}>
-          <TileLink
-            href="/admin/contabilidad"
-            title="Contabilidad"
-            desc="Gastos, balance y control financiero del restaurante"
-            icon="📒"
-            badge={<div style={pill("rgba(16,185,129,0.18)", "#10B981")}>FINANZAS</div>}
-          />
-        </div>
+  <TileLink
+    href="/admin/contabilidad"
+    title="Contabilidad"
+    desc="Gastos, balance y control financiero del restaurante"
+    icon="📒"
+    badge={
+      <div style={pill("rgba(16,185,129,0.18)", "#10B981")}>
+        FINANZAS
+      </div>
+    }
+  />
+</div>
+
 
         <div style={{ ...card, gridColumn: "span 6" }}>
           <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 10 }}>Insight rápido</div>
