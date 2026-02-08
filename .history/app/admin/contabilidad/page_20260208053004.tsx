@@ -40,108 +40,6 @@ function moneyEUR(v: number) {
   return `€ ${safeNum(v).toFixed(2)}`;
 }
 
-function csvEscape(v: any) {
-  const s = String(v ?? "");
-  // CSV RFC-ish: wrap with quotes if contains comma/newline/quote; escape quote by doubling
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
-
-function downloadTextFile(filename: string, content: string, mime = "text/plain;charset=utf-8") {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function openPrintWindow(opts: {
-  title: string;
-  subtitle?: string;
-  kpis?: Array<{ label: string; value: string }>;
-  tableHeaders: string[];
-  tableRows: (string | number)[][];
-  footerNote?: string;
-}) {
-  const { title, subtitle, kpis, tableHeaders, tableRows, footerNote } = opts;
-
-  const kpiHtml =
-    kpis && kpis.length
-      ? `
-      <div class="kpis">
-        ${kpis
-          .map(
-            (k) => `
-          <div class="kpi">
-            <div class="kpiLabel">${k.label}</div>
-            <div class="kpiValue">${k.value}</div>
-          </div>
-        `
-          )
-          .join("")}
-      </div>
-    `
-      : "";
-
-  const thead = `<tr>${tableHeaders.map((h) => `<th>${h}</th>`).join("")}</tr>`;
-  const tbody = tableRows
-    .map((r) => `<tr>${r.map((c) => `<td>${String(c ?? "")}</td>`).join("")}</tr>`)
-    .join("");
-
-  const html = `
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>${title}</title>
-<style>
-  :root { color-scheme: light; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 28px; color:#0b1220; }
-  h1 { margin: 0 0 6px 0; font-size: 22px; }
-  .sub { margin: 0 0 16px 0; color:#4b5563; font-size: 12px; }
-  .kpis { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin: 12px 0 16px 0; }
-  .kpi { border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; }
-  .kpiLabel { font-size: 12px; color:#6b7280; margin-bottom: 6px; }
-  .kpiValue { font-weight: 800; font-size: 14px; }
-  table { width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 12px; overflow:hidden; }
-  th, td { text-align:left; padding: 10px; border-top: 1px solid #e5e7eb; font-size: 12px; }
-  thead th { background: #f3f4f6; border-top:none; font-size: 12px; color:#374151; }
-  .note { margin-top: 12px; font-size: 11px; color:#6b7280; }
-  @media print {
-    body { margin: 0; padding: 0; }
-    .wrap { margin: 18px; }
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>${title}</h1>
-  ${subtitle ? `<div class="sub">${subtitle}</div>` : ""}
-  ${kpiHtml}
-  <table>
-    <thead>${thead}</thead>
-    <tbody>${tbody}</tbody>
-  </table>
-  ${footerNote ? `<div class="note">${footerNote}</div>` : ""}
-</div>
-<script>
-  window.onload = () => { window.focus(); window.print(); };
-</script>
-</body>
-</html>
-  `.trim();
-
-  const w = window.open("", "_blank", "noopener,noreferrer");
-  if (!w) return alert("Tu navegador bloqueó la ventana de impresión. Permite pop-ups para imprimir.");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-}
-
 export default function ContabilidadPage() {
   const baseUrl = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
 
@@ -322,7 +220,7 @@ export default function ContabilidadPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [gastos]);
 
-  // KPIs Gastos
+  // ✅ PASO 2: Totales (Gastos)
   const gastosStats = useMemo(() => {
     const rows = Array.isArray(gastos) ? gastos : [];
     const total = rows.reduce((acc, g) => acc + safeNum(g.monto), 0);
@@ -339,94 +237,14 @@ export default function ContabilidadPage() {
       }
     }
 
-    return { count, total, avg, max, maxRow };
-  }, [gastos]);
-
-  // ✅ PASO 6: Resumen por categoría (top + %)
-  const resumenCategoria = useMemo(() => {
-    const rows = Array.isArray(gastos) ? gastos : [];
-    const map = new Map<string, { categoria: string; total: number; count: number }>();
-
-    for (const g of rows) {
-      const c = up(g.categoria) || "OTROS";
-      const prev = map.get(c) ?? { categoria: c, total: 0, count: 0 };
-      prev.total += safeNum(g.monto);
-      prev.count += 1;
-      map.set(c, prev);
-    }
-
-    const arr = Array.from(map.values()).sort((a, b) => b.total - a.total);
-    const total = arr.reduce((acc, x) => acc + x.total, 0);
-
-    const withPct = arr.map((x) => ({
-      ...x,
-      pct: total > 0 ? (x.total / total) * 100 : 0,
-    }));
-
     return {
+      count,
       total,
-      rows: withPct,
-      top5: withPct.slice(0, 5),
+      avg,
+      max,
+      maxRow,
     };
   }, [gastos]);
-
-  // ✅ PASO 3: Exportar Excel (CSV)
-  const exportGastosCSV = () => {
-    const rows = Array.isArray(gastos) ? gastos : [];
-    const header = ["ID", "Fecha", "Concepto", "Monto", "Categoría"];
-    const lines = [
-      header.map(csvEscape).join(","),
-      ...rows.map((g) =>
-        [
-          g.id,
-          g.fecha ?? "",
-          g.concepto ?? "",
-          safeNum(g.monto).toFixed(2),
-          up(g.categoria) || "OTROS",
-        ].map(csvEscape).join(",")
-      ),
-    ];
-
-    // info filtros
-    const meta = [
-      `# Export Contabilidad - Gastos`,
-      `# Desde: ${desde || "-"}`,
-      `# Hasta: ${hasta || "-"}`,
-      `# Categoría: ${cat || "-"}`,
-      `# Total (filtrado): ${moneyEUR(gastosStats.total)}`,
-      ``,
-    ].join("\n");
-
-    downloadTextFile(
-      `gastos_${new Date().toISOString().slice(0, 10)}.csv`,
-      meta + lines.join("\n"),
-      "text/csv;charset=utf-8"
-    );
-  };
-
-  // ✅ PASO 4: PDF/Imprimir (Gastos)
-  const printGastos = () => {
-    const rows = Array.isArray(gastos) ? gastos : [];
-    openPrintWindow({
-      title: "Contabilidad — Gastos",
-      subtitle: `Filtros: Desde ${desde || "-"} | Hasta ${hasta || "-"} | Categoría ${cat || "-"}`,
-      kpis: [
-        { label: "Total", value: moneyEUR(gastosStats.total) },
-        { label: "Promedio", value: moneyEUR(gastosStats.avg) },
-        { label: "Mayor gasto", value: moneyEUR(gastosStats.max) },
-        { label: "Registros", value: String(gastosStats.count) },
-      ],
-      tableHeaders: ["ID", "Fecha", "Concepto", "Monto", "Categoría"],
-      tableRows: rows.map((g) => [
-        g.id,
-        g.fecha ?? "-",
-        g.concepto ?? "",
-        moneyEUR(safeNum(g.monto)),
-        up(g.categoria) || "OTROS",
-      ]),
-      footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
-    });
-  };
 
   // ---------- BALANCE ----------
   const [balance, setBalance] = useState<BalanceRow[]>([]);
@@ -458,6 +276,7 @@ export default function ContabilidadPage() {
     }
   };
 
+  // ✅ PASO 2: Totales (Balance)
   const balanceStats = useMemo(() => {
     const rows = Array.isArray(balance) ? balance : [];
     const totalIngresos = rows.reduce((acc, r) => acc + safeNum(r.ingresos), 0);
@@ -465,60 +284,6 @@ export default function ContabilidadPage() {
     const totalBalance = rows.reduce((acc, r) => acc + safeNum(r.balance), 0);
     return { meses: rows.length, totalIngresos, totalGastos, totalBalance };
   }, [balance]);
-
-  // ✅ PASO 3: Export Balance (CSV)
-  const exportBalanceCSV = () => {
-    const rows = Array.isArray(balance) ? balance : [];
-    const header = ["Mes", "Ingresos", "Gastos", "Balance"];
-    const lines = [
-      header.map(csvEscape).join(","),
-      ...rows.map((r) =>
-        [
-          r.mes ?? "",
-          safeNum(r.ingresos).toFixed(2),
-          safeNum(r.gastos).toFixed(2),
-          safeNum(r.balance).toFixed(2),
-        ].map(csvEscape).join(",")
-      ),
-    ];
-
-    const meta = [
-      `# Export Contabilidad - Balance Mensual`,
-      `# Total ingresos: ${moneyEUR(balanceStats.totalIngresos)}`,
-      `# Total gastos: ${moneyEUR(balanceStats.totalGastos)}`,
-      `# Balance total: ${moneyEUR(balanceStats.totalBalance)}`,
-      ``,
-    ].join("\n");
-
-    downloadTextFile(
-      `balance_mensual_${new Date().toISOString().slice(0, 10)}.csv`,
-      meta + lines.join("\n"),
-      "text/csv;charset=utf-8"
-    );
-  };
-
-  // ✅ PASO 4: PDF/Imprimir (Balance)
-  const printBalance = () => {
-    const rows = Array.isArray(balance) ? balance : [];
-    openPrintWindow({
-      title: "Contabilidad — Balance mensual",
-      subtitle: `Resumen mensual (datos desde el backend)`,
-      kpis: [
-        { label: "Total ingresos", value: moneyEUR(balanceStats.totalIngresos) },
-        { label: "Total gastos", value: moneyEUR(balanceStats.totalGastos) },
-        { label: "Balance total", value: moneyEUR(balanceStats.totalBalance) },
-        { label: "Meses", value: String(balanceStats.meses) },
-      ],
-      tableHeaders: ["Mes", "Ingresos", "Gastos", "Balance"],
-      tableRows: rows.map((r) => [
-        r.mes ?? "-",
-        moneyEUR(safeNum(r.ingresos)),
-        moneyEUR(safeNum(r.gastos)),
-        moneyEUR(safeNum(r.balance)),
-      ]),
-      footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
-    });
-  };
 
   // cargar gastos al entrar
   useEffect(() => {
@@ -569,7 +334,6 @@ export default function ContabilidadPage() {
       cursor: "pointer",
       fontWeight: 800,
       fontSize: 14,
-      whiteSpace: "nowrap",
     } as React.CSSProperties,
     btnPrimary: {
       padding: "10px 14px",
@@ -580,7 +344,6 @@ export default function ContabilidadPage() {
       cursor: "pointer",
       fontWeight: 900,
       fontSize: 14,
-      whiteSpace: "nowrap",
     } as React.CSSProperties,
     btnDanger: {
       padding: "8px 12px",
@@ -591,7 +354,6 @@ export default function ContabilidadPage() {
       cursor: "pointer",
       fontWeight: 900,
       fontSize: 13,
-      whiteSpace: "nowrap",
     } as React.CSSProperties,
     badge: {
       padding: "6px 10px",
@@ -609,6 +371,8 @@ export default function ContabilidadPage() {
     } as React.CSSProperties,
     th: { textAlign: "left", padding: 12, fontSize: 12, color: "rgba(255,255,255,.75)" } as React.CSSProperties,
     td: { padding: 12, borderTop: "1px solid rgba(255,255,255,.10)" } as React.CSSProperties,
+
+    // ✅ Stats cards
     statsGrid: {
       display: "grid",
       gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
@@ -624,13 +388,6 @@ export default function ContabilidadPage() {
     statLabel: { opacity: 0.8, fontSize: 12, marginBottom: 6 } as React.CSSProperties,
     statValue: { fontSize: 18, fontWeight: 1000 } as React.CSSProperties,
     statSub: { opacity: 0.8, fontSize: 12, marginTop: 4 } as React.CSSProperties,
-    section: {
-      border: "1px solid rgba(255,255,255,.12)",
-      background: "rgba(255,255,255,.05)",
-      borderRadius: 16,
-      padding: 14,
-      marginBottom: 12,
-    } as React.CSSProperties,
   };
 
   return (
@@ -672,7 +429,7 @@ export default function ContabilidadPage() {
               </div>
             )}
 
-            {/* KPIs */}
+            {/* ✅ PASO 2: Totales arriba */}
             <div style={s.statsGrid}>
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Total gastos (filtrado)</div>
@@ -689,7 +446,9 @@ export default function ContabilidadPage() {
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Gasto más alto</div>
                 <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.max)}</div>
-                <div style={s.statSub}>{gastosStats.maxRow ? `${gastosStats.maxRow.concepto}` : "—"}</div>
+                <div style={s.statSub}>
+                  {gastosStats.maxRow ? `${gastosStats.maxRow.concepto}` : "—"}
+                </div>
               </div>
 
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
@@ -699,7 +458,6 @@ export default function ContabilidadPage() {
               </div>
             </div>
 
-            {/* Acciones arriba (PASO 3 + PASO 4) */}
             <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
               <div style={s.row}>
                 <span style={s.badge}>Registros: {gastos.length}</span>
@@ -710,65 +468,19 @@ export default function ContabilidadPage() {
                 <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
                   🔄 Refrescar
                 </button>
-                <button onClick={exportGastosCSV} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
-                  📥 Excel (CSV)
-                </button>
-                <button onClick={printGastos} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
-                  🖨️ PDF / Imprimir
-                </button>
               </div>
             </div>
 
-            {/* ✅ PASO 6: Resumen por categoría */}
-            <div style={s.section}>
-              <div style={{ fontWeight: 1000, marginBottom: 10 }}>📌 Resumen por categoría (filtrado)</div>
-              {gLoading ? (
-                <div style={{ opacity: 0.8 }}>Cargando…</div>
-              ) : resumenCategoria.rows.length ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(12, minmax(0,1fr))", gap: 10 }}>
-                  <div style={{ gridColumn: "span 6", border: "1px solid rgba(255,255,255,.10)", borderRadius: 14, overflow: "hidden" }}>
-                    <table style={s.table}>
-                      <thead style={{ background: "rgba(255,255,255,.06)" }}>
-                        <tr>
-                          <th style={s.th}>Categoría</th>
-                          <th style={s.th}>Registros</th>
-                          <th style={s.th}>Total</th>
-                          <th style={s.th}>%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {resumenCategoria.top5.map((r) => (
-                          <tr key={r.categoria}>
-                            <td style={{ ...s.td, fontWeight: 1000 }}>{r.categoria}</td>
-                            <td style={s.td}>{r.count}</td>
-                            <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.total)}</td>
-                            <td style={s.td}>{r.pct.toFixed(1)}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div style={{ gridColumn: "span 6", ...s.statCard }}>
-                    <div style={s.statLabel}>Total por categorías</div>
-                    <div style={s.statValue}>{moneyEUR(resumenCategoria.total)}</div>
-                    <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {resumenCategoria.top5.map((r) => (
-                        <span key={`pill-${r.categoria}`} style={s.badge}>
-                          {r.categoria}: {moneyEUR(r.total)}
-                        </span>
-                      ))}
-                    </div>
-                    <div style={s.statSub}>Muestra Top 5 por total</div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ opacity: 0.8 }}>No hay datos para resumir.</div>
-              )}
-            </div>
-
             {/* Crear */}
-            <div style={s.section}>
+            <div
+              style={{
+                border: "1px solid rgba(255,255,255,.12)",
+                background: "rgba(255,255,255,.05)",
+                borderRadius: 16,
+                padding: 14,
+                marginBottom: 12,
+              }}
+            >
               <div style={{ fontWeight: 1000, marginBottom: 10 }}>➕ Nuevo gasto</div>
               <div style={s.row}>
                 <input type="date" value={newFecha} onChange={(e) => setNewFecha(e.target.value)} style={s.input} />
@@ -940,7 +652,7 @@ export default function ContabilidadPage() {
               </div>
             )}
 
-            {/* KPIs Balance */}
+            {/* ✅ PASO 2: Totales arriba (Balance) */}
             <div style={s.statsGrid}>
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Total ingresos</div>
@@ -967,24 +679,15 @@ export default function ContabilidadPage() {
               </div>
             </div>
 
-            {/* Acciones arriba (PASO 3 + PASO 4) */}
             <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
               <div style={s.row}>
                 <span style={s.badge}>Meses: {balance.length}</span>
                 {bLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}
               </div>
 
-              <div style={s.row}>
-                <button onClick={fetchBalance} style={s.btn} disabled={bLoading}>
-                  🔄 Refrescar
-                </button>
-                <button onClick={exportBalanceCSV} style={s.btn} disabled={bLoading || balance.length === 0}>
-                  📥 Excel (CSV)
-                </button>
-                <button onClick={printBalance} style={s.btn} disabled={bLoading || balance.length === 0}>
-                  🖨️ PDF / Imprimir
-                </button>
-              </div>
+              <button onClick={fetchBalance} style={s.btn} disabled={bLoading}>
+                🔄 Refrescar
+              </button>
             </div>
 
             <div style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, overflow: "hidden" }}>
@@ -1001,9 +704,9 @@ export default function ContabilidadPage() {
                   {balance.map((r, idx) => (
                     <tr key={`${r.mes ?? "null"}-${idx}`}>
                       <td style={{ ...s.td, fontWeight: 1000 }}>{r.mes ?? "-"}</td>
-                      <td style={s.td}>{moneyEUR(safeNum(r.ingresos))}</td>
-                      <td style={s.td}>{moneyEUR(safeNum(r.gastos))}</td>
-                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(safeNum(r.balance))}</td>
+                      <td style={s.td}>€ {safeNum(r.ingresos).toFixed(2)}</td>
+                      <td style={s.td}>€ {safeNum(r.gastos).toFixed(2)}</td>
+                      <td style={{ ...s.td, fontWeight: 1000 }}>€ {safeNum(r.balance).toFixed(2)}</td>
                     </tr>
                   ))}
 
