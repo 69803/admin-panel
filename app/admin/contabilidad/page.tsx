@@ -43,11 +43,11 @@ type LibroRow = {
   concepto: string;
   categoria: string;
   monto: number; // siempre positivo
-  ref: string; // "GASTO#id" | "PEDIDO#id"
+  ref: string; // "GASTO#id" | "PEDIDO#id" | "MOV#id"
   saldo: number; // acumulado
 };
 
-// ✅ NUEVO: Form para crear operación del Libro Diario (tipo Excel)
+// ✅ Form para crear operación del Libro Diario (tipo Excel)
 type DiarioOperacionForm = {
   fecha: string; // YYYY-MM-DD
   proveedor: string;
@@ -55,7 +55,6 @@ type DiarioOperacionForm = {
   productos_servicios: string;
   monto_total: number;
   iva: number;
-  neto: number; // calculado
   modo_pago: string;
   observacion: string;
 };
@@ -65,12 +64,14 @@ type Movimiento = {
   id: number;
   fecha: string | null; // YYYY-MM-DD
   tipo: "GASTO" | "INGRESO";
+  concepto: string;
+  categoria: string;
+  monto: number;
+  iva: number;
+  neto: number;
   proveedor?: string | null;
   factura_no?: string | null;
   productos_servicios?: string | null;
-  monto_total: number;
-  iva: number;
-  neto: number;
   modo_pago?: string | null;
   observacion?: string | null;
   created_at?: string;
@@ -79,16 +80,14 @@ type Movimiento = {
 function normalizeApiUrl(raw?: string) {
   if (!raw) return null;
   let url = raw.trim();
-
   if (url.startsWith("//")) url = `https:${url}`;
 
   const isLocal =
-    url.includes("localhost") || url.includes("127.0.0.1") || url.includes("0.0.0.0");
+    url.includes("localhost") ||
+    url.includes("127.0.0.1") ||
+    url.includes("0.0.0.0");
 
-  if (!isLocal) {
-    url = url.replace(/^http:\/\//i, "https://");
-  }
-
+  if (!isLocal) url = url.replace(/^http:\/\//i, "https://");
   url = url.replace(/\/+$/, "");
   return url;
 }
@@ -158,7 +157,10 @@ function openPrintWindow(opts: {
 
   const thead = `<tr>${tableHeaders.map((h) => `<th>${h}</th>`).join("")}</tr>`;
   const tbody = tableRows
-    .map((r) => `<tr>${r.map((c) => `<td>${String(c ?? "")}</td>`).join("")}</tr>`)
+    .map(
+      (r) =>
+        `<tr>${r.map((c) => `<td>${String(c ?? "")}</td>`).join("")}</tr>`
+    )
     .join("");
 
   const html = `
@@ -214,9 +216,7 @@ function openPrintWindow(opts: {
   w.document.close();
 }
 
-/**
- * ✅ OTROS es la única protegida (default).
- */
+/** ✅ OTROS es la única protegida (default). */
 const BASE_CATS = ["OTROS"] as const;
 
 const LS_KEY = "conta_categorias_v1";
@@ -257,8 +257,6 @@ export default function ContabilidadPage() {
 
   // ✅ Modal NUEVA OPERACION (Libro diario)
   const [opOpen, setOpOpen] = useState(false);
-
-  // ✅ tipo de operación (selector)
   const [opTipo, setOpTipo] = useState<"GASTO" | "INGRESO">("GASTO");
 
   const [op, setOp] = useState<DiarioOperacionForm>({
@@ -268,7 +266,6 @@ export default function ContabilidadPage() {
     productos_servicios: "",
     monto_total: 0,
     iva: 0,
-    neto: 0,
     modo_pago: "Transferencia",
     observacion: "",
   });
@@ -301,7 +298,6 @@ export default function ContabilidadPage() {
       productos_servicios: "",
       monto_total: 0,
       iva: 0,
-      neto: 0,
       modo_pago: "Transferencia",
       observacion: "",
     });
@@ -379,9 +375,9 @@ export default function ContabilidadPage() {
     }
   };
 
-  /** ✅ Libro: fetch solo gastos */
   const fetchLibroGastos = async () => {
-    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
+    if (!baseUrl)
+      throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
 
     const qs = new URLSearchParams();
     if (lDesde.trim()) qs.set("desde", lDesde.trim());
@@ -402,9 +398,9 @@ export default function ContabilidadPage() {
     setLibroGastos(Array.isArray(data) ? data : []);
   };
 
-  /** ✅ Libro: fetch ingresos desde pedidos_historial */
   const fetchPedidosHistorial = async () => {
-    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
+    if (!baseUrl)
+      throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
 
     const res = await fetch(`${baseUrl}/pedidos_historial`, {
       cache: "no-store",
@@ -417,7 +413,6 @@ export default function ContabilidadPage() {
     setPedidosHist(Array.isArray(data) ? data : []);
   };
 
-  /** ✅ Libro: fetch movimientos manuales */
   const fetchMovimientos = async (limit = 200) => {
     if (!baseUrl) return;
     try {
@@ -436,7 +431,7 @@ export default function ContabilidadPage() {
     }
   };
 
-  /** ✅ Libro: refresh completo */
+  // ✅ FIX: ahora sí existe y trae TODO (gastos + pedidos + movimientos)
   const fetchLibroAll = async () => {
     setLLoading(true);
     setLError(null);
@@ -449,7 +444,7 @@ export default function ContabilidadPage() {
     }
   };
 
-  // ✅✅ ARREGLADO: Guardar operación EN BACKEND (sin romper nada)
+  // ✅ Guardar operación en BACKEND
   async function opSaveUIOnly(e: React.FormEvent) {
     e.preventDefault();
     if (!opCanSave) return;
@@ -459,21 +454,23 @@ export default function ContabilidadPage() {
       return;
     }
 
+    // ✅ Backend MovimientoIn espera: fecha,tipo,concepto,categoria,monto,iva,proveedor,...
+    // Tú tienes monto_total + productos_servicios -> lo mapeamos bien.
     const payload = {
-      fecha: op.fecha, // ✅ debe ser YYYY-MM-DD (input type=date ya lo manda así)
+      fecha: op.fecha, // YYYY-MM-DD
       tipo: opTipo, // "GASTO" | "INGRESO"
+      concepto: op.productos_servicios, // ✅ requerido
+      categoria: opTipo === "INGRESO" ? "INGRESOS" : "GASTOS",
+      monto: safeNum(op.monto_total), // ✅ backend usa "monto"
+      iva: safeNum(op.iva),
       proveedor: op.proveedor,
       factura_no: op.factura_no,
       productos_servicios: op.productos_servicios,
-      monto_total: safeNum(op.monto_total),
-      iva: safeNum(op.iva),
-      neto: opNetoAuto, // calculado
       modo_pago: op.modo_pago,
       observacion: op.observacion,
     };
 
     try {
-      // ✅ CORRECTO: este modal guarda en /contabilidad/movimientos (NO en /gastos)
       const res = await fetch(`${baseUrl}/contabilidad/movimientos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -485,18 +482,13 @@ export default function ContabilidadPage() {
         throw new Error(`POST /contabilidad/movimientos (HTTP ${res.status}) ${txt}`);
       }
 
-      const saved = await res.json().catch(() => null);
-      console.log("✅ GUARDADO EN BACKEND:", saved);
+      await res.json().catch(() => null);
 
       // refresca listas para que se vea en UI
-      await fetchMovimientos(200);
-      await fetchGastos();
-      await fetchLibroAll();
+      await Promise.all([fetchMovimientos(200), fetchGastos(), fetchLibroAll()]);
 
       setOpOpen(false);
       opReset();
-
-      alert("✅ Guardado en backend.");
     } catch (err: any) {
       console.error("❌ ERROR GUARDANDO:", err);
       alert(err?.message ?? "Error guardando movimiento");
@@ -512,7 +504,8 @@ export default function ContabilidadPage() {
     const fecha = newFecha.trim() || null;
 
     if (!concepto) return setGError("Concepto requerido");
-    if (!Number.isFinite(montoNum) || montoNum < 0) return setGError("Monto inválido (>= 0)");
+    if (!Number.isFinite(montoNum) || montoNum < 0)
+      return setGError("Monto inválido (>= 0)");
 
     setGBusy(true);
     setGError(null);
@@ -568,7 +561,8 @@ export default function ContabilidadPage() {
     const fecha = editFecha.trim() || null;
 
     if (!concepto) return setGError("Concepto requerido");
-    if (!Number.isFinite(montoNum) || montoNum < 0) return setGError("Monto inválido (>= 0)");
+    if (!Number.isFinite(montoNum) || montoNum < 0)
+      return setGError("Monto inválido (>= 0)");
 
     setGBusy(true);
     setGError(null);
@@ -627,9 +621,12 @@ export default function ContabilidadPage() {
     const toReplace = up(catReplace) || "OTROS";
 
     if (!toDelete) return setGError("Selecciona una categoría a eliminar.");
-    if (toDelete === "OTROS") return setGError("No puedes eliminar OTROS (categoría default).");
-    if (BASE_CATS.includes(toDelete as any)) return setGError(`No puedes eliminar la categoría base: ${toDelete}`);
-    if (toDelete === toReplace) return setGError("La categoría de reemplazo no puede ser la misma.");
+    if (toDelete === "OTROS")
+      return setGError("No puedes eliminar OTROS (categoría default).");
+    if (BASE_CATS.includes(toDelete as any))
+      return setGError(`No puedes eliminar la categoría base: ${toDelete}`);
+    if (toDelete === toReplace)
+      return setGError("La categoría de reemplazo no puede ser la misma.");
 
     const afectados = gastos.filter((g) => up(g.categoria) === toDelete);
 
@@ -684,14 +681,14 @@ export default function ContabilidadPage() {
     }
   };
 
-  /** Categorías detectadas (desde gastos tab) */
   const categoriasDetectadas = useMemo(() => {
     const set = new Set<string>();
     for (const g of gastos) set.add(up(g.categoria) || "OTROS");
-    return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    return Array.from(set)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
   }, [gastos]);
 
-  /** ✅ Persistimos categorías */
   useEffect(() => {
     try {
       const prev = new Set(readCatsLS());
@@ -711,10 +708,11 @@ export default function ContabilidadPage() {
     set.add("OTROS");
     for (const c of readCatsLS()) set.add(up(c));
     for (const c of categoriasDetectadas) set.add(up(c));
-    return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    return Array.from(set)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
   }, [categoriasDetectadas]);
 
-  // KPIs Gastos
   const gastosStats = useMemo(() => {
     const rows = Array.isArray(gastos) ? gastos : [];
     const total = rows.reduce((acc, g) => acc + safeNum(g.monto), 0);
@@ -734,7 +732,6 @@ export default function ContabilidadPage() {
     return { count, total, avg, max, maxRow };
   }, [gastos]);
 
-  // Resumen por categoría
   const resumenCategoria = useMemo(() => {
     const rows = Array.isArray(gastos) ? gastos : [];
     const map = new Map<string, { categoria: string; total: number; count: number }>();
@@ -758,14 +755,19 @@ export default function ContabilidadPage() {
     return { total, rows: withPct, top5: withPct.slice(0, 5) };
   }, [gastos]);
 
-  // CSV / PDF Gastos
   const exportGastosCSV = () => {
     const rows = Array.isArray(gastos) ? gastos : [];
     const header = ["ID", "Fecha", "Concepto", "Monto", "Categoría"];
     const lines = [
       header.map(csvEscape).join(","),
       ...rows.map((g) =>
-        [g.id, g.fecha ?? "", g.concepto ?? "", safeNum(g.monto).toFixed(2), up(g.categoria) || "OTROS"]
+        [
+          g.id,
+          g.fecha ?? "",
+          g.concepto ?? "",
+          safeNum(g.monto).toFixed(2),
+          up(g.categoria) || "OTROS",
+        ]
           .map(csvEscape)
           .join(",")
       ),
@@ -799,7 +801,13 @@ export default function ContabilidadPage() {
         { label: "Registros", value: String(gastosStats.count) },
       ],
       tableHeaders: ["ID", "Fecha", "Concepto", "Monto", "Categoría"],
-      tableRows: rows.map((g) => [g.id, g.fecha ?? "-", g.concepto ?? "", moneyEUR(safeNum(g.monto)), up(g.categoria) || "OTROS"]),
+      tableRows: rows.map((g) => [
+        g.id,
+        g.fecha ?? "-",
+        g.concepto ?? "",
+        moneyEUR(safeNum(g.monto)),
+        up(g.categoria) || "OTROS",
+      ]),
       footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
     });
   };
@@ -818,18 +826,25 @@ export default function ContabilidadPage() {
     setBError(null);
 
     try {
-      // ✅ CORRECTO: backend tiene /reportes/balance_mensual
-      const res = await fetch(`${baseUrl}/reportes/balance_mensual`, {
+      // ✅ FIX: endpoint correcto del backend
+      const res = await fetch(`${baseUrl}/contabilidad/balance_mensual`, {
         cache: "no-store",
       });
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        throw new Error(`GET /reportes/balance_mensual (HTTP ${res.status}) ${txt}`);
+        throw new Error(`GET /contabilidad/balance_mensual (HTTP ${res.status}) ${txt}`);
       }
 
-      const data = (await res.json()) as BalanceRow[];
-      setBalance(Array.isArray(data) ? data : []);
+      const raw = await res.json();
+
+const fixed = (Array.isArray(raw) ? raw : []).map((r: any) => ({
+  ...r,
+  mes: r?.mes ? `${r.mes}T00:00:00Z` : null,
+}));
+
+setBalance(fixed);
+
     } catch (e: any) {
       setBError(e?.message ?? "Error cargando balance");
     } finally {
@@ -851,7 +866,12 @@ export default function ContabilidadPage() {
     const lines = [
       header.map(csvEscape).join(","),
       ...rows.map((r) =>
-        [r.mes ?? "", safeNum(r.ingresos).toFixed(2), safeNum(r.gastos).toFixed(2), safeNum(r.balance).toFixed(2)]
+        [
+          r.mes ?? "",
+          safeNum(r.ingresos).toFixed(2),
+          safeNum(r.gastos).toFixed(2),
+          safeNum(r.balance).toFixed(2),
+        ]
           .map(csvEscape)
           .join(",")
       ),
@@ -884,12 +904,17 @@ export default function ContabilidadPage() {
         { label: "Meses", value: String(balanceStats.meses) },
       ],
       tableHeaders: ["Mes", "Ingresos", "Gastos", "Balance"],
-      tableRows: rows.map((r) => [r.mes ?? "-", moneyEUR(safeNum(r.ingresos)), moneyEUR(safeNum(r.gastos)), moneyEUR(safeNum(r.balance))]),
+      tableRows: rows.map((r) => [
+        r.mes ?? "-",
+        moneyEUR(safeNum(r.ingresos)),
+        moneyEUR(safeNum(r.gastos)),
+        moneyEUR(safeNum(r.balance)),
+      ]),
       footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
     });
   };
 
-  // ---------- LIBRO DIARIO (mezclado) ----------
+  // ---------- LIBRO DIARIO (mezclado: ventas + gastos + movimientos) ----------
   const libroRows: LibroRow[] = useMemo(() => {
     const q = lQ.trim().toLowerCase();
     const catFilter = up(lCat);
@@ -929,7 +954,20 @@ export default function ContabilidadPage() {
         };
       });
 
-    const merged = [...ingresosMovs, ...gastosMovs].filter((r) => {
+    // ✅ Movimientos manuales (ya vienen como INGRESO/GASTO)
+    const manualMovs = (Array.isArray(movimientos) ? movimientos : []).map((m) => {
+      const fecha = ymdFromAny(m.fecha ?? m.created_at ?? "");
+      return {
+        fecha,
+        tipo: m.tipo === "INGRESO" ? ("INGRESO" as "INGRESO") : ("GASTO" as "GASTO"),
+        concepto: (m.concepto ?? m.productos_servicios ?? "").trim() || `Movimiento #${m.id}`,
+        categoria: up(m.categoria) || "OTROS",
+        monto: safeNum(m.monto),
+        ref: `MOV#${m.id}`,
+      };
+    });
+
+    const merged = [...ingresosMovs, ...gastosMovs, ...manualMovs].filter((r) => {
       if (!r.fecha) return false;
       if (!inRange(r.fecha, lDesde, lHasta)) return false;
 
@@ -945,12 +983,12 @@ export default function ContabilidadPage() {
           (r.fecha ?? "").toLowerCase().includes(q);
         if (!hay) return false;
       }
-
       return true;
     });
 
     merged.sort((a, b) => {
       if (a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
+      // ingreso primero el mismo día
       if (a.tipo !== b.tipo) return a.tipo === "INGRESO" ? -1 : 1;
       return a.ref.localeCompare(b.ref);
     });
@@ -963,12 +1001,20 @@ export default function ContabilidadPage() {
     });
 
     return withSaldo;
-  }, [libroGastos, pedidosHist, lDesde, lHasta, lCat, lQ]);
+  }, [libroGastos, pedidosHist, movimientos, lDesde, lHasta, lCat, lQ]);
 
   const libroStats = useMemo(() => {
-    const totalIngresos = libroRows.reduce((acc, r) => acc + (r.tipo === "INGRESO" ? safeNum(r.monto) : 0), 0);
-    const totalGastos = libroRows.reduce((acc, r) => acc + (r.tipo === "GASTO" ? safeNum(r.monto) : 0), 0);
-    const saldoFinal = libroRows.length ? safeNum(libroRows[libroRows.length - 1].saldo) : 0;
+    const totalIngresos = libroRows.reduce(
+      (acc, r) => acc + (r.tipo === "INGRESO" ? safeNum(r.monto) : 0),
+      0
+    );
+    const totalGastos = libroRows.reduce(
+      (acc, r) => acc + (r.tipo === "GASTO" ? safeNum(r.monto) : 0),
+      0
+    );
+    const saldoFinal = libroRows.length
+      ? safeNum(libroRows[libroRows.length - 1].saldo)
+      : 0;
     return { count: libroRows.length, totalIngresos, totalGastos, saldoFinal };
   }, [libroRows]);
 
@@ -977,7 +1023,15 @@ export default function ContabilidadPage() {
     const lines = [
       header.map(csvEscape).join(","),
       ...libroRows.map((r) =>
-        [r.fecha, r.tipo, r.concepto, r.categoria, safeNum(r.monto).toFixed(2), safeNum(r.saldo).toFixed(2), r.ref]
+        [
+          r.fecha,
+          r.tipo,
+          r.concepto,
+          r.categoria,
+          safeNum(r.monto).toFixed(2),
+          safeNum(r.saldo).toFixed(2),
+          r.ref,
+        ]
           .map(csvEscape)
           .join(",")
       ),
@@ -1013,7 +1067,14 @@ export default function ContabilidadPage() {
         { label: "Saldo final", value: moneyEUR(libroStats.saldoFinal) },
       ],
       tableHeaders: ["Fecha", "Tipo", "Concepto", "Categoría", "Monto", "Saldo"],
-      tableRows: libroRows.map((r) => [r.fecha, r.tipo, r.concepto, r.categoria, moneyEUR(r.monto), moneyEUR(r.saldo)]),
+      tableRows: libroRows.map((r) => [
+        r.fecha,
+        r.tipo,
+        r.concepto,
+        r.categoria,
+        moneyEUR(r.monto),
+        moneyEUR(r.saldo),
+      ]),
       footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
     });
   };
@@ -1171,15 +1232,13 @@ export default function ContabilidadPage() {
 
   return (
     <main style={s.wrap}>
-      {/* ✅ TODO tu JSX sigue igual que el tuyo (no te lo quité). 
-          Si quieres que te lo pegue completo también con el JSX entero, dímelo y te lo mando,
-          pero la parte que te rompía era la lógica arriba (opSaveUIOnly + endpoints). */}
       <div style={s.card}>
         <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 1000 }}>💰 Contabilidad</div>
             <div style={{ opacity: 0.8, fontSize: 13, marginTop: 4 }}>
-              API: <span style={{ fontWeight: 900 }}>{baseUrl ?? "(no definido)"}</span>
+              API:{" "}
+              <span style={{ fontWeight: 900 }}>{baseUrl ?? "(no definido)"}</span>
             </div>
           </div>
 
@@ -1196,11 +1255,739 @@ export default function ContabilidadPage() {
           </div>
         </div>
 
-        {/* 👇 AQUÍ va todo tu JSX original tal cual.
-           NO lo cambio porque tu problema era arriba. */}
-        <div style={{ opacity: 0.75, fontSize: 12 }}>
-          ✅ Lógica arreglada: POST movimientos, GET movimientos, balance endpoint, y se eliminó el bloque duplicado que rompía el build.
-        </div>
+        {/* =======================
+            TAB: GASTOS
+        ======================= */}
+        {tab === "gastos" ? (
+          <>
+            {gError && (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: 12,
+                  borderRadius: 14,
+                  background: "rgba(239,68,68,.12)",
+                  border: "1px solid rgba(239,68,68,.25)",
+                  color: "#fecaca",
+                  fontWeight: 900,
+                }}
+              >
+                ❌ {gError}
+              </div>
+            )}
+
+            <div style={s.statsGrid}>
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Total gastos (filtrado)</div>
+                <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.total)}</div>
+                <div style={s.statSub}>Suma de los registros mostrados</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Promedio por gasto</div>
+                <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.avg)}</div>
+                <div style={s.statSub}>Promedio del listado actual</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Gasto más alto</div>
+                <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.max)}</div>
+                <div style={s.statSub}>{gastosStats.maxRow ? `${gastosStats.maxRow.concepto}` : "—"}</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Registros</div>
+                <div style={s.statValue}>{gLoading ? "…" : gastosStats.count}</div>
+                <div style={s.statSub}>{gLoading ? "Cargando…" : "Listo"}</div>
+              </div>
+            </div>
+
+            <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={s.row}>
+                <span style={s.badge}>Registros: {gastos.length}</span>
+                {gLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}
+              </div>
+
+              <div style={s.row}>
+                <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
+                  🔄 Refrescar
+                </button>
+                <button onClick={exportGastosCSV} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
+                  📥 Excel (CSV)
+                </button>
+                <button onClick={printGastos} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
+                  🖨️ PDF / Imprimir
+                </button>
+              </div>
+            </div>
+
+            <div style={s.section}>
+              <div style={{ fontWeight: 1000, marginBottom: 10 }}>📌 Resumen por categoría (filtrado)</div>
+              {gLoading ? (
+                <div style={{ opacity: 0.8 }}>Cargando…</div>
+              ) : resumenCategoria.rows.length ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(12, minmax(0,1fr))", gap: 10 }}>
+                  <div
+                    style={{
+                      gridColumn: "span 6",
+                      border: "1px solid rgba(255,255,255,.10)",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <table style={s.table}>
+                      <thead style={{ background: "rgba(255,255,255,.06)" }}>
+                        <tr>
+                          <th style={s.th}>Categoría</th>
+                          <th style={s.th}>Registros</th>
+                          <th style={s.th}>Total</th>
+                          <th style={s.th}>%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resumenCategoria.top5.map((r) => (
+                          <tr key={r.categoria}>
+                            <td style={{ ...s.td, fontWeight: 1000 }}>{r.categoria}</td>
+                            <td style={s.td}>{r.count}</td>
+                            <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.total)}</td>
+                            <td style={s.td}>{r.pct.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div style={{ gridColumn: "span 6", ...s.statCard }}>
+                    <div style={s.statLabel}>Total por categorías</div>
+                    <div style={s.statValue}>{moneyEUR(resumenCategoria.total)}</div>
+                    <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {resumenCategoria.top5.map((r) => (
+                        <span key={`pill-${r.categoria}`} style={s.badge}>
+                          {r.categoria}: {moneyEUR(r.total)}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={s.statSub}>Muestra Top 5 por total</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ opacity: 0.8 }}>No hay datos para resumir.</div>
+              )}
+            </div>
+
+            <div style={s.section}>
+              <div style={{ fontWeight: 1000, marginBottom: 10 }}>🗑️ Eliminar categoría</div>
+              <div style={{ opacity: 0.85, fontSize: 13, marginBottom: 10 }}>
+                Esto reasigna los gastos de esa categoría a otra (ej: OTROS) y luego la elimina del listado.
+              </div>
+
+              <div style={s.row}>
+                <select value={up(catDel)} onChange={(e) => setCatDel(e.target.value)} style={{ ...s.input, width: 240 }}>
+                  <option value="" style={{ color: "#111" }}>
+                    Selecciona categoría…
+                  </option>
+                  {categoriasOpciones
+                    .filter((c) => c !== "OTROS")
+                    .map((c) => (
+                      <option key={`del-${c}`} value={c} style={{ color: "#111" }}>
+                        {c}
+                      </option>
+                    ))}
+                </select>
+
+                <span style={{ opacity: 0.85, fontWeight: 800 }}>Reemplazar por:</span>
+
+                <select value={up(catReplace)} onChange={(e) => setCatReplace(e.target.value)} style={{ ...s.input, width: 220 }}>
+                  {categoriasOpciones.map((c) => (
+                    <option key={`rep-${c}`} value={c} style={{ color: "#111" }}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+
+                <button onClick={deleteCategoria} style={s.btnDanger} disabled={gBusy}>
+                  ✖ Eliminar categoría
+                </button>
+              </div>
+            </div>
+
+            <div style={s.section}>
+              <div style={{ fontWeight: 1000, marginBottom: 10 }}>➕ Nuevo gasto</div>
+              <div style={s.row}>
+                <input type="date" value={newFecha} onChange={(e) => setNewFecha(e.target.value)} style={s.input} />
+                <input
+                  value={newConcepto}
+                  onChange={(e) => setNewConcepto(e.target.value)}
+                  placeholder="Concepto (ej: Harina PAN)"
+                  style={{ ...s.input, minWidth: 260 }}
+                />
+                <input
+                  value={newMonto}
+                  onChange={(e) => setNewMonto(e.target.value)}
+                  placeholder="Monto (ej: 12.50)"
+                  inputMode="decimal"
+                  style={{ ...s.input, width: 160 }}
+                />
+
+                <select value={up(newCategoria)} onChange={(e) => setNewCategoria(e.target.value)} style={{ ...s.input, width: 220 }}>
+                  {categoriasOpciones.map((c) => (
+                    <option key={c} value={c} style={{ color: "#111" }}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+
+                <button onClick={createGasto} style={s.btnPrimary} disabled={gBusy}>
+                  Guardar
+                </button>
+              </div>
+            </div>
+
+            <div style={{ ...s.row, marginBottom: 12 }}>
+              <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={s.input} />
+              <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} style={s.input} />
+              <input
+                value={cat}
+                onChange={(e) => setCat(e.target.value)}
+                placeholder="Filtrar categoría (opcional)"
+                style={{ ...s.input, width: 240 }}
+                list="cat-sugs"
+              />
+
+              <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
+                Aplicar filtros
+              </button>
+              <button
+                onClick={() => {
+                  setDesde("");
+                  setHasta("");
+                  setCat("");
+                  setTimeout(fetchGastos, 0);
+                }}
+                style={s.btn}
+                disabled={gLoading || gBusy}
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <datalist id="cat-sugs">
+              {categoriasOpciones.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+
+            <div style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, overflow: "hidden" }}>
+              <table style={s.table}>
+                <thead style={{ background: "rgba(255,255,255,.06)" }}>
+                  <tr>
+                    <th style={s.th}>ID</th>
+                    <th style={s.th}>Fecha</th>
+                    <th style={s.th}>Concepto</th>
+                    <th style={s.th}>Monto</th>
+                    <th style={s.th}>Categoría</th>
+                    <th style={s.th}>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {gastos.map((g) => {
+                    const isEditing = editingId === g.id;
+                    return (
+                      <tr key={g.id}>
+                        <td style={{ ...s.td, fontWeight: 1000 }}>{g.id}</td>
+
+                        <td style={s.td}>
+                          {isEditing ? (
+                            <input type="date" value={editFecha} onChange={(e) => setEditFecha(e.target.value)} style={s.input} />
+                          ) : (
+                            <span style={{ opacity: 0.9 }}>{g.fecha ?? "-"}</span>
+                          )}
+                        </td>
+
+                        <td style={s.td}>
+                          {isEditing ? (
+                            <input value={editConcepto} onChange={(e) => setEditConcepto(e.target.value)} style={{ ...s.input, minWidth: 260 }} />
+                          ) : (
+                            <span style={{ fontWeight: 800 }}>{g.concepto}</span>
+                          )}
+                        </td>
+
+                        <td style={s.td}>
+                          {isEditing ? (
+                            <input value={editMonto} onChange={(e) => setEditMonto(e.target.value)} inputMode="decimal" style={{ ...s.input, width: 140 }} />
+                          ) : (
+                            <span style={{ fontWeight: 1000 }}>€ {safeNum(g.monto).toFixed(2)}</span>
+                          )}
+                        </td>
+
+                        <td style={s.td}>
+                          {isEditing ? (
+                            <select value={up(editCategoria)} onChange={(e) => setEditCategoria(e.target.value)} style={{ ...s.input, width: 200 }}>
+                              {categoriasOpciones.map((c) => (
+                                <option key={`edit-${c}`} value={c} style={{ color: "#111" }}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span style={s.badge}>{up(g.categoria) || "OTROS"}</span>
+                          )}
+                        </td>
+
+                        <td style={s.td}>
+                          {!isEditing ? (
+                            <div style={s.row}>
+                              <button onClick={() => startEdit(g)} style={s.btn} disabled={gBusy}>
+                                ✏️ Editar
+                              </button>
+                              <button onClick={() => deleteGasto(g.id)} style={s.btnDanger} disabled={gBusy}>
+                                ✖ Borrar
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={s.row}>
+                              <button onClick={() => saveEdit(g.id)} style={s.btnPrimary} disabled={gBusy}>
+                                💾 Guardar
+                              </button>
+                              <button onClick={cancelEdit} style={s.btn} disabled={gBusy}>
+                                Cancelar
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {gastos.length === 0 && !gLoading && (
+                    <tr>
+                      <td colSpan={6} style={{ ...s.td, opacity: 0.8 }}>
+                        No hay gastos todavía.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : tab === "balance" ? (
+          <>
+            {bError && (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: 12,
+                  borderRadius: 14,
+                  background: "rgba(239,68,68,.12)",
+                  border: "1px solid rgba(239,68,68,.25)",
+                  color: "#fecaca",
+                  fontWeight: 900,
+                }}
+              >
+                ❌ {bError}
+              </div>
+            )}
+
+            <div style={s.statsGrid}>
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Total ingresos</div>
+                <div style={s.statValue}>{bLoading ? "…" : moneyEUR(balanceStats.totalIngresos)}</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Total gastos</div>
+                <div style={s.statValue}>{bLoading ? "…" : moneyEUR(balanceStats.totalGastos)}</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Balance total</div>
+                <div style={s.statValue}>{bLoading ? "…" : moneyEUR(balanceStats.totalBalance)}</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Meses</div>
+                <div style={s.statValue}>{bLoading ? "…" : balanceStats.meses}</div>
+              </div>
+            </div>
+
+            <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={s.row}>
+                <span style={s.badge}>Meses: {balance.length}</span>
+                {bLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}
+              </div>
+
+              <div style={s.row}>
+                <button onClick={fetchBalance} style={s.btn} disabled={bLoading}>
+                  🔄 Refrescar
+                </button>
+                <button onClick={exportBalanceCSV} style={s.btn} disabled={bLoading || balance.length === 0}>
+                  📥 Excel (CSV)
+                </button>
+                <button onClick={printBalance} style={s.btn} disabled={bLoading || balance.length === 0}>
+                  🖨️ PDF / Imprimir
+                </button>
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, overflow: "hidden" }}>
+              <table style={s.table}>
+                <thead style={{ background: "rgba(255,255,255,.06)" }}>
+                  <tr>
+                    <th style={s.th}>Mes</th>
+                    <th style={s.th}>Ingresos</th>
+                    <th style={s.th}>Gastos</th>
+                    <th style={s.th}>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balance.map((r, idx) => (
+                    <tr key={`${r.mes ?? "null"}-${idx}`}>
+                      <td style={{ ...s.td, fontWeight: 1000 }}>{r.mes ?? "-"}</td>
+                      <td style={s.td}>{moneyEUR(safeNum(r.ingresos))}</td>
+                      <td style={s.td}>{moneyEUR(safeNum(r.gastos))}</td>
+                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(safeNum(r.balance))}</td>
+                    </tr>
+                  ))}
+
+                  {balance.length === 0 && !bLoading && (
+                    <tr>
+                      <td colSpan={4} style={{ ...s.td, opacity: 0.8 }}>
+                        No hay datos de balance todavía.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <>
+            {lError && (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: 12,
+                  borderRadius: 14,
+                  background: "rgba(239,68,68,.12)",
+                  border: "1px solid rgba(239,68,68,.25)",
+                  color: "#fecaca",
+                  fontWeight: 900,
+                }}
+              >
+                ❌ {lError}
+              </div>
+            )}
+
+            <div style={s.statsGrid}>
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Registros</div>
+                <div style={s.statValue}>{lLoading ? "…" : libroStats.count}</div>
+                <div style={s.statSub}>Movimientos mostrados</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Total ingresos</div>
+                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(libroStats.totalIngresos)}</div>
+                <div style={s.statSub}>Ventas + ingresos manuales</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Total gastos</div>
+                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(libroStats.totalGastos)}</div>
+                <div style={s.statSub}>Gastos + gastos manuales</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Saldo final</div>
+                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(libroStats.saldoFinal)}</div>
+                <div style={s.statSub}>Acumulado (inicia en 0)</div>
+              </div>
+            </div>
+
+            <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={s.row}>{lLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}</div>
+
+              <div style={s.row}>
+                <button
+                  onClick={() => setOpOpen(true)}
+                  style={{
+                    ...s.btnPrimary,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 999,
+                    padding: 0,
+                    fontSize: 24,
+                    lineHeight: "44px",
+                  }}
+                  title="Nueva operación (Libro diario)"
+                  type="button"
+                >
+                  +
+                </button>
+
+                <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
+                  🔄 Refrescar
+                </button>
+                <button onClick={exportLibroCSV} style={s.btn} disabled={lLoading || libroRows.length === 0}>
+                  📥 Excel (CSV)
+                </button>
+                <button onClick={printLibro} style={s.btn} disabled={lLoading || libroRows.length === 0}>
+                  🖨️ PDF / Imprimir
+                </button>
+              </div>
+            </div>
+
+            {opOpen && (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 999,
+                  background: "rgba(0,0,0,.55)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: 900,
+                    borderRadius: 18,
+                    border: "1px solid rgba(255,255,255,.14)",
+                    background: "#0b1220",
+                    boxShadow: "0 25px 80px rgba(0,0,0,.55)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{ ...s.row, justifyContent: "space-between", padding: 14, borderBottom: "1px solid rgba(255,255,255,.10)" }}>
+                    <div style={{ fontWeight: 1000 }}>➕ Nueva operación — Libro diario</div>
+                    <button
+                      onClick={() => {
+                        setOpOpen(false);
+                        opReset();
+                      }}
+                      style={s.btn}
+                      type="button"
+                    >
+                      ✕ Cerrar
+                    </button>
+                  </div>
+
+                  <form onSubmit={opSaveUIOnly} style={{ padding: 14 }}>
+                    <div
+                      style={{
+                        marginBottom: 12,
+                        padding: 12,
+                        borderRadius: 14,
+                        border: "1px solid rgba(255,255,255,.12)",
+                        background: "rgba(255,255,255,.05)",
+                        display: "flex",
+                        gap: 14,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span style={{ fontWeight: 1000 }}>Tipo de operación:</span>
+
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, ...s.badge }}>
+                        <input type="radio" name="opTipo" checked={opTipo === "GASTO"} onChange={() => setOpTipo("GASTO")} />
+                        GASTO
+                      </label>
+
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, ...s.badge }}>
+                        <input type="radio" name="opTipo" checked={opTipo === "INGRESO"} onChange={() => setOpTipo("INGRESO")} />
+                        INGRESO
+                      </label>
+
+                      <span style={{ opacity: 0.8, fontSize: 12 }}>
+                        Seleccionado: <b>{opTipo}</b>
+                      </span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(12, minmax(0,1fr))", gap: 10 }}>
+                      <div style={{ gridColumn: "span 3" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Fecha</div>
+                        <input type="date" value={op.fecha} onChange={(e) => opSet("fecha", e.target.value)} style={{ ...s.input, width: "100%" }} />
+                      </div>
+
+                      <div style={{ gridColumn: "span 5" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Proveedor/Persona</div>
+                        <input
+                          value={op.proveedor}
+                          onChange={(e) => opSet("proveedor", e.target.value)}
+                          style={{ ...s.input, width: "100%" }}
+                          placeholder="Ej: AHMED MAHDAD"
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: "span 4" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Factura No</div>
+                        <input
+                          value={op.factura_no}
+                          onChange={(e) => opSet("factura_no", e.target.value)}
+                          style={{ ...s.input, width: "100%" }}
+                          placeholder="Ej: Recibo S/N"
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: "span 12" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Productos/Servicios</div>
+                        <input
+                          value={op.productos_servicios}
+                          onChange={(e) => opSet("productos_servicios", e.target.value)}
+                          style={{ ...s.input, width: "100%" }}
+                          placeholder="Ej: Cafetera + Molinos"
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: "span 3" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Monto Total</div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={String(op.monto_total)}
+                          onChange={(e) => opSet("monto_total", safeNum(e.target.value))}
+                          style={{ ...s.input, width: "100%" }}
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: "span 3" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>IVA</div>
+                        <input type="number" step="0.01" value={String(op.iva)} onChange={(e) => opSet("iva", safeNum(e.target.value))} style={{ ...s.input, width: "100%" }} />
+                      </div>
+
+                      <div style={{ gridColumn: "span 3" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Neto (auto)</div>
+                        <input value={opNetoAuto.toFixed(2)} readOnly style={{ ...s.input, width: "100%", opacity: 0.85 }} />
+                      </div>
+
+                      <div style={{ gridColumn: "span 3" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Modo de pago</div>
+                        <select value={op.modo_pago} onChange={(e) => opSet("modo_pago", e.target.value)} style={{ ...s.input, width: "100%" }}>
+                          <option value="Transferencia">Transferencia</option>
+                          <option value="Efectivo">Efectivo</option>
+                          <option value="Tarjeta">Tarjeta</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                      </div>
+
+                      <div style={{ gridColumn: "span 12" }}>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Observación</div>
+                        <textarea
+                          value={op.observacion}
+                          onChange={(e) => opSet("observacion", e.target.value)}
+                          style={{ ...s.input, width: "100%", minHeight: 90 }}
+                          placeholder='Ej: "Se pagó sin factura, N/A para la declaración"'
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ ...s.row, justifyContent: "flex-end", marginTop: 14 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpOpen(false);
+                          opReset();
+                        }}
+                        style={s.btn}
+                      >
+                        Cancelar
+                      </button>
+
+                      <button type="submit" style={s.btnPrimary} disabled={!opCanSave}>
+                        Guardar operación
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            <div style={{ ...s.row, marginBottom: 12 }}>
+              <input type="date" value={lDesde} onChange={(e) => setLDesde(e.target.value)} style={s.input} />
+              <input type="date" value={lHasta} onChange={(e) => setLHasta(e.target.value)} style={s.input} />
+
+              <input
+                value={lCat}
+                onChange={(e) => setLCat(e.target.value)}
+                placeholder="Filtrar categoría (opcional) - incluye VENTAS"
+                style={{ ...s.input, width: 280 }}
+                list="cat-sugs-libro"
+              />
+
+              <input value={lQ} onChange={(e) => setLQ(e.target.value)} placeholder="Buscar (concepto/categoría/ref/fecha)" style={{ ...s.input, width: 280 }} />
+
+              <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
+                Aplicar filtros
+              </button>
+
+              <button
+                onClick={() => {
+                  setLDesde("");
+                  setLHasta("");
+                  setLCat("");
+                  setLQ("");
+                  setTimeout(fetchLibroAll, 0);
+                }}
+                style={s.btn}
+                disabled={lLoading}
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <datalist id="cat-sugs-libro">
+              {["VENTAS", "INGRESOS", "GASTOS", ...categoriasOpciones].map((c) => (
+                <option key={`lib-${c}`} value={c} />
+              ))}
+            </datalist>
+
+            <div style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, overflow: "hidden" }}>
+              <table style={s.table}>
+                <thead style={{ background: "rgba(255,255,255,.06)" }}>
+                  <tr>
+                    <th style={s.th}>Fecha</th>
+                    <th style={s.th}>Tipo</th>
+                    <th style={s.th}>Concepto</th>
+                    <th style={s.th}>Categoría</th>
+                    <th style={s.th}>Monto</th>
+                    <th style={s.th}>Saldo</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {libroRows.map((r) => (
+                    <tr key={`row-${r.ref}`}>
+                      <td style={s.td}>{r.fecha}</td>
+                      <td style={s.td}>{r.tipo === "INGRESO" ? <span style={s.badgeIngreso}>INGRESO</span> : <span style={s.badgeGasto}>GASTO</span>}</td>
+                      <td style={{ ...s.td, fontWeight: 800 }}>{r.concepto}</td>
+                      <td style={s.td}>
+                        <span style={s.badge}>{r.categoria}</span>
+                      </td>
+                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
+                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.saldo)}</td>
+                    </tr>
+                  ))}
+
+                  {libroRows.length === 0 && !lLoading && (
+                    <tr>
+                      <td colSpan={6} style={{ ...s.td, opacity: 0.8 }}>
+                        No hay movimientos para mostrar.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
+              Nota: Ingresos desde <b>/pedidos_historial</b> (solo <b>entregado</b>) + movimientos manuales desde <b>/contabilidad/movimientos</b>.
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
