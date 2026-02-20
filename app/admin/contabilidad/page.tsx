@@ -9,55 +9,97 @@ type BalanceRow = {
   balance: number;
 };
 
+type Gasto = {
+  id: number;
+  fecha: string | null;
+  concepto: string;
+  monto: number;
+  categoria: string;
+};
+
 export default function ContabilidadPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  const [tab, setTab] = useState<"home" | "balance">("home");
+  const [tab, setTab] = useState<"home" | "balance" | "gastos">("home");
+
+  // BALANCE
   const [balance, setBalance] = useState<BalanceRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
+  // GASTOS
+  const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [loadingGastos, setLoadingGastos] = useState(false);
+
+  const [newConcepto, setNewConcepto] = useState("");
+  const [newMonto, setNewMonto] = useState("");
+
+  // ---------------- BALANCE ----------------
   const fetchBalance = async () => {
-    if (!baseUrl) {
-      setError("Falta NEXT_PUBLIC_API_URL");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
+    if (!baseUrl) return;
+    setLoadingBalance(true);
 
     try {
       const res = await fetch(
         `${baseUrl}/contabilidad/balance_mensual`,
         { cache: "no-store" }
       );
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
       const data = await res.json();
       setBalance(Array.isArray(data) ? data : []);
-    } catch (e: any) {
-      setError(e.message);
     } finally {
-      setLoading(false);
+      setLoadingBalance(false);
     }
   };
 
-  useEffect(() => {
-    if (tab === "balance") {
-      fetchBalance();
+  // ---------------- GASTOS ----------------
+  const fetchGastos = async () => {
+    if (!baseUrl) return;
+    setLoadingGastos(true);
+
+    try {
+      const res = await fetch(`${baseUrl}/gastos?limit=50`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setGastos(Array.isArray(data) ? data : []);
+    } finally {
+      setLoadingGastos(false);
     }
+  };
+
+  const createGasto = async () => {
+    if (!baseUrl) return;
+    if (!newConcepto || !newMonto) return;
+
+    await fetch(`${baseUrl}/gastos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fecha: null,
+        concepto: newConcepto,
+        monto: Number(newMonto),
+        categoria: "OTROS",
+      }),
+    });
+
+    setNewConcepto("");
+    setNewMonto("");
+    fetchGastos();
+  };
+
+  // ---------------- EFFECT ----------------
+  useEffect(() => {
+    if (tab === "balance") fetchBalance();
+    if (tab === "gastos") fetchGastos();
   }, [tab]);
 
+  // ---------------- STYLES ----------------
   const s = {
     wrap: {
       minHeight: "100vh",
       padding: 40,
       background: "#0b1220",
       color: "white",
-      fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
+      fontFamily: "system-ui",
     } as React.CSSProperties,
     card: {
       maxWidth: 1100,
@@ -77,7 +119,7 @@ export default function ContabilidadPage() {
       cursor: "pointer",
       fontWeight: 700,
     } as React.CSSProperties,
-    buttonActive: {
+    active: {
       padding: "10px 16px",
       marginRight: 10,
       borderRadius: 10,
@@ -103,79 +145,115 @@ export default function ContabilidadPage() {
       padding: 12,
       borderBottom: "1px solid rgba(255,255,255,.08)",
     } as React.CSSProperties,
+    input: {
+      padding: 10,
+      marginRight: 10,
+      borderRadius: 8,
+      border: "1px solid rgba(255,255,255,.2)",
+      background: "rgba(255,255,255,.1)",
+      color: "white",
+    } as React.CSSProperties,
   };
 
   return (
     <main style={s.wrap}>
       <div style={s.card}>
-        <h1 style={{ fontSize: 24, fontWeight: 900 }}>
-          💰 CONTABILIDAD (CONTROLADA)
-        </h1>
+        <h1>💰 CONTABILIDAD</h1>
 
         <div style={{ marginTop: 20 }}>
           <button
             onClick={() => setTab("home")}
-            style={tab === "home" ? s.buttonActive : s.button}
+            style={tab === "home" ? s.active : s.button}
           >
             Home
           </button>
 
           <button
             onClick={() => setTab("balance")}
-            style={tab === "balance" ? s.buttonActive : s.button}
+            style={tab === "balance" ? s.active : s.button}
           >
-            Balance mensual
+            Balance
+          </button>
+
+          <button
+            onClick={() => setTab("gastos")}
+            style={tab === "gastos" ? s.active : s.button}
+          >
+            Gastos
           </button>
         </div>
 
-        {tab === "home" && (
-          <div style={{ marginTop: 30 }}>
-            HOME FUNCIONANDO
-          </div>
+        {/* HOME */}
+        {tab === "home" && <div style={{ marginTop: 30 }}>HOME OK</div>}
+
+        {/* BALANCE */}
+        {tab === "balance" && (
+          <table style={s.table}>
+            <thead>
+              <tr>
+                <th style={s.th}>Mes</th>
+                <th style={s.th}>Ingresos</th>
+                <th style={s.th}>Gastos</th>
+                <th style={s.th}>Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {balance.map((r, i) => (
+                <tr key={i}>
+                  <td style={s.td}>{r.mes}</td>
+                  <td style={s.td}>{r.ingresos}</td>
+                  <td style={s.td}>{r.gastos}</td>
+                  <td style={{ ...s.td, fontWeight: 900 }}>
+                    {r.balance}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
 
-        {tab === "balance" && (
-          <div style={{ marginTop: 30 }}>
-            {error && (
-              <div style={{ color: "#f87171", marginBottom: 10 }}>
-                ❌ {error}
-              </div>
-            )}
-
-            {loading && <div>Cargando...</div>}
+        {/* GASTOS */}
+        {tab === "gastos" && (
+          <>
+            <div style={{ marginTop: 20 }}>
+              <input
+                placeholder="Concepto"
+                value={newConcepto}
+                onChange={(e) => setNewConcepto(e.target.value)}
+                style={s.input}
+              />
+              <input
+                placeholder="Monto"
+                value={newMonto}
+                onChange={(e) => setNewMonto(e.target.value)}
+                style={s.input}
+              />
+              <button onClick={createGasto} style={s.button}>
+                Guardar
+              </button>
+            </div>
 
             <table style={s.table}>
               <thead>
                 <tr>
-                  <th style={s.th}>Mes</th>
-                  <th style={s.th}>Ingresos</th>
-                  <th style={s.th}>Gastos</th>
-                  <th style={s.th}>Balance</th>
+                  <th style={s.th}>ID</th>
+                  <th style={s.th}>Concepto</th>
+                  <th style={s.th}>Monto</th>
+                  <th style={s.th}>Categoría</th>
                 </tr>
               </thead>
-
               <tbody>
-                {balance.map((r, i) => (
-                  <tr key={i}>
-                    <td style={s.td}>{r.mes}</td>
-                    <td style={s.td}>{r.ingresos}</td>
-                    <td style={s.td}>{r.gastos}</td>
-                    <td style={{ ...s.td, fontWeight: 900 }}>
-                      {r.balance}
-                    </td>
+                {gastos.map((g) => (
+                  <tr key={g.id}>
+                    <td style={s.td}>{g.id}</td>
+                    <td style={s.td}>{g.concepto}</td>
+                    <td style={s.td}>{g.monto}</td>
+                    <td style={s.td}>{g.categoria}</td>
                   </tr>
                 ))}
-
-                {balance.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan={4} style={s.td}>
-                      No hay datos
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
-          </div>
+          </>
         )}
       </div>
     </main>
