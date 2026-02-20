@@ -20,12 +20,23 @@ type BalanceRow = {
   balance: number;
 };
 
+/** ✅ Pedidos historial (INGRESOS reales) */
+type PedidoHistorialItem = {
+  plato_id: number;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+  subtotal: number;
+};
+
 type PedidoHistorial = {
   id: number;
   mesa_id: number | null;
   estado: string;
   created_at: string; // ISO
+  items: PedidoHistorialItem[];
   total: number;
+  comentario?: string | null;
 };
 
 type Movimiento = {
@@ -35,8 +46,8 @@ type Movimiento = {
   concepto: string;
   categoria: string;
   monto: number;
-  iva?: number;
-  neto?: number;
+  iva: number;
+  neto: number;
   proveedor?: string | null;
   factura_no?: string | null;
   productos_servicios?: string | null;
@@ -50,8 +61,8 @@ type LibroRow = {
   tipo: "INGRESO" | "GASTO";
   concepto: string;
   categoria: string;
-  monto: number; // positivo
-  ref: string; // GASTO#id | PEDIDO#id | MOV#id
+  monto: number; // siempre positivo
+  ref: string; // "GASTO#id" | "PEDIDO#id" | "MOV#id"
   saldo: number; // acumulado
 };
 
@@ -237,147 +248,6 @@ export default function ContabilidadPage() {
 
   const [tab, setTab] = useState<"gastos" | "balance" | "libro">("gastos");
 
-  /* ============ UI / STYLES ============ */
-
-  const s = {
-    wrap: {
-      minHeight: "100vh",
-      padding: 26,
-      background: "#0b1220",
-      color: "white",
-      fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
-    } as React.CSSProperties,
-    card: {
-      maxWidth: 1200,
-      margin: "0 auto",
-      background: "rgba(255,255,255,.06)",
-      border: "1px solid rgba(255,255,255,.12)",
-      borderRadius: 18,
-      padding: 18,
-      boxShadow: "0 18px 50px rgba(0,0,0,.25)",
-    } as React.CSSProperties,
-    row: {
-      display: "flex",
-      gap: 10,
-      flexWrap: "wrap",
-      alignItems: "center",
-    } as React.CSSProperties,
-    input: {
-      padding: 10,
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,.18)",
-      background: "rgba(0,0,0,.25)",
-      color: "white",
-      outline: "none",
-      fontSize: 14,
-    } as React.CSSProperties,
-    btn: {
-      padding: "10px 14px",
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,.18)",
-      background: "rgba(255,255,255,.08)",
-      color: "white",
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 14,
-      whiteSpace: "nowrap",
-    } as React.CSSProperties,
-    btnPrimary: {
-      padding: "10px 14px",
-      borderRadius: 12,
-      border: "1px solid rgba(124,58,237,.9)",
-      background: "rgba(124,58,237,.95)",
-      color: "white",
-      cursor: "pointer",
-      fontWeight: 900,
-      fontSize: 14,
-      whiteSpace: "nowrap",
-    } as React.CSSProperties,
-    btnDanger: {
-      padding: "8px 12px",
-      borderRadius: 12,
-      border: "1px solid rgba(239,68,68,.5)",
-      background: "rgba(239,68,68,.15)",
-      color: "#fecaca",
-      cursor: "pointer",
-      fontWeight: 900,
-      fontSize: 13,
-      whiteSpace: "nowrap",
-    } as React.CSSProperties,
-    badge: {
-      padding: "6px 10px",
-      borderRadius: 999,
-      background: "rgba(255,255,255,.10)",
-      border: "1px solid rgba(255,255,255,.16)",
-      fontSize: 12,
-      fontWeight: 900,
-    } as React.CSSProperties,
-    badgeIngreso: {
-      padding: "6px 10px",
-      borderRadius: 999,
-      background: "rgba(34,197,94,.16)",
-      border: "1px solid rgba(34,197,94,.35)",
-      fontSize: 12,
-      fontWeight: 900,
-      color: "#bbf7d0",
-    } as React.CSSProperties,
-    badgeGasto: {
-      padding: "6px 10px",
-      borderRadius: 999,
-      background: "rgba(239,68,68,.16)",
-      border: "1px solid rgba(239,68,68,.35)",
-      fontSize: 12,
-      fontWeight: 900,
-      color: "#fecaca",
-    } as React.CSSProperties,
-    table: {
-      width: "100%",
-      borderCollapse: "collapse",
-      overflow: "hidden",
-      borderRadius: 14,
-    } as React.CSSProperties,
-    th: {
-      textAlign: "left",
-      padding: 12,
-      fontSize: 12,
-      color: "rgba(255,255,255,.75)",
-    } as React.CSSProperties,
-    td: {
-      padding: 12,
-      borderTop: "1px solid rgba(255,255,255,.10)",
-    } as React.CSSProperties,
-    statsGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
-      gap: 10,
-      marginBottom: 12,
-    } as React.CSSProperties,
-    statCard: {
-      borderRadius: 16,
-      border: "1px solid rgba(255,255,255,.12)",
-      background: "rgba(255,255,255,.05)",
-      padding: 12,
-    } as React.CSSProperties,
-    statLabel: {
-      opacity: 0.8,
-      fontSize: 12,
-      marginBottom: 6,
-    } as React.CSSProperties,
-    statValue: { fontSize: 18, fontWeight: 1000 } as React.CSSProperties,
-    statSub: {
-      opacity: 0.8,
-      fontSize: 12,
-      marginTop: 4,
-    } as React.CSSProperties,
-    section: {
-      border: "1px solid rgba(255,255,255,.12)",
-      background: "rgba(255,255,255,.05)",
-      borderRadius: 16,
-      padding: 14,
-      marginBottom: 12,
-    } as React.CSSProperties,
-  };
-
   /* ===================== GASTOS ===================== */
 
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -400,9 +270,13 @@ export default function ContabilidadPage() {
   const [editMonto, setEditMonto] = useState("");
   const [editCategoria, setEditCategoria] = useState("OTROS");
 
+  // ✅ Eliminar categoría
+  const [catDel, setCatDel] = useState<string>("");
+  const [catReplace, setCatReplace] = useState<string>("OTROS");
+
   const fetchGastos = async () => {
     if (!baseUrl) {
-      setGError("Falta NEXT_PUBLIC_API_URL en Vercel");
+      setGError("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
       return;
     }
 
@@ -417,6 +291,7 @@ export default function ContabilidadPage() {
       qs.set("limit", "200");
 
       const res = await fetch(`${baseUrl}/gastos?${qs.toString()}`, { cache: "no-store" });
+
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`GET /gastos (HTTP ${res.status}) ${txt}`);
@@ -595,6 +470,29 @@ export default function ContabilidadPage() {
     return { count, total, avg, max, maxRow };
   }, [gastos]);
 
+  const resumenCategoria = useMemo(() => {
+    const rows = Array.isArray(gastos) ? gastos : [];
+    const map = new Map<string, { categoria: string; total: number; count: number }>();
+
+    for (const g of rows) {
+      const c = up(g.categoria) || "OTROS";
+      const prev = map.get(c) ?? { categoria: c, total: 0, count: 0 };
+      prev.total += safeNum(g.monto);
+      prev.count += 1;
+      map.set(c, prev);
+    }
+
+    const arr = Array.from(map.values()).sort((a, b) => b.total - a.total);
+    const total = arr.reduce((acc, x) => acc + x.total, 0);
+
+    const withPct = arr.map((x) => ({
+      ...x,
+      pct: total > 0 ? (x.total / total) * 100 : 0,
+    }));
+
+    return { total, rows: withPct, top5: withPct.slice(0, 5) };
+  }, [gastos]);
+
   const exportGastosCSV = () => {
     const rows = Array.isArray(gastos) ? gastos : [];
     const header = ["ID", "Fecha", "Concepto", "Monto", "Categoría"];
@@ -635,9 +533,79 @@ export default function ContabilidadPage() {
         { label: "Registros", value: String(gastosStats.count) },
       ],
       tableHeaders: ["ID", "Fecha", "Concepto", "Monto", "Categoría"],
-      tableRows: rows.map((g) => [g.id, g.fecha ?? "-", g.concepto ?? "", moneyEUR(safeNum(g.monto)), up(g.categoria) || "OTROS"]),
+      tableRows: rows.map((g) => [
+        g.id,
+        g.fecha ?? "-",
+        g.concepto ?? "",
+        moneyEUR(safeNum(g.monto)),
+        up(g.categoria) || "OTROS",
+      ]),
       footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
     });
+  };
+
+  const deleteCategoria = async () => {
+    if (!baseUrl) return;
+
+    const toDelete = up(catDel);
+    const toReplace = up(catReplace) || "OTROS";
+
+    if (!toDelete) return setGError("Selecciona una categoría a eliminar.");
+    if (toDelete === "OTROS") return setGError("No puedes eliminar OTROS (categoría default).");
+    if (BASE_CATS.includes(toDelete as any)) return setGError(`No puedes eliminar la categoría base: ${toDelete}`);
+    if (toDelete === toReplace) return setGError("La categoría de reemplazo no puede ser la misma.");
+
+    const afectados = gastos.filter((g) => up(g.categoria) === toDelete);
+
+    const ok = confirm(
+      `Vas a ELIMINAR la categoría "${toDelete}".\n\n` +
+        `Gastos afectados (según el listado actual): ${afectados.length}\n` +
+        `Se moverán a: "${toReplace}"\n\n` +
+        `¿Continuar?`
+    );
+    if (!ok) return;
+
+    setGBusy(true);
+    setGError(null);
+
+    try {
+      for (const g of afectados) {
+        const res = await fetch(`${baseUrl}/gastos/${g.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fecha: g.fecha ?? null,
+            concepto: g.concepto,
+            monto: safeNum(g.monto),
+            categoria: toReplace,
+          }),
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(`Error moviendo gasto ID ${g.id}: (HTTP ${res.status}) ${txt}`);
+        }
+      }
+
+      const current = new Set(readCatsLS());
+      current.delete(toDelete);
+      current.add("OTROS");
+      writeCatsLS(Array.from(current).sort((a, b) => a.localeCompare(b)));
+
+      if (up(cat) === toDelete) setCat("");
+      if (up(newCategoria) === toDelete) setNewCategoria("OTROS");
+      if (up(editCategoria) === toDelete) setEditCategoria("OTROS");
+
+      setCatDel("");
+      setCatReplace("OTROS");
+
+      await fetchGastos();
+      if (tab === "libro") await fetchLibroAll();
+    } catch (e: any) {
+      setGError(e?.message ?? "Error eliminando categoría");
+    } finally {
+      setGBusy(false);
+    }
   };
 
   /* ===================== BALANCE ===================== */
@@ -648,7 +616,7 @@ export default function ContabilidadPage() {
 
   const fetchBalance = async () => {
     if (!baseUrl) {
-      setBError("Falta NEXT_PUBLIC_API_URL en Vercel");
+      setBError("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
       return;
     }
     setBLoading(true);
@@ -656,15 +624,19 @@ export default function ContabilidadPage() {
 
     try {
       const res = await fetch(`${baseUrl}/contabilidad/balance_mensual`, { cache: "no-store" });
+
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`GET /contabilidad/balance_mensual (HTTP ${res.status}) ${txt}`);
       }
+
       const raw = await res.json();
+
       const fixed = (Array.isArray(raw) ? raw : []).map((r: any) => ({
         ...r,
         mes: r?.mes ? String(r.mes).slice(0, 10) : null,
       }));
+
       setBalance(fixed);
     } catch (e: any) {
       setBError(e?.message ?? "Error cargando balance");
@@ -712,7 +684,7 @@ export default function ContabilidadPage() {
     const rows = Array.isArray(balance) ? balance : [];
     openPrintWindow({
       title: "Contabilidad — Balance mensual",
-      subtitle: `Resumen mensual (backend)`,
+      subtitle: `Resumen mensual (datos desde el backend)`,
       kpis: [
         { label: "Total ingresos", value: moneyEUR(balanceStats.totalIngresos) },
         { label: "Total gastos", value: moneyEUR(balanceStats.totalGastos) },
@@ -720,7 +692,12 @@ export default function ContabilidadPage() {
         { label: "Meses", value: String(balanceStats.meses) },
       ],
       tableHeaders: ["Mes", "Ingresos", "Gastos", "Balance"],
-      tableRows: rows.map((r) => [r.mes ?? "-", moneyEUR(safeNum(r.ingresos)), moneyEUR(safeNum(r.gastos)), moneyEUR(safeNum(r.balance))]),
+      tableRows: rows.map((r) => [
+        r.mes ?? "-",
+        moneyEUR(safeNum(r.ingresos)),
+        moneyEUR(safeNum(r.gastos)),
+        moneyEUR(safeNum(r.balance)),
+      ]),
       footerNote: "Tip: en el diálogo de impresión elige “Guardar como PDF”.",
     });
   };
@@ -739,7 +716,7 @@ export default function ContabilidadPage() {
   const [lQ, setLQ] = useState("");
 
   const fetchLibroGastos = async () => {
-    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL");
+    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
 
     const qs = new URLSearchParams();
     if (lDesde.trim()) qs.set("desde", lDesde.trim());
@@ -748,6 +725,7 @@ export default function ContabilidadPage() {
     qs.set("limit", "500");
 
     const res = await fetch(`${baseUrl}/gastos?${qs.toString()}`, { cache: "no-store" });
+
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       throw new Error(`GET /gastos (Libro) (HTTP ${res.status}) ${txt}`);
@@ -758,7 +736,7 @@ export default function ContabilidadPage() {
   };
 
   const fetchPedidosHistorial = async () => {
-    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL");
+    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
 
     const res = await fetch(`${baseUrl}/pedidos_historial`, { cache: "no-store" });
     if (!res.ok) {
@@ -797,94 +775,6 @@ export default function ContabilidadPage() {
     }
   };
 
-  // Modal NUEVA OPERACIÓN (movimiento manual)
-  const [opOpen, setOpOpen] = useState(false);
-  const [opTipo, setOpTipo] = useState<"GASTO" | "INGRESO">("GASTO");
-  const [op, setOp] = useState<DiarioOperacionForm>({
-    fecha: "",
-    proveedor: "",
-    factura_no: "",
-    productos_servicios: "",
-    monto_total: 0,
-    iva: 0,
-    modo_pago: "Transferencia",
-    observacion: "",
-  });
-
-  const opNetoAuto = useMemo(() => Math.max(0, safeNum(op.monto_total) - safeNum(op.iva)), [op.monto_total, op.iva]);
-
-  const opCanSave = useMemo(() => {
-    return (
-      !!op.fecha &&
-      op.proveedor.trim().length > 0 &&
-      op.productos_servicios.trim().length > 0 &&
-      safeNum(op.monto_total) > 0
-    );
-  }, [op]);
-
-  function opSet<K extends keyof DiarioOperacionForm>(key: K, value: DiarioOperacionForm[K]) {
-    setOp((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function opReset() {
-    setOp({
-      fecha: "",
-      proveedor: "",
-      factura_no: "",
-      productos_servicios: "",
-      monto_total: 0,
-      iva: 0,
-      modo_pago: "Transferencia",
-      observacion: "",
-    });
-    setOpTipo("GASTO");
-  }
-
-  async function opSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!opCanSave) return;
-
-    if (!baseUrl) {
-      alert("Falta NEXT_PUBLIC_API_URL");
-      return;
-    }
-
-    const payload = {
-      fecha: op.fecha,
-      tipo: opTipo,
-      concepto: op.productos_servicios,
-      categoria: opTipo === "INGRESO" ? "INGRESOS" : "GASTOS",
-      monto: safeNum(op.monto_total),
-      iva: safeNum(op.iva),
-      proveedor: op.proveedor,
-      factura_no: op.factura_no,
-      productos_servicios: op.productos_servicios,
-      modo_pago: op.modo_pago,
-      observacion: op.observacion,
-    };
-
-    try {
-      const res = await fetch(`${baseUrl}/contabilidad/movimientos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(`POST /contabilidad/movimientos (HTTP ${res.status}) ${txt}`);
-      }
-
-      await res.json().catch(() => null);
-      await Promise.all([fetchMovimientos(200), fetchGastos(), fetchLibroAll()]);
-      setOpOpen(false);
-      opReset();
-    } catch (err: any) {
-      console.error("❌ ERROR GUARDANDO:", err);
-      alert(err?.message ?? "Error guardando movimiento");
-    }
-  }
-
   const libroRows: LibroRow[] = useMemo(() => {
     const q = lQ.trim().toLowerCase();
     const catFilter = up(lCat);
@@ -905,10 +795,19 @@ export default function ContabilidadPage() {
       .filter((p) => (p?.estado ?? "").toLowerCase() === "entregado")
       .map((p) => {
         const fecha = ymdFromAny(p.created_at);
+        const items = Array.isArray(p.items) ? p.items : [];
+        const concepto =
+          items.length > 0
+            ? `Venta #${p.id} — ${items
+                .slice(0, 3)
+                .map((x) => x?.nombre)
+                .filter(Boolean)
+                .join(", ")}${items.length > 3 ? "…" : ""}`
+            : `Venta #${p.id}`;
         return {
           fecha,
           tipo: "INGRESO" as const,
-          concepto: `Venta #${p.id}`,
+          concepto,
           categoria: "VENTAS",
           monto: safeNum(p.total),
           ref: `PEDIDO#${p.id}`,
@@ -1013,6 +912,97 @@ export default function ContabilidadPage() {
     });
   };
 
+  // Modal NUEVA OPERACION (Libro diario)
+  const [opOpen, setOpOpen] = useState(false);
+  const [opTipo, setOpTipo] = useState<"GASTO" | "INGRESO">("GASTO");
+
+  const [op, setOp] = useState<DiarioOperacionForm>({
+    fecha: "",
+    proveedor: "",
+    factura_no: "",
+    productos_servicios: "",
+    monto_total: 0,
+    iva: 0,
+    modo_pago: "Transferencia",
+    observacion: "",
+  });
+
+  const opNetoAuto = useMemo(() => Math.max(0, safeNum(op.monto_total) - safeNum(op.iva)), [op.monto_total, op.iva]);
+
+  const opCanSave = useMemo(() => {
+    return (
+      !!op.fecha &&
+      op.proveedor.trim().length > 0 &&
+      op.productos_servicios.trim().length > 0 &&
+      safeNum(op.monto_total) > 0
+    );
+  }, [op]);
+
+  function opSet<K extends keyof DiarioOperacionForm>(key: K, value: DiarioOperacionForm[K]) {
+    setOp((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function opReset() {
+    setOp({
+      fecha: "",
+      proveedor: "",
+      factura_no: "",
+      productos_servicios: "",
+      monto_total: 0,
+      iva: 0,
+      modo_pago: "Transferencia",
+      observacion: "",
+    });
+    setOpTipo("GASTO");
+  }
+
+  async function opSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!opCanSave) return;
+
+    if (!baseUrl) {
+      alert("Falta NEXT_PUBLIC_API_URL");
+      return;
+    }
+
+    const payload = {
+      fecha: op.fecha,
+      tipo: opTipo,
+      concepto: op.productos_servicios,
+      categoria: opTipo === "INGRESO" ? "INGRESOS" : "GASTOS",
+      monto: safeNum(op.monto_total),
+      iva: safeNum(op.iva),
+      proveedor: op.proveedor,
+      factura_no: op.factura_no,
+      productos_servicios: op.productos_servicios,
+      modo_pago: op.modo_pago,
+      observacion: op.observacion,
+    };
+
+    try {
+      const res = await fetch(`${baseUrl}/contabilidad/movimientos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`POST /contabilidad/movimientos (HTTP ${res.status}) ${txt}`);
+      }
+
+      await res.json().catch(() => null);
+
+      await Promise.all([fetchMovimientos(200), fetchGastos(), fetchLibroAll()]);
+
+      setOpOpen(false);
+      opReset();
+    } catch (err: any) {
+      console.error("❌ ERROR GUARDANDO:", err);
+      alert(err?.message ?? "Error guardando movimiento");
+    }
+  }
+
   /* ===================== EFFECTS ===================== */
 
   useEffect(() => {
@@ -1026,7 +1016,148 @@ export default function ContabilidadPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  /* ===================== RENDER ===================== */
+  /* ===================== STYLES ===================== */
+
+  const s = {
+    wrap: {
+      minHeight: "100vh",
+      padding: 26,
+      background: "#0b1220",
+      color: "white",
+      fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
+    } as React.CSSProperties,
+    card: {
+      maxWidth: 1200,
+      margin: "0 auto",
+      background: "rgba(255,255,255,.06)",
+      border: "1px solid rgba(255,255,255,.12)",
+      borderRadius: 18,
+      padding: 18,
+      boxShadow: "0 18px 50px rgba(0,0,0,.25)",
+    } as React.CSSProperties,
+    row: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap",
+      alignItems: "center",
+    } as React.CSSProperties,
+    input: {
+      padding: 10,
+      borderRadius: 12,
+      border: "1px solid rgba(255,255,255,.18)",
+      background: "rgba(0,0,0,.25)",
+      color: "white",
+      outline: "none",
+      fontSize: 14,
+    } as React.CSSProperties,
+    btn: {
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: "1px solid rgba(255,255,255,.18)",
+      background: "rgba(255,255,255,.08)",
+      color: "white",
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 14,
+      whiteSpace: "nowrap",
+    } as React.CSSProperties,
+    btnPrimary: {
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: "1px solid rgba(124,58,237,.9)",
+      background: "rgba(124,58,237,.95)",
+      color: "white",
+      cursor: "pointer",
+      fontWeight: 900,
+      fontSize: 14,
+      whiteSpace: "nowrap",
+    } as React.CSSProperties,
+    btnDanger: {
+      padding: "8px 12px",
+      borderRadius: 12,
+      border: "1px solid rgba(239,68,68,.5)",
+      background: "rgba(239,68,68,.15)",
+      color: "#fecaca",
+      cursor: "pointer",
+      fontWeight: 900,
+      fontSize: 13,
+      whiteSpace: "nowrap",
+    } as React.CSSProperties,
+    badge: {
+      padding: "6px 10px",
+      borderRadius: 999,
+      background: "rgba(255,255,255,.10)",
+      border: "1px solid rgba(255,255,255,.16)",
+      fontSize: 12,
+      fontWeight: 900,
+    } as React.CSSProperties,
+    badgeIngreso: {
+      padding: "6px 10px",
+      borderRadius: 999,
+      background: "rgba(34,197,94,.16)",
+      border: "1px solid rgba(34,197,94,.35)",
+      fontSize: 12,
+      fontWeight: 900,
+      color: "#bbf7d0",
+    } as React.CSSProperties,
+    badgeGasto: {
+      padding: "6px 10px",
+      borderRadius: 999,
+      background: "rgba(239,68,68,.16)",
+      border: "1px solid rgba(239,68,68,.35)",
+      fontSize: 12,
+      fontWeight: 900,
+      color: "#fecaca",
+    } as React.CSSProperties,
+    table: {
+      width: "100%",
+      borderCollapse: "collapse",
+      overflow: "hidden",
+      borderRadius: 14,
+    } as React.CSSProperties,
+    th: {
+      textAlign: "left",
+      padding: 12,
+      fontSize: 12,
+      color: "rgba(255,255,255,.75)",
+    } as React.CSSProperties,
+    td: {
+      padding: 12,
+      borderTop: "1px solid rgba(255,255,255,.10)",
+    } as React.CSSProperties,
+    statsGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
+      gap: 10,
+      marginBottom: 12,
+    } as React.CSSProperties,
+    statCard: {
+      borderRadius: 16,
+      border: "1px solid rgba(255,255,255,.12)",
+      background: "rgba(255,255,255,.05)",
+      padding: 12,
+    } as React.CSSProperties,
+    statLabel: {
+      opacity: 0.8,
+      fontSize: 12,
+      marginBottom: 6,
+    } as React.CSSProperties,
+    statValue: { fontSize: 18, fontWeight: 1000 } as React.CSSProperties,
+    statSub: {
+      opacity: 0.8,
+      fontSize: 12,
+      marginTop: 4,
+    } as React.CSSProperties,
+    section: {
+      border: "1px solid rgba(255,255,255,.12)",
+      background: "rgba(255,255,255,.05)",
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 12,
+    } as React.CSSProperties,
+  };
+
+  /* ===================== UI ===================== */
 
   return (
     <main style={s.wrap}>
@@ -1075,17 +1206,17 @@ export default function ContabilidadPage() {
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Total gastos (filtrado)</div>
                 <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.total)}</div>
-                <div style={s.statSub}>Suma de registros mostrados</div>
+                <div style={s.statSub}>Suma de los registros mostrados</div>
               </div>
 
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
-                <div style={s.statLabel}>Promedio</div>
+                <div style={s.statLabel}>Promedio por gasto</div>
                 <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.avg)}</div>
-                <div style={s.statSub}>Promedio listado actual</div>
+                <div style={s.statSub}>Promedio del listado actual</div>
               </div>
 
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
-                <div style={s.statLabel}>Mayor gasto</div>
+                <div style={s.statLabel}>Gasto más alto</div>
                 <div style={s.statValue}>{gLoading ? "…" : moneyEUR(gastosStats.max)}</div>
                 <div style={s.statSub}>{gastosStats.maxRow ? `${gastosStats.maxRow.concepto}` : "—"}</div>
               </div>
@@ -1112,6 +1243,96 @@ export default function ContabilidadPage() {
                 </button>
                 <button onClick={printGastos} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
                   🖨️ PDF / Imprimir
+                </button>
+              </div>
+            </div>
+
+            <div style={s.section}>
+              <div style={{ fontWeight: 1000, marginBottom: 10 }}>📌 Resumen por categoría (filtrado)</div>
+              {gLoading ? (
+                <div style={{ opacity: 0.8 }}>Cargando…</div>
+              ) : resumenCategoria.rows.length ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(12, minmax(0,1fr))", gap: 10 }}>
+                  <div
+                    style={{
+                      gridColumn: "span 6",
+                      border: "1px solid rgba(255,255,255,.10)",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <table style={s.table}>
+                      <thead style={{ background: "rgba(255,255,255,.06)" }}>
+                        <tr>
+                          <th style={s.th}>Categoría</th>
+                          <th style={s.th}>Registros</th>
+                          <th style={s.th}>Total</th>
+                          <th style={s.th}>%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resumenCategoria.top5.map((r) => (
+                          <tr key={r.categoria}>
+                            <td style={{ ...s.td, fontWeight: 1000 }}>{r.categoria}</td>
+                            <td style={s.td}>{r.count}</td>
+                            <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.total)}</td>
+                            <td style={s.td}>{r.pct.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div style={{ gridColumn: "span 6", ...s.statCard }}>
+                    <div style={s.statLabel}>Total por categorías</div>
+                    <div style={s.statValue}>{moneyEUR(resumenCategoria.total)}</div>
+                    <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {resumenCategoria.top5.map((r) => (
+                        <span key={`pill-${r.categoria}`} style={s.badge}>
+                          {r.categoria}: {moneyEUR(r.total)}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={s.statSub}>Muestra Top 5 por total</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ opacity: 0.8 }}>No hay datos para resumir.</div>
+              )}
+            </div>
+
+            <div style={s.section}>
+              <div style={{ fontWeight: 1000, marginBottom: 10 }}>🗑️ Eliminar categoría</div>
+              <div style={{ opacity: 0.85, fontSize: 13, marginBottom: 10 }}>
+                Esto reasigna los gastos de esa categoría a otra (ej: OTROS) y luego la elimina del listado.
+              </div>
+
+              <div style={s.row}>
+                <select value={up(catDel)} onChange={(e) => setCatDel(e.target.value)} style={{ ...s.input, width: 240 }}>
+                  <option value="" style={{ color: "#111" }}>
+                    Selecciona categoría…
+                  </option>
+                  {categoriasOpciones
+                    .filter((c) => c !== "OTROS")
+                    .map((c) => (
+                      <option key={`del-${c}`} value={c} style={{ color: "#111" }}>
+                        {c}
+                      </option>
+                    ))}
+                </select>
+
+                <span style={{ opacity: 0.85, fontWeight: 800 }}>Reemplazar por:</span>
+
+                <select value={up(catReplace)} onChange={(e) => setCatReplace(e.target.value)} style={{ ...s.input, width: 220 }}>
+                  {categoriasOpciones.map((c) => (
+                    <option key={`rep-${c}`} value={c} style={{ color: "#111" }}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+
+                <button onClick={deleteCategoria} style={s.btnDanger} disabled={gBusy}>
+                  ✖ Eliminar categoría
                 </button>
               </div>
             </div>
@@ -1416,7 +1637,15 @@ export default function ContabilidadPage() {
               <div style={s.row}>
                 <button
                   onClick={() => setOpOpen(true)}
-                  style={{ ...s.btnPrimary, width: 44, height: 44, borderRadius: 999, padding: 0, fontSize: 24, lineHeight: "44px" }}
+                  style={{
+                    ...s.btnPrimary,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 999,
+                    padding: 0,
+                    fontSize: 24,
+                    lineHeight: "44px",
+                  }}
                   title="Nueva operación (Libro diario)"
                   type="button"
                 >
@@ -1512,28 +1741,22 @@ export default function ContabilidadPage() {
 
                       <div style={{ gridColumn: "span 5" }}>
                         <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Proveedor/Persona</div>
-                        <input value={op.proveedor} onChange={(e) => opSet("proveedor", e.target.value)} style={{ ...s.input, width: "100%" }} placeholder="Ej: AHMED" />
+                        <input value={op.proveedor} onChange={(e) => opSet("proveedor", e.target.value)} style={{ ...s.input, width: "100%" }} placeholder="Ej: AHMED MAHDAD" />
                       </div>
 
                       <div style={{ gridColumn: "span 4" }}>
                         <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Factura No</div>
-                        <input value={op.factura_no} onChange={(e) => opSet("factura_no", e.target.value)} style={{ ...s.input, width: "100%" }} placeholder="Ej: Recibo" />
+                        <input value={op.factura_no} onChange={(e) => opSet("factura_no", e.target.value)} style={{ ...s.input, width: "100%" }} placeholder="Ej: Recibo S/N" />
                       </div>
 
                       <div style={{ gridColumn: "span 12" }}>
                         <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Productos/Servicios</div>
-                        <input value={op.productos_servicios} onChange={(e) => opSet("productos_servicios", e.target.value)} style={{ ...s.input, width: "100%" }} placeholder="Ej: Cafetera" />
+                        <input value={op.productos_servicios} onChange={(e) => opSet("productos_servicios", e.target.value)} style={{ ...s.input, width: "100%" }} placeholder="Ej: Cafetera + Molinos" />
                       </div>
 
                       <div style={{ gridColumn: "span 3" }}>
                         <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Monto Total</div>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={String(op.monto_total)}
-                          onChange={(e) => opSet("monto_total", safeNum(e.target.value))}
-                          style={{ ...s.input, width: "100%" }}
-                        />
+                        <input type="number" step="0.01" value={String(op.monto_total)} onChange={(e) => opSet("monto_total", safeNum(e.target.value))} style={{ ...s.input, width: "100%" }} />
                       </div>
 
                       <div style={{ gridColumn: "span 3" }}>
@@ -1558,7 +1781,7 @@ export default function ContabilidadPage() {
 
                       <div style={{ gridColumn: "span 12" }}>
                         <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Observación</div>
-                        <textarea value={op.observacion} onChange={(e) => opSet("observacion", e.target.value)} style={{ ...s.input, width: "100%", minHeight: 90 }} placeholder='Ej: "N/A"' />
+                        <textarea value={op.observacion} onChange={(e) => opSet("observacion", e.target.value)} style={{ ...s.input, width: "100%", minHeight: 90 }} placeholder='Ej: "Se pagó sin factura, N/A para la declaración"' />
                       </div>
                     </div>
 
@@ -1587,7 +1810,8 @@ export default function ContabilidadPage() {
               <input type="date" value={lDesde} onChange={(e) => setLDesde(e.target.value)} style={s.input} />
               <input type="date" value={lHasta} onChange={(e) => setLHasta(e.target.value)} style={s.input} />
 
-              <input value={lCat} onChange={(e) => setLCat(e.target.value)} placeholder="Filtrar categoría (incluye VENTAS)" style={{ ...s.input, width: 280 }} list="cat-sugs-libro" />
+              <input value={lCat} onChange={(e) => setLCat(e.target.value)} placeholder="Filtrar categoría (opcional) - incluye VENTAS" style={{ ...s.input, width: 280 }} list="cat-sugs-libro" />
+
               <input value={lQ} onChange={(e) => setLQ(e.target.value)} placeholder="Buscar (concepto/categoría/ref/fecha)" style={{ ...s.input, width: 280 }} />
 
               <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
