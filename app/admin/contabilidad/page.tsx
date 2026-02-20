@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 
+/* ================= TYPES ================= */
+
 type Gasto = {
   id: number;
   fecha: string | null;
@@ -33,26 +35,37 @@ type Movimiento = {
   monto: number;
 };
 
+/* ================= COMPONENT ================= */
+
 export default function ContabilidadPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  const [tab, setTab] = useState<"home" | "gastos" | "balance" | "libro">("home");
+  const [tab, setTab] = useState<
+    "home" | "gastos" | "balance" | "libro"
+  >("home");
 
-  // ---------------- GASTOS ----------------
+  /* ================= GASTOS ================= */
+
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [newConcepto, setNewConcepto] = useState("");
   const [newMonto, setNewMonto] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editConcepto, setEditConcepto] = useState("");
+  const [editMonto, setEditMonto] = useState("");
 
   const fetchGastos = async () => {
     if (!baseUrl) return;
-    const res = await fetch(`${baseUrl}/gastos?limit=200`, { cache: "no-store" });
+    const res = await fetch(`${baseUrl}/gastos?limit=300`, {
+      cache: "no-store",
+    });
     const data = await res.json();
     setGastos(Array.isArray(data) ? data : []);
   };
 
   const createGasto = async () => {
     if (!baseUrl) return;
+    if (!newConcepto || !newMonto) return;
+
     await fetch(`${baseUrl}/gastos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,6 +76,7 @@ export default function ContabilidadPage() {
         categoria: "OTROS",
       }),
     });
+
     setNewConcepto("");
     setNewMonto("");
     fetchGastos();
@@ -74,27 +88,63 @@ export default function ContabilidadPage() {
     fetchGastos();
   };
 
-  // ---------------- BALANCE ----------------
+  const startEdit = (g: Gasto) => {
+    setEditingId(g.id);
+    setEditConcepto(g.concepto);
+    setEditMonto(String(g.monto));
+  };
+
+  const saveEdit = async (id: number) => {
+    if (!baseUrl) return;
+
+    await fetch(`${baseUrl}/gastos/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fecha: null,
+        concepto: editConcepto,
+        monto: Number(editMonto),
+        categoria: "OTROS",
+      }),
+    });
+
+    setEditingId(null);
+    fetchGastos();
+  };
+
+  /* ================= BALANCE ================= */
+
   const [balance, setBalance] = useState<BalanceRow[]>([]);
 
   const fetchBalance = async () => {
     if (!baseUrl) return;
-    const res = await fetch(`${baseUrl}/contabilidad/balance_mensual`, { cache: "no-store" });
+    const res = await fetch(
+      `${baseUrl}/contabilidad/balance_mensual`,
+      { cache: "no-store" }
+    );
     const data = await res.json();
     setBalance(Array.isArray(data) ? data : []);
   };
 
-  // ---------------- LIBRO ----------------
+  /* ================= LIBRO DIARIO ================= */
+
   const [pedidos, setPedidos] = useState<PedidoHistorial[]>([]);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const [movConcepto, setMovConcepto] = useState("");
+  const [movMonto, setMovMonto] = useState("");
+  const [movTipo, setMovTipo] = useState<"INGRESO" | "GASTO">(
+    "GASTO"
+  );
 
   const fetchLibro = async () => {
     if (!baseUrl) return;
 
     const [gRes, pRes, mRes] = await Promise.all([
-      fetch(`${baseUrl}/gastos?limit=200`),
+      fetch(`${baseUrl}/gastos?limit=300`),
       fetch(`${baseUrl}/pedidos_historial`),
-      fetch(`${baseUrl}/contabilidad/movimientos?limit=200`),
+      fetch(`${baseUrl}/contabilidad/movimientos?limit=300`),
     ]);
 
     const g = await gRes.json();
@@ -106,12 +156,32 @@ export default function ContabilidadPage() {
     setMovimientos(Array.isArray(m) ? m : []);
   };
 
+  const createMovimiento = async () => {
+    if (!baseUrl) return;
+
+    await fetch(`${baseUrl}/contabilidad/movimientos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fecha: null,
+        tipo: movTipo,
+        concepto: movConcepto,
+        categoria: movTipo === "INGRESO" ? "INGRESOS" : "GASTOS",
+        monto: Number(movMonto),
+      }),
+    });
+
+    setMovConcepto("");
+    setMovMonto("");
+    setModalOpen(false);
+    fetchLibro();
+  };
+
   const libroRows = useMemo(() => {
     const gastosRows = gastos.map((g) => ({
       fecha: g.fecha ?? "",
       tipo: "GASTO" as const,
       concepto: g.concepto,
-      categoria: g.categoria,
       monto: g.monto,
     }));
 
@@ -121,7 +191,6 @@ export default function ContabilidadPage() {
         fecha: p.created_at.slice(0, 10),
         tipo: "INGRESO" as const,
         concepto: `Venta #${p.id}`,
-        categoria: "VENTAS",
         monto: p.total,
       }));
 
@@ -129,7 +198,6 @@ export default function ContabilidadPage() {
       fecha: m.fecha ?? "",
       tipo: m.tipo,
       concepto: m.concepto,
-      categoria: m.categoria,
       monto: m.monto,
     }));
 
@@ -144,12 +212,15 @@ export default function ContabilidadPage() {
     });
   }, [gastos, pedidos, movimientos]);
 
-  // ---------------- EFFECT ----------------
+  /* ================= EFFECT ================= */
+
   useEffect(() => {
     if (tab === "gastos") fetchGastos();
     if (tab === "balance") fetchBalance();
     if (tab === "libro") fetchLibro();
   }, [tab]);
+
+  /* ================= STYLES ================= */
 
   const s = {
     wrap: {
@@ -160,42 +231,30 @@ export default function ContabilidadPage() {
       fontFamily: "system-ui",
     } as React.CSSProperties,
     button: {
-      padding: "10px 16px",
-      marginRight: 10,
-      borderRadius: 10,
+      padding: "8px 14px",
+      marginRight: 8,
+      borderRadius: 8,
       border: "1px solid rgba(255,255,255,.2)",
-      background: "rgba(255,255,255,.08)",
+      background: "rgba(255,255,255,.1)",
       color: "white",
       cursor: "pointer",
     } as React.CSSProperties,
     active: {
-      padding: "10px 16px",
-      marginRight: 10,
-      borderRadius: 10,
+      padding: "8px 14px",
+      marginRight: 8,
+      borderRadius: 8,
       border: "1px solid #7c3aed",
       background: "#7c3aed",
       color: "white",
       cursor: "pointer",
     } as React.CSSProperties,
-    table: {
-      width: "100%",
-      borderCollapse: "collapse",
-      marginTop: 20,
-    } as React.CSSProperties,
-    th: {
-      textAlign: "left",
-      padding: 10,
-      borderBottom: "1px solid rgba(255,255,255,.2)",
-    } as React.CSSProperties,
-    td: {
-      padding: 10,
-      borderBottom: "1px solid rgba(255,255,255,.1)",
-    } as React.CSSProperties,
   };
+
+  /* ================= RENDER ================= */
 
   return (
     <main style={s.wrap}>
-      <h1>💰 CONTABILIDAD AVANZADA</h1>
+      <h1>💰 CONTABILIDAD COMPLETA</h1>
 
       <div style={{ marginTop: 20 }}>
         {["home", "gastos", "balance", "libro"].map((t) => (
@@ -227,25 +286,52 @@ export default function ContabilidadPage() {
             <button onClick={createGasto}>Guardar</button>
           </div>
 
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={s.th}>ID</th>
-                <th style={s.th}>Concepto</th>
-                <th style={s.th}>Monto</th>
-                <th style={s.th}>Acción</th>
-              </tr>
-            </thead>
+          <table style={{ marginTop: 20, width: "100%" }}>
             <tbody>
               {gastos.map((g) => (
                 <tr key={g.id}>
-                  <td style={s.td}>{g.id}</td>
-                  <td style={s.td}>{g.concepto}</td>
-                  <td style={s.td}>{g.monto}</td>
-                  <td style={s.td}>
-                    <button onClick={() => deleteGasto(g.id)}>
-                      Borrar
-                    </button>
+                  <td>{g.id}</td>
+                  <td>
+                    {editingId === g.id ? (
+                      <input
+                        value={editConcepto}
+                        onChange={(e) =>
+                          setEditConcepto(e.target.value)
+                        }
+                      />
+                    ) : (
+                      g.concepto
+                    )}
+                  </td>
+                  <td>
+                    {editingId === g.id ? (
+                      <input
+                        value={editMonto}
+                        onChange={(e) =>
+                          setEditMonto(e.target.value)
+                        }
+                      />
+                    ) : (
+                      g.monto
+                    )}
+                  </td>
+                  <td>
+                    {editingId === g.id ? (
+                      <button onClick={() => saveEdit(g.id)}>
+                        Guardar
+                      </button>
+                    ) : (
+                      <>
+                        <button onClick={() => startEdit(g)}>
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => deleteGasto(g.id)}
+                        >
+                          Borrar
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -255,22 +341,14 @@ export default function ContabilidadPage() {
       )}
 
       {tab === "balance" && (
-        <table style={s.table}>
-          <thead>
-            <tr>
-              <th style={s.th}>Mes</th>
-              <th style={s.th}>Ingresos</th>
-              <th style={s.th}>Gastos</th>
-              <th style={s.th}>Balance</th>
-            </tr>
-          </thead>
+        <table style={{ marginTop: 20, width: "100%" }}>
           <tbody>
             {balance.map((r, i) => (
               <tr key={i}>
-                <td style={s.td}>{r.mes}</td>
-                <td style={s.td}>{r.ingresos}</td>
-                <td style={s.td}>{r.gastos}</td>
-                <td style={s.td}>{r.balance}</td>
+                <td>{r.mes}</td>
+                <td>{r.ingresos}</td>
+                <td>{r.gastos}</td>
+                <td>{r.balance}</td>
               </tr>
             ))}
           </tbody>
@@ -278,28 +356,56 @@ export default function ContabilidadPage() {
       )}
 
       {tab === "libro" && (
-        <table style={s.table}>
-          <thead>
-            <tr>
-              <th style={s.th}>Fecha</th>
-              <th style={s.th}>Tipo</th>
-              <th style={s.th}>Concepto</th>
-              <th style={s.th}>Monto</th>
-              <th style={s.th}>Saldo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {libroRows.map((r, i) => (
-              <tr key={i}>
-                <td style={s.td}>{r.fecha}</td>
-                <td style={s.td}>{r.tipo}</td>
-                <td style={s.td}>{r.concepto}</td>
-                <td style={s.td}>{r.monto}</td>
-                <td style={s.td}>{r.saldo}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <button onClick={() => setModalOpen(true)}>
+            + Nuevo Movimiento
+          </button>
+
+          {modalOpen && (
+            <div>
+              <input
+                placeholder="Concepto"
+                value={movConcepto}
+                onChange={(e) =>
+                  setMovConcepto(e.target.value)
+                }
+              />
+              <input
+                placeholder="Monto"
+                value={movMonto}
+                onChange={(e) =>
+                  setMovMonto(e.target.value)
+                }
+              />
+              <select
+                value={movTipo}
+                onChange={(e) =>
+                  setMovTipo(e.target.value as any)
+                }
+              >
+                <option value="GASTO">GASTO</option>
+                <option value="INGRESO">INGRESO</option>
+              </select>
+              <button onClick={createMovimiento}>
+                Guardar
+              </button>
+            </div>
+          )}
+
+          <table style={{ marginTop: 20, width: "100%" }}>
+            <tbody>
+              {libroRows.map((r, i) => (
+                <tr key={i}>
+                  <td>{r.fecha}</td>
+                  <td>{r.tipo}</td>
+                  <td>{r.concepto}</td>
+                  <td>{r.monto}</td>
+                  <td>{r.saldo}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
     </main>
   );
