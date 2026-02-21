@@ -359,7 +359,8 @@ export default function ContabilidadPage() {
     const [lHasta, setLHasta] = useState("");
     const [lCat, setLCat] = useState("");
     const [lQ, setLQ] = useState("");
-    const [libroVisibleCount, setLibroVisibleCount] = useState(10);
+    const [libroPage, setLibroPage] = useState(1);
+    const libroPageSize = 10;
 
     const fetchGastos = async () => {
         if (!baseUrl) {
@@ -758,7 +759,7 @@ export default function ContabilidadPage() {
 
     useEffect(() => {
         if (tab === "libro") {
-            setLibroVisibleCount(10);
+            setLibroPage(1)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab, lDesde, lHasta, lCat, lQ]);
@@ -1993,43 +1994,45 @@ export default function ContabilidadPage() {
                                 </thead>
 
                                 <tbody>
-                                    {libroRows.slice(0, libroVisibleCount).map((r) => (
-                                        <tr key={`row-${r.ref}`}>
-                                            <td style={s.td}>{r.fecha}</td>
-                                            <td style={s.td}>
-                                                {r.tipo === "INGRESO" ? <span style={s.badgeIngreso}>INGRESO</span> : <span style={s.badgeGasto}>GASTO</span>}
-                                            </td>
-                                            <td style={{ ...s.td, fontWeight: 800 }}>{r.concepto}</td>
-                                            <td style={s.td}>
-                                                <span style={s.badge}>{r.categoria}</span>
-                                            </td>
-                                            <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
-                                            <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.saldo)}</td>
-                                            <td style={s.td}>
-                                                {r.tipo === "GASTO" && (r.ref.startsWith("GASTO#") || r.ref.startsWith("MOV#")) ? (
-                                                    <button
-                                                        title="Eliminar"
-                                                        onClick={() => deleteGasto(Number(r.ref.split("#")[1]))}
-                                                        style={{
-                                                            border: "1px solid rgba(239,68,68,.35)",
-                                                            background: "rgba(239,68,68,.12)",
-                                                            color: "#fecaca",
-                                                            borderRadius: 10,
-                                                            padding: "6px 10px",
-                                                            cursor: "pointer",
-                                                            fontWeight: 1000,
-                                                        }}
-                                                    >
-                                                        🗑
-                                                    </button>
-                                                ) : (
-                                                    <span style={{ opacity: 0.35 }}>—</span>
-                                                )}
-                                            </td>
+                                    {libroRows
+                                        .slice((libroPage - 1) * libroPageSize, libroPage * libroPageSize)
+                                        .map((r) => (
+                                            <tr key={`row-${r.ref}`}>
+                                                <td style={s.td}>{r.fecha}</td>
+                                                <td style={s.td}>
+                                                    {r.tipo === "INGRESO" ? <span style={s.badgeIngreso}>INGRESO</span> : <span style={s.badgeGasto}>GASTO</span>}
+                                                </td>
+                                                <td style={{ ...s.td, fontWeight: 800 }}>{r.concepto}</td>
+                                                <td style={s.td}>
+                                                    <span style={s.badge}>{r.categoria}</span>
+                                                </td>
+                                                <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
+                                                <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.saldo)}</td>
+                                                <td style={s.td}>
+                                                    {r.tipo === "GASTO" && (r.ref.startsWith("GASTO#") || r.ref.startsWith("MOV#")) ? (
+                                                        <button
+                                                            title="Eliminar"
+                                                            onClick={() => deleteGasto(Number(r.ref.split("#")[1]))}
+                                                            style={{
+                                                                border: "1px solid rgba(239,68,68,.35)",
+                                                                background: "rgba(239,68,68,.12)",
+                                                                color: "#fecaca",
+                                                                borderRadius: 10,
+                                                                padding: "6px 10px",
+                                                                cursor: "pointer",
+                                                                fontWeight: 1000,
+                                                            }}
+                                                        >
+                                                            🗑
+                                                        </button>
+                                                    ) : (
+                                                        <span style={{ opacity: 0.35 }}>—</span>
+                                                    )}
+                                                </td>
 
 
-                                        </tr>
-                                    ))}
+                                            </tr>
+                                        ))}
 
                                     {libroRows.length === 0 && !lLoading && (
                                         <tr>
@@ -2040,28 +2043,7 @@ export default function ContabilidadPage() {
                                     )}
                                 </tbody>
                             </table>
-                            {libroVisibleCount < libroRows.length && (
-                                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 14 }}>
-                                    {[0, 1, 2].map((i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() =>
-                                                setLibroVisibleCount((prev) =>
-                                                    Math.min(prev + 10, libroRows.length)
-                                                )
-                                            }
-                                            style={{
-                                                width: 10,
-                                                height: 10,
-                                                borderRadius: 999,
-                                                border: "none",
-                                                background: "rgba(239,68,68,.9)",
-                                                cursor: "pointer",
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                            
                         </div>
 
                         <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
