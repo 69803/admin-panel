@@ -359,6 +359,7 @@ export default function ContabilidadPage() {
     const [lHasta, setLHasta] = useState("");
     const [lCat, setLCat] = useState("");
     const [lQ, setLQ] = useState("");
+    const [libroVisibleCount, setLibroVisibleCount] = useState(10);
 
     const fetchGastos = async () => {
         if (!baseUrl) {
@@ -754,6 +755,13 @@ export default function ContabilidadPage() {
         } catch { }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categoriasDetectadas.join("|")]);
+
+    useEffect(() => {
+        if (tab === "libro") {
+            setLibroVisibleCount(10);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab, lDesde, lHasta, lCat, lQ]);
 
     const categoriasOpciones = useMemo(() => {
         const set = new Set<string>();
@@ -1985,7 +1993,7 @@ export default function ContabilidadPage() {
                                 </thead>
 
                                 <tbody>
-                                    {libroRows.map((r) => (
+                                    {libroRows.slice(0, libroVisibleCount).map((r) => (
                                         <tr key={`row-${r.ref}`}>
                                             <td style={s.td}>{r.fecha}</td>
                                             <td style={s.td}>
@@ -2032,6 +2040,28 @@ export default function ContabilidadPage() {
                                     )}
                                 </tbody>
                             </table>
+                            {libroVisibleCount < libroRows.length && (
+                                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 14 }}>
+                                    {[0, 1, 2].map((i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() =>
+                                                setLibroVisibleCount((prev) =>
+                                                    Math.min(prev + 10, libroRows.length)
+                                                )
+                                            }
+                                            style={{
+                                                width: 10,
+                                                height: 10,
+                                                borderRadius: 999,
+                                                border: "none",
+                                                background: "rgba(239,68,68,.9)",
+                                                cursor: "pointer",
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
