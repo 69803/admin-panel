@@ -362,9 +362,9 @@ export default function ContabilidadPage() {
     const [libroPage, setLibroPage] = useState(1);
     const libroPageSize = 10;
 
-    
 
-    
+
+
 
     const fetchGastos = async () => {
         if (!baseUrl) {
@@ -665,6 +665,64 @@ export default function ContabilidadPage() {
             if (tab === "libro") await fetchLibroAll();
         } catch (e: any) {
             setGError(e?.message ?? "Error borrando gasto");
+        } finally {
+            setGBusy(false);
+        }
+    };
+    const deleteMovimiento = async (id: number) => {
+        if (!baseUrl) return alert("Falta NEXT_PUBLIC_API_URL");
+
+        const ok = confirm(`¿Borrar movimiento ID ${id}?`);
+        if (!ok) return;
+
+        setGBusy(true);
+        try {
+            const res = await fetch(`${baseUrl}/contabilidad/movimientos/${id}`, {
+                method: "DELETE",
+                cache: "no-store",
+            });
+
+            const txt = await res.text().catch(() => "");
+            if (!res.ok) throw new Error(`DELETE movimientos (HTTP ${res.status}) ${txt}`);
+
+            // ✅ optimista: quita de UI al momento
+            setMovimientos((prev) => prev.filter((m) => m.id !== id));
+
+            // ✅ refresca todo para que libroRows se recalculen
+            await Promise.all([fetchMovimientos(200), fetchLibroAll(), fetchGastos()]);
+        } catch (e: any) {
+            console.error(e);
+            alert(e?.message ?? "Error borrando movimiento");
+        } finally {
+            setGBusy(false);
+        }
+    };
+
+    const deleteGastoFromLibro = async (id: number) => {
+        if (!baseUrl) return alert("Falta NEXT_PUBLIC_API_URL");
+
+        const ok = confirm(`¿Borrar gasto ID ${id}?`);
+        if (!ok) return;
+
+        setGBusy(true);
+        try {
+            const res = await fetch(`${baseUrl}/gastos/${id}`, {
+                method: "DELETE",
+                cache: "no-store",
+            });
+
+            const txt = await res.text().catch(() => "");
+            if (!res.ok) throw new Error(`DELETE gastos (HTTP ${res.status}) ${txt}`);
+
+            // ✅ optimista: quita de UI al momento (libro y gastos)
+            setLibroGastos((prev) => prev.filter((g) => g.id !== id));
+            setGastos((prev) => prev.filter((g) => g.id !== id));
+
+            // ✅ refresca todo para que libroRows se recalculen
+            await Promise.all([fetchGastos(), fetchLibroAll()]);
+        } catch (e: any) {
+            console.error(e);
+            alert(e?.message ?? "Error borrando gasto");
         } finally {
             setGBusy(false);
         }
@@ -2013,114 +2071,137 @@ export default function ContabilidadPage() {
                                                 <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
                                                 <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.saldo)}</td>
                                                 <td style={s.td}>
-                                                    {r.tipo === "GASTO" && (r.ref.startsWith("GASTO#") || r.ref.startsWith("MOV#")) ? (
-                                                        <button
-                                                            title="Eliminar"
-                                                            onClick={() => deleteGasto(Number(r.ref.split("#")[1]))}
-                                                            style={{
-                                                                border: "1px solid rgba(239,68,68,.35)",
-                                                                background: "rgba(239,68,68,.12)",
-                                                                color: "#fecaca",
-                                                                borderRadius: 10,
-                                                                padding: "6px 10px",
-                                                                cursor: "pointer",
-                                                                fontWeight: 1000,
-                                                            }}
+
+
+                                                    {r.tipo === "GASTO" &&
+                                                        (String(r.ref).startsWith("GASTO#") ||
+                                                            String(r.ref).startsWith("MOV#")) && (
+                                                            <button
+                                                                title="Eliminar"
+                                                                onClick={async () => {
+                                                                    const id = Number(r.ref.split("#")[1]);
+                                                                    await deleteGasto(id);
+                                                                    await fetchLibroAll(); // recarga tabla libro
+                                                                }}
+                                                                style={{
+                                                                    border: "1px solid rgba(239,68,68,.35)",
+                                                                    background: "rgba(239,68,68,.12)",
+                                                                    color: "#fecaca",
+                                                                    borderRadius: 10,
+                                                                    padding: "6px 10px",
+                                                                    cursor: "pointer",
+                                                                    fontWeight: 1000,
+                                                                }}
+                                                            >
+                                                                🗑
+                                                            </button>
+                                                            )}
+                                                    
+                                                    
+                                                    style={{
+                                                        border: "1px solid rgba(239,68,68,.35)",
+                                                        background: "rgba(239,68,68,.12)",
+                                                        color: "#fecaca",
+                                                        borderRadius: 10,
+                                                        padding: "6px 10px",
+                                                        cursor: "pointer",
+                                                        fontWeight: 1000,
+                                                    }}
                                                         >
-                                                            🗑
-                                                        </button>
-                                                    ) : (
-                                                        <span style={{ opacity: 0.35 }}>—</span>
+                                                    🗑
+                                                </button>
+                                                ) : (
+                                                <span style={{ opacity: 0.35 }}>—</span>
                                                     )}
-                                                </td>
+                                            </td>
 
 
                                             </tr>
                                         ))}
 
-                                    {libroRows.length === 0 && !lLoading && (
-                                        <tr>
-                                            <td colSpan={7} style={{ ...s.td, opacity: 0.8 }}>
-                                                No hay movimientos para mostrar.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                {libroRows.length === 0 && !lLoading && (
+                                    <tr>
+                                        <td colSpan={7} style={{ ...s.td, opacity: 0.8 }}>
+                                            No hay movimientos para mostrar.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
 
+                    </div>
+                {/* ✅ Paginador Libro Diario (abajo de la tabla) */}
+                {libroRows.length > 0 && (
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 12,
+                            marginTop: 14,
+                        }}
+                    >
+                        <button
+                            onClick={() => setLibroPage((p) => Math.max(1, p - 1))}
+                            disabled={libroPage <= 1}
+                            style={{
+                                ...s.btn,
+                                minWidth: 46,
+                                opacity: libroPage <= 1 ? 0.45 : 1,
+                                cursor: libroPage <= 1 ? "not-allowed" : "pointer",
+                            }}
+                            title="Anterior"
+                            type="button"
+                        >
+                            ←
+                        </button>
+
+                        <div
+                            style={{
+                                ...s.badge,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "10px 14px",
+                            }}
+                        >
+                            <span style={{ opacity: 0.85 }}>Página</span>
+                            <b>{libroPage}</b>
+                            <span style={{ opacity: 0.65 }}>/</span>
+                            <b>{Math.max(1, Math.ceil(libroRows.length / libroPageSize))}</b>
                         </div>
-                        {/* ✅ Paginador Libro Diario (abajo de la tabla) */}
-                        {libroRows.length > 0 && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    gap: 12,
-                                    marginTop: 14,
-                                }}
-                            >
-                                <button
-                                    onClick={() => setLibroPage((p) => Math.max(1, p - 1))}
-                                    disabled={libroPage <= 1}
-                                    style={{
-                                        ...s.btn,
-                                        minWidth: 46,
-                                        opacity: libroPage <= 1 ? 0.45 : 1,
-                                        cursor: libroPage <= 1 ? "not-allowed" : "pointer",
-                                    }}
-                                    title="Anterior"
-                                    type="button"
-                                >
-                                    ←
-                                </button>
 
-                                <div
-                                    style={{
-                                        ...s.badge,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        padding: "10px 14px",
-                                    }}
-                                >
-                                    <span style={{ opacity: 0.85 }}>Página</span>
-                                    <b>{libroPage}</b>
-                                    <span style={{ opacity: 0.65 }}>/</span>
-                                    <b>{Math.max(1, Math.ceil(libroRows.length / libroPageSize))}</b>
-                                </div>
-
-                                <button
-                                    onClick={() =>
-                                        setLibroPage((p) =>
-                                            Math.min(Math.ceil(libroRows.length / libroPageSize), p + 1)
-                                        )
-                                    }
-                                    disabled={libroPage >= Math.ceil(libroRows.length / libroPageSize)}
-                                    style={{
-                                        ...s.btn,
-                                        minWidth: 46,
-                                        opacity:
-                                            libroPage >= Math.ceil(libroRows.length / libroPageSize) ? 0.45 : 1,
-                                        cursor:
-                                            libroPage >= Math.ceil(libroRows.length / libroPageSize)
-                                                ? "not-allowed"
-                                                : "pointer",
-                                    }}
-                                    title="Siguiente"
-                                    type="button"
-                                >
-                                    →
-                                </button>
-                            </div>
-                        )}
-                        <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
-                            Nota: Ingresos desde <b>/pedidos_historial</b> (solo <b>entregado</b>) + movimientos manuales desde{" "}
-                            <b>/contabilidad/movimientos</b>.
-                        </div>
-                    </>
+                        <button
+                            onClick={() =>
+                                setLibroPage((p) =>
+                                    Math.min(Math.ceil(libroRows.length / libroPageSize), p + 1)
+                                )
+                            }
+                            disabled={libroPage >= Math.ceil(libroRows.length / libroPageSize)}
+                            style={{
+                                ...s.btn,
+                                minWidth: 46,
+                                opacity:
+                                    libroPage >= Math.ceil(libroRows.length / libroPageSize) ? 0.45 : 1,
+                                cursor:
+                                    libroPage >= Math.ceil(libroRows.length / libroPageSize)
+                                        ? "not-allowed"
+                                        : "pointer",
+                            }}
+                            title="Siguiente"
+                            type="button"
+                        >
+                            →
+                        </button>
+                    </div>
                 )}
-            </div>
-        </main>
+                <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
+                    Nota: Ingresos desde <b>/pedidos_historial</b> (solo <b>entregado</b>) + movimientos manuales desde{" "}
+                    <b>/contabilidad/movimientos</b>.
+                </div>
+            </>
+                )}
+        </div>
+        </main >
     );
 }
