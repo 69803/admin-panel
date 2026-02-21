@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
@@ -2061,147 +2061,134 @@ export default function ContabilidadPage() {
                                         .map((r) => (
                                             <tr key={`row-${r.ref}`}>
                                                 <td style={s.td}>{r.fecha}</td>
+
                                                 <td style={s.td}>
-                                                    {r.tipo === "INGRESO" ? <span style={s.badgeIngreso}>INGRESO</span> : <span style={s.badgeGasto}>GASTO</span>}
+                                                    {r.tipo === "INGRESO" ? (
+                                                        <span style={s.badgeIngreso}>INGRESO</span>
+                                                    ) : (
+                                                        <span style={s.badgeGasto}>GASTO</span>
+                                                    )}
                                                 </td>
-                                                <td style={{ ...s.td, fontWeight: 800 }}>{r.concepto}</td>
+
+                                                <td style={{ ...s.td, fontWeight: 800 }}>
+                                                    {r.concepto}
+                                                </td>
+
                                                 <td style={s.td}>
                                                     <span style={s.badge}>{r.categoria}</span>
                                                 </td>
-                                                <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
-                                                <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.saldo)}</td>
+
+                                                <td style={{ ...s.td, fontWeight: 1000 }}>
+                                                    {moneyEUR(r.monto)}
+                                                </td>
+
+                                                <td style={{ ...s.td, fontWeight: 1000 }}>
+                                                    {moneyEUR(r.saldo)}
+                                                </td>
+
                                                 <td style={s.td}>
-
-
                                                     {r.tipo === "GASTO" &&
-                                                        (String(r.ref).startsWith("GASTO#") ||
-                                                            String(r.ref).startsWith("MOV#")) && (
+                                                        (r.ref.startsWith("GASTO#") || r.ref.startsWith("MOV#")) && (
                                                             <button
-                                                                title="Eliminar"
+                                                                type="button"
                                                                 onClick={async () => {
                                                                     const id = Number(r.ref.split("#")[1]);
-                                                                    await deleteGasto(id);
-                                                                    await fetchLibroAll(); // recarga tabla libro
+
+                                                                    if (r.ref.startsWith("GASTO#")) {
+                                                                        await deleteGastoFromLibro(id);
+                                                                    } else {
+                                                                        await deleteMovimiento(id);
+                                                                    }
+
+                                                                    await fetchLibroAll();
                                                                 }}
-                                                                style={{
-                                                                    border: "1px solid rgba(239,68,68,.35)",
-                                                                    background: "rgba(239,68,68,.12)",
-                                                                    color: "#fecaca",
-                                                                    borderRadius: 10,
-                                                                    padding: "6px 10px",
-                                                                    cursor: "pointer",
-                                                                    fontWeight: 1000,
-                                                                }}
+                                                                style={s.btnDanger}
+                                                                title="Eliminar"
                                                             >
                                                                 🗑
                                                             </button>
-                                                            )}
-                                                    
-                                                    
-                                                    style={{
-                                                        border: "1px solid rgba(239,68,68,.35)",
-                                                        background: "rgba(239,68,68,.12)",
-                                                        color: "#fecaca",
-                                                        borderRadius: 10,
-                                                        padding: "6px 10px",
-                                                        cursor: "pointer",
-                                                        fontWeight: 1000,
-                                                    }}
-                                                        >
-                                                    🗑
-                                                </button>
-                                                ) : (
-                                                <span style={{ opacity: 0.35 }}>—</span>
-                                                    )}
-                                            </td>
-
-
+                                                        )}
+                                                </td>
                                             </tr>
                                         ))}
+                                </tbody>
 
-                                {libroRows.length === 0 && !lLoading && (
-                                    <tr>
-                                        <td colSpan={7} style={{ ...s.td, opacity: 0.8 }}>
-                                            No hay movimientos para mostrar.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
 
-                    </div>
-                {/* ✅ Paginador Libro Diario (abajo de la tabla) */}
-                {libroRows.length > 0 && (
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: 12,
-                            marginTop: 14,
-                        }}
-                    >
-                        <button
-                            onClick={() => setLibroPage((p) => Math.max(1, p - 1))}
-                            disabled={libroPage <= 1}
-                            style={{
-                                ...s.btn,
-                                minWidth: 46,
-                                opacity: libroPage <= 1 ? 0.45 : 1,
-                                cursor: libroPage <= 1 ? "not-allowed" : "pointer",
-                            }}
-                            title="Anterior"
-                            type="button"
-                        >
-                            ←
-                        </button>
+                            </table>
 
-                        <div
-                            style={{
-                                ...s.badge,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                padding: "10px 14px",
-                            }}
-                        >
-                            <span style={{ opacity: 0.85 }}>Página</span>
-                            <b>{libroPage}</b>
-                            <span style={{ opacity: 0.65 }}>/</span>
-                            <b>{Math.max(1, Math.ceil(libroRows.length / libroPageSize))}</b>
                         </div>
+                        {/* ✅ Paginador Libro Diario (abajo de la tabla) */}
+                        {libroRows.length > 0 && (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    gap: 12,
+                                    marginTop: 14,
+                                }}
+                            >
+                                <button
+                                    onClick={() => setLibroPage((p) => Math.max(1, p - 1))}
+                                    disabled={libroPage <= 1}
+                                    style={{
+                                        ...s.btn,
+                                        minWidth: 46,
+                                        opacity: libroPage <= 1 ? 0.45 : 1,
+                                        cursor: libroPage <= 1 ? "not-allowed" : "pointer",
+                                    }}
+                                    title="Anterior"
+                                    type="button"
+                                >
+                                    ←
+                                </button>
 
-                        <button
-                            onClick={() =>
-                                setLibroPage((p) =>
-                                    Math.min(Math.ceil(libroRows.length / libroPageSize), p + 1)
-                                )
-                            }
-                            disabled={libroPage >= Math.ceil(libroRows.length / libroPageSize)}
-                            style={{
-                                ...s.btn,
-                                minWidth: 46,
-                                opacity:
-                                    libroPage >= Math.ceil(libroRows.length / libroPageSize) ? 0.45 : 1,
-                                cursor:
-                                    libroPage >= Math.ceil(libroRows.length / libroPageSize)
-                                        ? "not-allowed"
-                                        : "pointer",
-                            }}
-                            title="Siguiente"
-                            type="button"
-                        >
-                            →
-                        </button>
-                    </div>
+                                <div
+                                    style={{
+                                        ...s.badge,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        padding: "10px 14px",
+                                    }}
+                                >
+                                    <span style={{ opacity: 0.85 }}>Página</span>
+                                    <b>{libroPage}</b>
+                                    <span style={{ opacity: 0.65 }}>/</span>
+                                    <b>{Math.max(1, Math.ceil(libroRows.length / libroPageSize))}</b>
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setLibroPage((p) =>
+                                            Math.min(Math.ceil(libroRows.length / libroPageSize), p + 1)
+                                        )
+                                    }
+                                    disabled={libroPage >= Math.ceil(libroRows.length / libroPageSize)}
+                                    style={{
+                                        ...s.btn,
+                                        minWidth: 46,
+                                        opacity:
+                                            libroPage >= Math.ceil(libroRows.length / libroPageSize) ? 0.45 : 1,
+                                        cursor:
+                                            libroPage >= Math.ceil(libroRows.length / libroPageSize)
+                                                ? "not-allowed"
+                                                : "pointer",
+                                    }}
+                                    title="Siguiente"
+                                    type="button"
+                                >
+                                    →
+                                </button>
+                            </div>
+                        )}
+                        <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
+                            Nota: Ingresos desde <b>/pedidos_historial</b> (solo <b>entregado</b>) + movimientos manuales desde{" "}
+                            <b>/contabilidad/movimientos</b>.
+                        </div>
+                    </>
                 )}
-                <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
-                    Nota: Ingresos desde <b>/pedidos_historial</b> (solo <b>entregado</b>) + movimientos manuales desde{" "}
-                    <b>/contabilidad/movimientos</b>.
-                </div>
-            </>
-                )}
-        </div>
+            </div>
         </main >
     );
 }
