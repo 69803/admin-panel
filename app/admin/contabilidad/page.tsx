@@ -362,6 +362,10 @@ export default function ContabilidadPage() {
     const [libroPage, setLibroPage] = useState(1);
     const libroPageSize = 10;
 
+    
+
+    
+
     const fetchGastos = async () => {
         if (!baseUrl) {
             setGError("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
@@ -2043,9 +2047,73 @@ export default function ContabilidadPage() {
                                     )}
                                 </tbody>
                             </table>
-                            
-                        </div>
 
+                        </div>
+                        {/* ✅ Paginador Libro Diario (abajo de la tabla) */}
+                        {libroRows.length > 0 && (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    gap: 12,
+                                    marginTop: 14,
+                                }}
+                            >
+                                <button
+                                    onClick={() => setLibroPage((p) => Math.max(1, p - 1))}
+                                    disabled={libroPage <= 1}
+                                    style={{
+                                        ...s.btn,
+                                        minWidth: 46,
+                                        opacity: libroPage <= 1 ? 0.45 : 1,
+                                        cursor: libroPage <= 1 ? "not-allowed" : "pointer",
+                                    }}
+                                    title="Anterior"
+                                    type="button"
+                                >
+                                    ←
+                                </button>
+
+                                <div
+                                    style={{
+                                        ...s.badge,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        padding: "10px 14px",
+                                    }}
+                                >
+                                    <span style={{ opacity: 0.85 }}>Página</span>
+                                    <b>{libroPage}</b>
+                                    <span style={{ opacity: 0.65 }}>/</span>
+                                    <b>{Math.max(1, Math.ceil(libroRows.length / libroPageSize))}</b>
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setLibroPage((p) =>
+                                            Math.min(Math.ceil(libroRows.length / libroPageSize), p + 1)
+                                        )
+                                    }
+                                    disabled={libroPage >= Math.ceil(libroRows.length / libroPageSize)}
+                                    style={{
+                                        ...s.btn,
+                                        minWidth: 46,
+                                        opacity:
+                                            libroPage >= Math.ceil(libroRows.length / libroPageSize) ? 0.45 : 1,
+                                        cursor:
+                                            libroPage >= Math.ceil(libroRows.length / libroPageSize)
+                                                ? "not-allowed"
+                                                : "pointer",
+                                    }}
+                                    title="Siguiente"
+                                    type="button"
+                                >
+                                    →
+                                </button>
+                            </div>
+                        )}
                         <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
                             Nota: Ingresos desde <b>/pedidos_historial</b> (solo <b>entregado</b>) + movimientos manuales desde{" "}
                             <b>/contabilidad/movimientos</b>.
