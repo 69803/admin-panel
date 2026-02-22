@@ -45,6 +45,10 @@ type LibroRow = {
     monto: number; // siempre positivo
     ref: string; // "GASTO#id" | "PEDIDO#id" | "MOV#id"
     saldo: number; // acumulado
+
+    // ✅ nuevo: para saber de dónde viene y guardar detalle
+    refType: "GASTO" | "PEDIDO" | "MOV";
+    meta?: any;
 };
 
 // ✅ Form para crear operación del Libro Diario (tipo Excel)
@@ -362,6 +366,20 @@ export default function ContabilidadPage() {
     const [libroPage, setLibroPage] = useState(1);
     const libroPageSize = 10;
 
+    // ===== DETALLE LIBRO =====
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailRow, setDetailRow] = useState<LibroRow | null>(null);
+
+    function openDetail(r: LibroRow) {
+        setDetailRow(r);
+        setDetailOpen(true);
+    }
+
+    function closeDetail() {
+        setDetailOpen(false);
+        setDetailRow(null);
+    }
+
     // =====================
     // PROVEEDOR: autocomplete pro (PEGAR AQUÍ)
     // =====================
@@ -529,29 +547,29 @@ export default function ContabilidadPage() {
     };
 
     const fetchLibroAll = async () => {
-  setLLoading(true);
-  setLError(null);
+        setLLoading(true);
+        setLError(null);
 
-  try {
-    // ⚡ lo rápido primero (NO incluye pedidos_historial)
-    await Promise.all([
-      fetchLibroGastos(),
-      fetchMovimientos(200),
-    ]);
+        try {
+            // ⚡ lo rápido primero (NO incluye pedidos_historial)
+            await Promise.all([
+                fetchLibroGastos(),
+                fetchMovimientos(200),
+            ]);
 
-    // ✅ el libro ya puede renderizar
-    setLLoading(false);
+            // ✅ el libro ya puede renderizar
+            setLLoading(false);
 
-    // 🐢 pedidos_historial en background (no bloquea UI)
-    void fetchPedidosHistorial().catch((e: any) => {
-      console.error("PEDIDOS_HISTORIAL ERROR ❌", e);
-    });
+            // 🐢 pedidos_historial en background (no bloquea UI)
+            void fetchPedidosHistorial().catch((e: any) => {
+                console.error("PEDIDOS_HISTORIAL ERROR ❌", e);
+            });
 
-  } catch (e: any) {
-    setLError(e?.message ?? "Error cargando libro diario");
-    setLLoading(false);
-  }
-};
+        } catch (e: any) {
+            setLError(e?.message ?? "Error cargando libro diario");
+            setLLoading(false);
+        }
+    };
 
     // ✅ Guardar operación (FIX REAL)
     async function opSaveUIOnly(e: React.FormEvent) {
@@ -622,11 +640,11 @@ export default function ContabilidadPage() {
             // refresco visual inmediato SIN esperar servidor
             void fetchMovimientos(200);
             if (tab === "libro") {
-  void fetchLibroGastos();
-}
+                void fetchLibroGastos();
+            }
 
             // si estás en libro, refresca solo lo visible
-            
+
 
             alert("✅ Operación guardada");
 
@@ -776,11 +794,11 @@ export default function ContabilidadPage() {
             setMovimientos((prev) => prev.filter((m) => m.id !== id));
 
             // ✅ refresca todo para que libroRows se recalculen
-            
-               // ✅ refresco mínimo (rápido)
-void fetchMovimientos(200);
-if (tab === "gastos") void fetchGastos();
-if (tab === "libro") void fetchLibroAll();
+
+            // ✅ refresco mínimo (rápido)
+            void fetchMovimientos(200);
+            if (tab === "gastos") void fetchGastos();
+            if (tab === "libro") void fetchLibroAll();
 
         } catch (e: any) {
             console.error(e);
@@ -1144,6 +1162,17 @@ if (tab === "libro") void fetchLibroAll();
                     categoria: up(g.categoria) || "OTROS",
                     monto: safeNum(g.monto),
                     ref: `GASTO#${g.id}`,
+
+                    // ✅ nuevo: para poder mostrar detalle al hacer click
+                    refType: "GASTO" as const,
+                    meta: {
+                        id: g.id,
+                        fecha: g.fecha ?? null,
+                        concepto: g.concepto ?? "",
+                        categoria: up(g.categoria) || "OTROS",
+                        monto: safeNum(g.monto),
+                        created_at: g.created_at ?? null,
+                    },
                 };
             }
         );
@@ -1168,6 +1197,26 @@ if (tab === "libro") void fetchLibroAll();
                     categoria: "VENTAS",
                     monto: safeNum(p.total),
                     ref: `PEDIDO#${p.id}`,
+
+                    // ✅ NUEVO (ESTO ES EL PASO 2)
+                    refType: "PEDIDO" as const,
+                    meta: {
+                        id: p.id,
+                        mesa_id: p.mesa_id ?? null,
+                        estado: p.estado ?? "",
+                        created_at: p.created_at ?? "",
+                        total: safeNum(p.total),
+                        comentario: p.comentario ?? null,
+                        items: Array.isArray(p.items)
+                            ? p.items.map((it) => ({
+                                plato_id: it.plato_id,
+                                nombre: it.nombre,
+                                precio: safeNum(it.precio),
+                                cantidad: safeNum(it.cantidad),
+                                subtotal: safeNum(it.subtotal),
+                            }))
+                            : [],
+                    },
                 };
             });
 
@@ -1177,12 +1226,29 @@ if (tab === "libro") void fetchLibroAll();
                 return {
                     fecha,
                     tipo: m.tipo === "INGRESO" ? ("INGRESO" as const) : ("GASTO" as const),
-                    concepto:
-                        (m.concepto ?? m.productos_servicios ?? "").trim() ||
-                        `Movimiento #${m.id}`,
+                    concepto: (m.concepto ?? m.productos_servicios ?? "").trim() || `Movimiento #${m.id}`,
                     categoria: up(m.categoria) || "OTROS",
                     monto: safeNum(m.monto),
                     ref: `MOV#${m.id}`,
+
+                    // ✅ NUEVO (PASO ACTUAL)
+                    refType: "MOV" as const,
+                    meta: {
+                        id: m.id,
+                        fecha: m.fecha ?? null,
+                        tipo: m.tipo,
+                        concepto: m.concepto ?? "",
+                        categoria: m.categoria ?? "",
+                        monto: safeNum(m.monto),
+                        iva: safeNum(m.iva),
+                        neto: safeNum(m.neto),
+                        proveedor: m.proveedor ?? null,
+                        factura_no: m.factura_no ?? null,
+                        productos_servicios: m.productos_servicios ?? null,
+                        modo_pago: m.modo_pago ?? null,
+                        observacion: m.observacion ?? null,
+                        created_at: m.created_at ?? null,
+                    },
                 };
             }
         );
@@ -2248,7 +2314,12 @@ if (tab === "libro") void fetchLibroAll();
                                     {libroRows
                                         .slice((libroPage - 1) * libroPageSize, libroPage * libroPageSize)
                                         .map((r) => (
-                                            <tr key={`row-${r.ref}`}>
+                                            <tr
+                                                key={`row-${r.ref}`}
+                                                onClick={() => openDetail(r)}
+                                                style={{ cursor: "pointer" }}
+                                                title="Ver detalle"
+                                            >
                                                 <td style={s.td}>{r.fecha}</td>
 
                                                 <td style={s.td}>
@@ -2282,15 +2353,16 @@ if (tab === "libro") void fetchLibroAll();
                                                     ) && (
                                                             <button
                                                                 type="button"
-                                                                onClick={async () => {
-  const id = Number(r.ref.split("#")[1]);
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    const id = Number(r.ref.split("#")[1]);
 
-  if (r.ref.startsWith("GASTO#")) {
-    await deleteGastoFromLibro(id);
-  } else {
-    await deleteMovimiento(id);
-  }
-}}
+                                                                    if (r.ref.startsWith("GASTO#")) {
+                                                                        await deleteGastoFromLibro(id);
+                                                                    } else {
+                                                                        await deleteMovimiento(id);
+                                                                    }
+                                                                }}
                                                                 style={s.btnDanger}
                                                                 title="Eliminar"
                                                             >
@@ -2306,6 +2378,109 @@ if (tab === "libro") void fetchLibroAll();
                             </table>
 
                         </div>
+
+                        {detailOpen && detailRow && (
+  <div
+    onClick={closeDetail}
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.55)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: "#111",
+        padding: 24,
+        borderRadius: 12,
+        width: "90%",
+        maxWidth: 700,
+        maxHeight: "85vh",
+        overflowY: "auto",
+        boxShadow: "0 20px 60px rgba(0,0,0,.6)",
+      }}
+    >
+      <h2 style={{ marginBottom: 16 }}>
+        Detalle — {detailRow.tipo}
+      </h2>
+
+      <div style={{ lineHeight: 1.6 }}>
+        <p><b>Fecha:</b> {detailRow.fecha}</p>
+        <p><b>Concepto:</b> {detailRow.concepto}</p>
+        <p><b>Categoría:</b> {detailRow.categoria}</p>
+        <p><b>Monto:</b> {moneyEUR(detailRow.monto)}</p>
+
+        {detailRow.meta && (
+          <>
+            <hr style={{ margin: "16px 0", opacity: .3 }} />
+
+            {detailRow.refType === "PEDIDO" && (
+              <>
+                <p><b>Mesa:</b> {detailRow.meta.mesa_id ?? "-"}</p>
+                <p><b>Estado:</b> {detailRow.meta.estado}</p>
+                <p><b>Comentario:</b> {detailRow.meta.comentario ?? "-"}</p>
+
+                {detailRow.meta.items?.length > 0 && (
+                  <>
+                    <h4>Platos:</h4>
+                    {detailRow.meta.items.map((it: any, i: number) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        {it.nombre} — {it.cantidad} x {moneyEUR(it.precio)} = {moneyEUR(it.subtotal)}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+
+            {detailRow.refType === "GASTO" && (
+              <>
+                <p><b>Proveedor:</b> {detailRow.meta.proveedor ?? "-"}</p>
+                <p><b>Factura:</b> {detailRow.meta.factura_no ?? "-"}</p>
+                <p><b>IVA:</b> € {detailRow.meta.iva ?? 0}</p>
+                <p><b>Neto:</b> € {detailRow.meta.neto ?? 0}</p>
+              </>
+            )}
+
+            {detailRow.refType === "MOV" && (
+              <>
+                <p><b>Proveedor:</b> {detailRow.meta.proveedor ?? "-"}</p>
+                <p><b>Factura:</b> {detailRow.meta.factura_no ?? "-"}</p>
+                <p><b>Modo pago:</b> {detailRow.meta.modo_pago ?? "-"}</p>
+                <p><b>Observación:</b> {detailRow.meta.observacion ?? "-"}</p>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      <div style={{ marginTop: 24, textAlign: "right" }}>
+        <button
+          onClick={closeDetail}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 6,
+            border: "none",
+            background: "#444",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
                         {/* ✅ Paginador Libro Diario (abajo de la tabla) */}
                         {libroRows.length > 0 && (
                             <div
