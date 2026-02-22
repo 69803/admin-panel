@@ -2087,28 +2087,30 @@ export default function ContabilidadPage() {
                                                 </td>
 
                                                 <td style={s.td}>
-                                                    {r.tipo === "GASTO" &&
-                                                        (r.ref.startsWith("GASTO#") || r.ref.startsWith("MOV#")) && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={async () => {
-                                                                    const id = Number(r.ref.split("#")[1]);
+  {(
+    (r.ref.startsWith("GASTO#") && r.tipo === "GASTO") ||
+    r.ref.startsWith("MOV#") // ✅ permite borrar movimientos aunque sean INGRESO
+  ) && (
+    <button
+      type="button"
+      onClick={async () => {
+        const id = Number(r.ref.split("#")[1]);
 
-                                                                    if (r.ref.startsWith("GASTO#")) {
-                                                                        await deleteGastoFromLibro(id);
-                                                                    } else {
-                                                                        await deleteMovimiento(id);
-                                                                    }
+        if (r.ref.startsWith("GASTO#")) {
+          await deleteGastoFromLibro(id);
+        } else {
+          await deleteMovimiento(id);
+        }
 
-                                                                    await fetchLibroAll();
-                                                                }}
-                                                                style={s.btnDanger}
-                                                                title="Eliminar"
-                                                            >
-                                                                🗑
-                                                            </button>
-                                                        )}
-                                                </td>
+        await fetchLibroAll();
+      }}
+      style={s.btnDanger}
+      title="Eliminar"
+    >
+      🗑
+    </button>
+  )}
+</td>
                                             </tr>
                                         ))}
                                 </tbody>
