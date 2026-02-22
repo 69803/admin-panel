@@ -605,7 +605,15 @@ export default function ContabilidadPage() {
                 JSON.parse(txt || "null");
             } catch { }
 
-            await Promise.all([fetchMovimientos(200), fetchGastos(), fetchLibroAll()]);
+            // ✅ refresco rápido: NO te congela por pedidos_historial
+            await fetchMovimientos(200);
+
+            // solo refresca lo necesario según la pestaña actual
+            if (tab === "gastos") await fetchGastos();
+            if (tab === "libro") await fetchLibroGastos();
+
+            // pedidos_historial en background (no bloquea el botón)
+            if (tab === "libro") void fetchPedidosHistorial();
 
             setOpOpen(false);
             opReset();
