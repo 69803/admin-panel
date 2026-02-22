@@ -529,20 +529,29 @@ export default function ContabilidadPage() {
     };
 
     const fetchLibroAll = async () => {
-        setLLoading(true);
-        setLError(null);
-        try {
-            await Promise.all([
-                fetchLibroGastos(),
-                fetchPedidosHistorial(),
-                fetchMovimientos(200),
-            ]);
-        } catch (e: any) {
-            setLError(e?.message ?? "Error cargando libro diario");
-        } finally {
-            setLLoading(false);
-        }
-    };
+  setLLoading(true);
+  setLError(null);
+
+  try {
+    // ⚡ lo rápido primero (NO incluye pedidos_historial)
+    await Promise.all([
+      fetchLibroGastos(),
+      fetchMovimientos(200),
+    ]);
+
+    // ✅ el libro ya puede renderizar
+    setLLoading(false);
+
+    // 🐢 pedidos_historial en background (no bloquea UI)
+    void fetchPedidosHistorial().catch((e: any) => {
+      console.error("PEDIDOS_HISTORIAL ERROR ❌", e);
+    });
+
+  } catch (e: any) {
+    setLError(e?.message ?? "Error cargando libro diario");
+    setLLoading(false);
+  }
+};
 
     // ✅ Guardar operación (FIX REAL)
     async function opSaveUIOnly(e: React.FormEvent) {
@@ -606,18 +615,21 @@ export default function ContabilidadPage() {
             } catch { }
 
             // ✅ refresco rápido: NO te congela por pedidos_historial
-            await fetchMovimientos(200);
-
-            // solo refresca lo necesario según la pestaña actual
-            if (tab === "gastos") await fetchGastos();
-            if (tab === "libro") await fetchLibroGastos();
-
-            // pedidos_historial en background (no bloquea el botón)
-            if (tab === "libro") void fetchPedidosHistorial();
-
+            // 🔥 refresco mínimo inmediato (ultra rápido)
             setOpOpen(false);
             opReset();
+
+            // refresco visual inmediato SIN esperar servidor
+            void fetchMovimientos(200);
+            if (tab === "libro") {
+  void fetchLibroGastos();
+}
+
+            // si estás en libro, refresca solo lo visible
+            
+
             alert("✅ Operación guardada");
+
         } catch (err: any) {
             console.error("❌ ERROR GUARDANDO:", err);
             alert(err?.message ?? "Error guardando movimiento");
