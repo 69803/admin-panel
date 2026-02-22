@@ -2540,7 +2540,10 @@ const res = await fetch(url, {
       <div style={{ marginTop: 24, textAlign: "right" }}>
   {detailRow?.refType !== "PEDIDO" && (
     <button
-      onClick={() => openEditFromDetail(detailRow)}
+  onClick={() => {
+    closeDetail();
+    openEditFromDetail(detailRow);
+  }}
       style={{
         padding: "8px 14px",
         borderRadius: 6,
