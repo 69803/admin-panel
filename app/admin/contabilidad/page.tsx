@@ -278,6 +278,9 @@ export default function ContabilidadPage() {
     const [opOpen, setOpOpen] = useState(false);
     const [opTipo, setOpTipo] = useState<"GASTO" | "INGRESO">("GASTO");
 
+    // ✅ Modo edición (cuando abrimos desde Detalle)
+const [opEdit, setOpEdit] = useState<null | { refType: "GASTO" | "MOV"; id: number }>(null);
+
     const [op, setOp] = useState<DiarioOperacionForm>({
         fecha: "",
         proveedor: "",
@@ -325,6 +328,7 @@ export default function ContabilidadPage() {
         });
         setOpTipo("GASTO");
         setOpSaving(false);
+        setOpEdit(null);
     }
 
     // ---------- GASTOS ----------
@@ -428,6 +432,49 @@ export default function ContabilidadPage() {
         setShowProveedorDropdown(false);
         setProveedorActiveIndex(-1);
     }
+    function openEditFromDetail(row: any) {
+    if (!row?.refType || !row?.meta) return;
+
+    // PEDIDO no se edita
+    if (row.refType === "PEDIDO") {
+        alert("Los PEDIDOS (VENTAS) no se editan desde Contabilidad.");
+        return;
+    }
+
+    const id = Number(String(row.ref).split("#")[1]);
+
+    if (row.refType === "GASTO") {
+        setOpTipo("GASTO");
+        setOp({
+            fecha: row.fecha ?? "",
+            proveedor: row.meta?.proveedor ?? "",
+            factura_no: row.meta?.factura_no ?? "",
+            productos_servicios: row.meta?.productos_servicios ?? row.concepto ?? "",
+            monto_total: safeNum(row.monto),
+            iva: safeNum(row.meta?.iva ?? 0),
+            modo_pago: row.meta?.modo_pago ?? "Transferencia",
+            observacion: row.meta?.observacion ?? "",
+        });
+        setOpEdit({ refType: "GASTO", id });
+    }
+
+    if (row.refType === "MOV") {
+        setOpTipo(row.tipo === "INGRESO" ? "INGRESO" : "GASTO");
+        setOp({
+            fecha: row.fecha ?? "",
+            proveedor: row.meta?.proveedor ?? "",
+            factura_no: row.meta?.factura_no ?? "",
+            productos_servicios: row.meta?.productos_servicios ?? row.concepto ?? "",
+            monto_total: safeNum(row.monto),
+            iva: safeNum(row.meta?.iva ?? 0),
+            modo_pago: row.meta?.modo_pago ?? "Transferencia",
+            observacion: row.meta?.observacion ?? "",
+        });
+        setOpEdit({ refType: "MOV", id });
+    }
+
+    setOpOpen(true);
+}
 
     function renderProveedorLabel(p: string, q: string) {
         const query = q.trim();
@@ -613,11 +660,42 @@ export default function ContabilidadPage() {
 
             console.log("POST MOVIMIENTO payload =>", payload);
 
-            const res = await fetch(`${baseUrl}/contabilidad/movimientos`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            const isEditing = !!opEdit;
+
+let url = `${baseUrl}/contabilidad/movimientos`;
+let method: "POST" | "PUT" = "POST";
+
+// ✅ si edita GASTO: va a /gastos/:id (BODY SEGURO: solo 4 campos)
+if (opEdit?.refType === "GASTO") {
+  url = `${baseUrl}/gastos/${opEdit.id}`;
+  method = "PUT";
+}
+
+// ✅ si edita MOV: va a /contabilidad/movimientos/:id
+if (opEdit?.refType === "MOV") {
+  url = `${baseUrl}/contabilidad/movimientos/${opEdit.id}`;
+  method = "PUT";
+}
+
+const body =
+  opEdit?.refType === "GASTO"
+    ? {
+        fecha: payload.fecha,
+        concepto: payload.concepto,
+        monto: payload.monto,
+        categoria: payload.categoria,
+      }
+    : payload;
+
+console.log(`${method} =>`, url, body);
+
+const res = await fetch(url, {
+  method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+
 
             const txt = await res.text().catch(() => "");
             if (!res.ok) {
@@ -646,7 +724,7 @@ export default function ContabilidadPage() {
             // si estás en libro, refresca solo lo visible
 
 
-            alert("✅ Operación guardada");
+            alert(isEditing ? "✅ Operación actualizada" : "✅ Operación guardada");
 
         } catch (err: any) {
             console.error("❌ ERROR GUARDANDO:", err);
