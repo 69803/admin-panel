@@ -776,7 +776,12 @@ export default function ContabilidadPage() {
             setMovimientos((prev) => prev.filter((m) => m.id !== id));
 
             // ✅ refresca todo para que libroRows se recalculen
-            await Promise.all([fetchMovimientos(200), fetchLibroAll(), fetchGastos()]);
+            
+               // ✅ refresco mínimo (rápido)
+void fetchMovimientos(200);
+if (tab === "gastos") void fetchGastos();
+if (tab === "libro") void fetchLibroAll();
+
         } catch (e: any) {
             console.error(e);
             alert(e?.message ?? "Error borrando movimiento");
@@ -805,7 +810,7 @@ export default function ContabilidadPage() {
             setLibroGastos((prev) => prev.filter((g) => g.id !== id));
             setGastos((prev) => prev.filter((g) => g.id !== id));
 
-            // ✅ refresca todo para que libroRows se recalculen
+            // ✅ refresco mínimo (rápido): solo lo necesario según la pestaña  
             await Promise.all([fetchGastos(), fetchLibroAll()]);
         } catch (e: any) {
             console.error(e);
@@ -2278,16 +2283,14 @@ export default function ContabilidadPage() {
                                                             <button
                                                                 type="button"
                                                                 onClick={async () => {
-                                                                    const id = Number(r.ref.split("#")[1]);
+  const id = Number(r.ref.split("#")[1]);
 
-                                                                    if (r.ref.startsWith("GASTO#")) {
-                                                                        await deleteGastoFromLibro(id);
-                                                                    } else {
-                                                                        await deleteMovimiento(id);
-                                                                    }
-
-                                                                    await fetchLibroAll();
-                                                                }}
+  if (r.ref.startsWith("GASTO#")) {
+    await deleteGastoFromLibro(id);
+  } else {
+    await deleteMovimiento(id);
+  }
+}}
                                                                 style={s.btnDanger}
                                                                 title="Eliminar"
                                                             >
