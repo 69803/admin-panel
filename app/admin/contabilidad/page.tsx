@@ -2189,6 +2189,6 @@ export default function ContabilidadPage() {
                     </>
                 )}
             </div>
-        </main >
+        </main>
     );
 }
