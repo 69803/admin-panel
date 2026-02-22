@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
@@ -362,7 +362,74 @@ export default function ContabilidadPage() {
     const [libroPage, setLibroPage] = useState(1);
     const libroPageSize = 10;
 
+    // =====================
+    // PROVEEDOR: autocomplete pro (PEGAR AQUÍ)
+    // =====================
+    const [proveedorQuery, setProveedorQuery] = useState("");
+    const [showProveedorDropdown, setShowProveedorDropdown] = useState(false);
+    const [proveedorActiveIndex, setProveedorActiveIndex] = useState(-1);
 
+    const proveedorWrapRef = useRef<HTMLDivElement | null>(null);
+
+    const proveedoresBase = useMemo(() => {
+        const set = new Set<string>();
+        movimientos.forEach((m) => {
+            const p = String(m?.proveedor ?? "").trim();
+            if (p) set.add(p);
+        });
+        return Array.from(set).sort((a, b) => a.localeCompare(b));
+    }, [movimientos]);
+
+    const proveedoresFiltrados = useMemo(() => {
+        const q = proveedorQuery.trim().toLowerCase();
+        if (!q) return proveedoresBase;
+        return proveedoresBase.filter((p) => p.toLowerCase().includes(q));
+    }, [proveedorQuery, proveedoresBase]);
+
+    useEffect(() => {
+        function onDocMouseDown(e: MouseEvent) {
+            const el = proveedorWrapRef.current;
+            if (!el) return;
+            if (!el.contains(e.target as Node)) {
+                setShowProveedorDropdown(false);
+                setProveedorActiveIndex(-1);
+            }
+        }
+        document.addEventListener("mousedown", onDocMouseDown);
+        return () => document.removeEventListener("mousedown", onDocMouseDown);
+    }, []);
+
+    useEffect(() => {
+        if (!opOpen) return;
+        setProveedorQuery(String(op?.proveedor ?? ""));
+    }, [opOpen, op?.proveedor]);
+
+    function selectProveedor(p: string) {
+        opSet("proveedor", p);
+        setProveedorQuery(p);
+        setShowProveedorDropdown(false);
+        setProveedorActiveIndex(-1);
+    }
+
+    function renderProveedorLabel(p: string, q: string) {
+        const query = q.trim();
+        if (!query) return p;
+
+        const idx = p.toLowerCase().indexOf(query.toLowerCase());
+        if (idx === -1) return p;
+
+        const a = p.slice(0, idx);
+        const b = p.slice(idx, idx + query.length);
+        const c = p.slice(idx + query.length);
+
+        return (
+            <span>
+                {a}
+                <b>{b}</b>
+                {c}
+            </span>
+        );
+    }
 
 
 
@@ -1809,16 +1876,22 @@ export default function ContabilidadPage() {
                                 >
                                     <div style={{ ...s.row, justifyContent: "space-between", padding: 14, borderBottom: "1px solid rgba(255,255,255,.10)" }}>
                                         <div style={{ fontWeight: 1000 }}>➕ Nueva operación — Libro diario</div>
+
                                         <button
                                             onClick={() => {
                                                 setOpOpen(false);
                                                 opReset();
+                                                setProveedorQuery("");
+                                                setShowProveedorDropdown(false);
+                                                setProveedorActiveIndex(-1);
                                             }}
                                             style={s.btn}
                                             type="button"
                                         >
                                             ✕ Cerrar
                                         </button>
+
+
                                     </div>
 
                                     <form onSubmit={opSaveUIOnly} style={{ padding: 14 }}>
@@ -1871,12 +1944,98 @@ export default function ContabilidadPage() {
 
                                             <div style={{ gridColumn: "span 5" }}>
                                                 <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Proveedor/Persona</div>
-                                                <input
-                                                    value={op.proveedor}
-                                                    onChange={(e) => opSet("proveedor", e.target.value)}
-                                                    style={{ ...s.input, width: "100%" }}
-                                                    placeholder="Ej: AHMED MAHDAD"
-                                                />
+
+                                                <div ref={proveedorWrapRef} style={{ position: "relative", width: "100%" }}>
+                                                    <input
+                                                        value={proveedorQuery}
+                                                        placeholder="Ej: AHMED MAHDAD"
+                                                        onChange={(e) => {
+                                                            const v = e.target.value;
+                                                            setProveedorQuery(v);
+                                                            opSet("proveedor", v);
+                                                            setShowProveedorDropdown(true);
+                                                            setProveedorActiveIndex(0);
+                                                        }}
+                                                        onFocus={() => {
+                                                            setShowProveedorDropdown(true);
+                                                            if (proveedoresFiltrados.length) setProveedorActiveIndex(0);
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (!showProveedorDropdown) return;
+
+                                                            if (e.key === "ArrowDown") {
+                                                                e.preventDefault();
+                                                                setProveedorActiveIndex((i) => {
+                                                                    const next = i + 1;
+                                                                    return next >= proveedoresFiltrados.length ? 0 : next;
+                                                                });
+                                                            }
+
+                                                            if (e.key === "ArrowUp") {
+                                                                e.preventDefault();
+                                                                setProveedorActiveIndex((i) => {
+                                                                    const prev = i - 1;
+                                                                    return prev < 0 ? Math.max(0, proveedoresFiltrados.length - 1) : prev;
+                                                                });
+                                                            }
+
+                                                            if (e.key === "Enter") {
+                                                                e.preventDefault();
+                                                                const pick = proveedoresFiltrados[proveedorActiveIndex];
+                                                                if (pick) selectProveedor(pick);
+                                                            }
+
+                                                            if (e.key === "Escape") {
+                                                                e.preventDefault();
+                                                                setShowProveedorDropdown(false);
+                                                                setProveedorActiveIndex(-1);
+                                                            }
+                                                        }}
+                                                        style={{ ...s.input, width: "100%" }}
+                                                        autoComplete="off"
+                                                    />
+
+                                                    {showProveedorDropdown && proveedoresFiltrados.length > 0 && (
+                                                        <div
+                                                            style={{
+                                                                position: "absolute",
+                                                                top: "calc(100% + 6px)",
+                                                                left: 0,
+                                                                right: 0,
+                                                                zIndex: 2000,
+                                                                background: "#0b1220",
+                                                                border: "1px solid rgba(255,255,255,.16)",
+                                                                borderRadius: 12,
+                                                                boxShadow: "0 14px 40px rgba(0,0,0,.45)",
+                                                                maxHeight: 220,
+                                                                overflowY: "auto",
+                                                            }}
+                                                        >
+                                                            {proveedoresFiltrados.slice(0, 50).map((p, idx) => {
+                                                                const active = idx === proveedorActiveIndex;
+                                                                return (
+                                                                    <div
+                                                                        key={p}
+                                                                        onMouseEnter={() => setProveedorActiveIndex(idx)}
+                                                                        onMouseDown={(e) => {
+                                                                            e.preventDefault();
+                                                                            selectProveedor(p);
+                                                                        }}
+                                                                        style={{
+                                                                            padding: "10px 12px",
+                                                                            cursor: "pointer",
+                                                                            background: active ? "rgba(255,255,255,.08)" : "transparent",
+                                                                            borderBottom: "1px solid rgba(255,255,255,.08)",
+                                                                            userSelect: "none",
+                                                                        }}
+                                                                    >
+                                                                        {renderProveedorLabel(p, proveedorQuery)}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div style={{ gridColumn: "span 4" }}>
@@ -1950,10 +2109,15 @@ export default function ContabilidadPage() {
                                         <div style={{ ...s.row, justifyContent: "flex-end", marginTop: 14 }}>
                                             <button
                                                 type="button"
+
                                                 onClick={() => {
                                                     setOpOpen(false);
                                                     opReset();
+                                                    setProveedorQuery("");
+                                                    setShowProveedorDropdown(false);
+                                                    setProveedorActiveIndex(-1);
                                                 }}
+
                                                 style={s.btn}
                                                 disabled={opSaving}
                                             >
@@ -2087,30 +2251,30 @@ export default function ContabilidadPage() {
                                                 </td>
 
                                                 <td style={s.td}>
-  {(
-    (r.ref.startsWith("GASTO#") && r.tipo === "GASTO") ||
-    r.ref.startsWith("MOV#") // ✅ permite borrar movimientos aunque sean INGRESO
-  ) && (
-    <button
-      type="button"
-      onClick={async () => {
-        const id = Number(r.ref.split("#")[1]);
+                                                    {(
+                                                        (r.ref.startsWith("GASTO#") && r.tipo === "GASTO") ||
+                                                        r.ref.startsWith("MOV#") // ✅ permite borrar movimientos aunque sean INGRESO
+                                                    ) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={async () => {
+                                                                    const id = Number(r.ref.split("#")[1]);
 
-        if (r.ref.startsWith("GASTO#")) {
-          await deleteGastoFromLibro(id);
-        } else {
-          await deleteMovimiento(id);
-        }
+                                                                    if (r.ref.startsWith("GASTO#")) {
+                                                                        await deleteGastoFromLibro(id);
+                                                                    } else {
+                                                                        await deleteMovimiento(id);
+                                                                    }
 
-        await fetchLibroAll();
-      }}
-      style={s.btnDanger}
-      title="Eliminar"
-    >
-      🗑
-    </button>
-  )}
-</td>
+                                                                    await fetchLibroAll();
+                                                                }}
+                                                                style={s.btnDanger}
+                                                                title="Eliminar"
+                                                            >
+                                                                🗑
+                                                            </button>
+                                                        )}
+                                                </td>
                                             </tr>
                                         ))}
                                 </tbody>
