@@ -2538,20 +2538,38 @@ const res = await fetch(url, {
       </div>
 
       <div style={{ marginTop: 24, textAlign: "right" }}>
-        <button
-          onClick={closeDetail}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 6,
-            border: "none",
-            background: "#444",
-            color: "#fff",
-            cursor: "pointer",
-          }}
-        >
-          Cerrar
-        </button>
-      </div>
+  {detailRow?.refType !== "PEDIDO" && (
+    <button
+      onClick={() => openEditFromDetail(detailRow)}
+      style={{
+        padding: "8px 14px",
+        borderRadius: 6,
+        border: "1px solid rgba(255,255,255,.18)",
+        background: "rgba(255,255,255,.08)",
+        color: "#fff",
+        cursor: "pointer",
+        marginRight: 10,
+        fontWeight: 900,
+      }}
+    >
+      ✏️ Editar
+    </button>
+  )}
+
+  <button
+    onClick={closeDetail}
+    style={{
+      padding: "8px 14px",
+      borderRadius: 6,
+      border: "none",
+      background: "#444",
+      color: "#fff",
+      cursor: "pointer",
+    }}
+  >
+    Cerrar
+  </button>
+</div>
     </div>
   </div>
 )}
