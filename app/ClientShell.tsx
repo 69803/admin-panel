@@ -41,15 +41,15 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     setAuthed(readAuthedFromLS());
   }, [mounted, pathname]);
 
-  // ✅ Redirección segura
+  // ✅ Redirección segura — lee localStorage directamente para evitar estado desactualizado
   useEffect(() => {
     if (!mounted) return;
     if (isLoginRoute) return;
 
-    if (isProtected && !authed) {
+    if (isProtected && !readAuthedFromLS()) {
       router.replace("/login");
     }
-  }, [mounted, isLoginRoute, isProtected, authed, router]);
+  }, [mounted, isLoginRoute, isProtected, pathname, router]);
 
   // Mientras monta: render estable (evita hydration mismatch)
   if (!mounted) {
