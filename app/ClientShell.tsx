@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
+import { ACTIVO } from "../lib/license";
+import PricingPage from "./pricing/page";
 
 const AUTH_KEY = "admin_auth_v1";
 
@@ -53,6 +55,10 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   if (!mounted) {
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
+
+  // ── BLOQUEO POR LICENCIA ──────────────────────────────────────────
+  if (!ACTIVO) return <PricingPage />;
+  // ─────────────────────────────────────────────────────────────────
 
   // Login: sin sidebar
   if (isLoginRoute) return <>{children}</>;

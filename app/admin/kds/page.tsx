@@ -27,18 +27,7 @@ function normalizeApiUrl(raw?: string) {
 
   let url = raw.trim();
 
-  // "dominio.com" -> https://dominio.com
-  if (!/^https?:\/\//i.test(url) && !url.startsWith("//")) {
-    url = `https://${url}`;
-  }
-
-  // //dominio.com -> https://dominio.com
-  if (url.startsWith("//")) url = `https:${url}`;
-
-  // fuerza https
-  url = url.replace(/^http:\/\//i, "https://");
-
-  // quita slash final
+  // solo quitar slash final
   url = url.replace(/\/+$/, "");
 
   return url;

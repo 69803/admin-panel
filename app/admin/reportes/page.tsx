@@ -25,9 +25,10 @@ function normalizeApiUrl(raw?: string) {
   if (!raw) return null;
 
   let url = raw.trim();
-  if (url.startsWith("//")) url = `https:${url}`;
-  url = url.replace(/^http:\/\//i, "https://");
+
+  // Solo quitar slash final
   url = url.replace(/\/+$/, "");
+
   return url;
 }
 
