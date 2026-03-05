@@ -599,23 +599,7 @@ export default function PricingPage() {
         <p style={{ opacity: 0.6, fontSize: 16, marginBottom: 28 }}>
           14 días gratis, sin tarjeta de crédito. Configura tu restaurante en menos de 5 minutos.
         </p>
-        <button
-          style={{
-            padding: "16px 40px",
-            borderRadius: 14,
-            border: "none",
-            background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
-            color: "#fff",
-            fontWeight: 900,
-            fontSize: 17,
-            cursor: "pointer",
-            boxShadow: "0 8px 30px rgba(124,58,237,.4)",
-            letterSpacing: ".02em",
-          }}
-        >
-          Ver planes →
-        </button>
-        <div style={{ marginTop: 14, fontSize: 13, opacity: 0.4 }}>
+        <div style={{ fontSize: 13, opacity: 0.4 }}>
           Sin permanencia · Cancela cuando quieras
         </div>
       </div>

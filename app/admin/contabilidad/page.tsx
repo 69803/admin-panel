@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import XLSXStyle from "xlsx-js-style";
 
 type Gasto = {
   id: number;
@@ -222,18 +223,17 @@ function openPrintWindow(opts: {
   ${footerNote ? `<div class="note">${footerNote}</div>` : ""}
 </div>
 <script>
-  window.onload = () => { window.focus(); window.print(); };
+  window.onload = function() { window.focus(); window.print(); };
 </script>
 </body>
 </html>
   `.trim();
 
-  const w = window.open("", "_blank", "noopener,noreferrer");
-  if (!w)
-    return alert("Tu navegador bloqueó la ventana de impresión. Permite pop-ups para imprimir.");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
+  if (!w) return alert("Tu navegador bloqueó la ventana de impresión. Permite pop-ups para imprimir.");
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 /** ✅ OTROS es la única protegida (default). */
@@ -1055,6 +1055,147 @@ export default function ContabilidadPage() {
     );
   };
 
+  const exportGastosXLSX = () => {
+    const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    let mesLabel = desde || hasta || (gastosAll[gastosAll.length - 1]?.fecha ?? "");
+    const mesStr = mesLabel.length >= 7
+      ? `${meses[parseInt(mesLabel.slice(5, 7)) - 1] ?? ""}  ${mesLabel.slice(0, 4)}`
+      : "";
+
+    const COLS = 10;
+    const border = (style = "thin") => ({ style, color: { rgb: "BBBBBB" } });
+
+    const sectionStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const colHdrStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFFF00" } },
+      font: { bold: true, italic: true, sz: 11 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const, wrapText: true },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const dataStyle = (yellow: boolean) => ({
+      fill: yellow ? { patternType: "solid" as const, fgColor: { rgb: "FFFF99" } } : undefined,
+      alignment: { vertical: "center" as const, wrapText: true },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    });
+    const totalsStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: { top: border("medium"), bottom: border("medium"), left: border(), right: border() },
+    };
+    const titleStyle = (sz = 14) => ({ font: { bold: true, sz }, alignment: { horizontal: "left" as const, vertical: "center" as const } });
+
+    const numFmt = "#,##0.00";
+
+    const aoa: any[][] = [
+      Array(COLS).fill(""),
+      ["", "", "", "EL RINCON DE DOMINGO", ...Array(COLS - 4).fill("")],
+      ["", "", "", "Libro de Compras, Servicios y Gastos", ...Array(COLS - 4).fill("")],
+      ["", "", "", mesStr, ...Array(COLS - 4).fill("")],
+      Array(COLS).fill(""),
+      Array(COLS).fill(""),
+      Array(COLS).fill(""),
+      ["Libro de Compras y Servicios", ...Array(COLS - 1).fill("")],
+      ["Fecha","Proveedor/Persona","Factura No","Productos/servicios","Monto Total","IVA","Neto","Modo de Pago","Ref/Nro.","Observacion"],
+    ];
+
+    let totMonto = 0, totIVA = 0, totNeto = 0;
+
+    for (let i = 0; i < gastosAll.length; i++) {
+      const g = gastosAll[i];
+      let proveedor = "", factura = "", productos = g.concepto ?? "", modoPago = "", ref = "", obs = "";
+      let iva = 0, neto = 0;
+
+      if (g._fromMov) {
+        const mov = movimientos.find((m) => m.id === g.id);
+        if (mov) {
+          proveedor = mov.proveedor ?? "";
+          factura   = mov.factura_no ?? "";
+          productos = mov.productos_servicios ?? mov.concepto ?? g.concepto ?? "";
+          modoPago  = mov.modo_pago ?? "";
+          obs       = mov.observacion ?? "";
+          iva       = safeNum(mov.iva);
+          neto      = safeNum(mov.neto);
+          ref       = mov.factura_no ?? "";
+        }
+      }
+
+      totMonto += safeNum(g.monto);
+      totIVA   += iva;
+      totNeto  += neto;
+
+      aoa.push([g.fecha ?? "", proveedor, factura, productos, safeNum(g.monto), iva || "", neto || "", modoPago, ref, obs]);
+    }
+
+    aoa.push(["TOTAL", "", "", "", totMonto, totIVA || "", totNeto || "", "", "", ""]);
+
+    const ws: any = XLSXStyle.utils.aoa_to_sheet(aoa);
+
+    ws["!merges"] = [
+      { s: { r: 1, c: 3 }, e: { r: 1, c: 9 } },
+      { s: { r: 2, c: 3 }, e: { r: 2, c: 9 } },
+      { s: { r: 3, c: 3 }, e: { r: 3, c: 9 } },
+      { s: { r: 7, c: 0 }, e: { r: 7, c: 9 } },
+    ];
+
+    ws["!cols"] = [
+      { wch: 13 }, { wch: 28 }, { wch: 18 }, { wch: 36 },
+      { wch: 13 }, { wch: 9 }, { wch: 9 }, { wch: 14 }, { wch: 18 }, { wch: 38 },
+    ];
+
+    ws["!rows"] = Array(aoa.length).fill({ hpt: 18 });
+    ws["!rows"][8] = { hpt: 28 };
+
+    const applyStyle = (r: number, c: number, s: any) => {
+      const ref = XLSXStyle.utils.encode_cell({ r, c });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = s;
+    };
+
+    // Títulos
+    [1, 2, 3].forEach((row) => {
+      const sz = row === 1 ? 15 : row === 2 ? 13 : 12;
+      applyStyle(row, 3, titleStyle(sz));
+    });
+
+    // Sección header (R7) y col headers (R8)
+    for (let c = 0; c < COLS; c++) {
+      applyStyle(7, c, sectionStyle);
+      applyStyle(8, c, colHdrStyle);
+    }
+
+    // Filas de datos
+    const DATA_START = 9;
+    for (let i = 0; i < gastosAll.length; i++) {
+      const yellow = i % 4 === 3; // cada 4ta fila amarilla, como en la foto
+      const st = dataStyle(yellow);
+      for (let c = 0; c < COLS; c++) {
+        const ref = XLSXStyle.utils.encode_cell({ r: DATA_START + i, c });
+        if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+        ws[ref].s = st;
+        if ((c === 4 || c === 5 || c === 6) && typeof ws[ref].v === "number") ws[ref].z = numFmt;
+      }
+    }
+
+    // Fila TOTAL
+    const totRow = DATA_START + gastosAll.length;
+    for (let c = 0; c < COLS; c++) {
+      const ref = XLSXStyle.utils.encode_cell({ r: totRow, c });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = totalsStyle;
+      if ((c === 4 || c === 5 || c === 6) && typeof ws[ref].v === "number") ws[ref].z = numFmt;
+    }
+
+    const wb = XLSXStyle.utils.book_new();
+    XLSXStyle.utils.book_append_sheet(wb, ws, "Gastos");
+    XLSXStyle.writeFile(wb, `gastos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   const printGastos = () => {
     const rows = gastosAll;
     openPrintWindow({
@@ -1272,6 +1413,158 @@ export default function ContabilidadPage() {
       meta + lines.join("\n"),
       "text/csv;charset=utf-8"
     );
+  };
+
+  const exportIngresosXLSX = () => {
+    const parseEUR = (s: string) => parseFloat((s ?? "").replace(/[^0-9.,-]/g, "").replace(",", ".")) || 0;
+
+    const ingresos = libroRows.filter((r) => r.tipo === "INGRESO");
+
+    // Calcular mes para el encabezado
+    const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    let mesLabel = lDesde || lHasta || (ingresos[ingresos.length - 1]?.fecha ?? "");
+    const mesStr = mesLabel.length >= 7
+      ? `${meses[parseInt(mesLabel.slice(5, 7)) - 1] ?? ""} ${mesLabel.slice(0, 4)}`
+      : "";
+
+    const COLS = 9;
+    const border = (style = "thin") => ({ style, color: { rgb: "CCCCCC" } });
+    const boldBorder = { top: border("medium"), bottom: border("medium"), left: border(), right: border() };
+
+    // Estilos
+    const titleStyle = (sz = 14) => ({ font: { bold: true, sz }, alignment: { horizontal: "center" as const, vertical: "center" as const } });
+    const sectionStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFFF00" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const colHdrStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 11 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const, wrapText: true },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const dataStyle = {
+      alignment: { vertical: "center" as const },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const cerradoStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "87CEEB" } },
+      font: { bold: true },
+      alignment: { vertical: "center" as const },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const totalsStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: boldBorder,
+    };
+    const numFmt = "#,##0.00";
+
+    // Construir filas
+    const aoa: any[][] = [
+      Array(COLS).fill(""),                                                    // R0
+      ["", "", "", "", "EL RINCON DE DOMINGO", "", "", "", ""],                // R1
+      ["", "", "", "", "Ingresos Diarios", "", "", "", ""],                    // R2
+      ["", "", "", "", mesStr, "", "", "", ""],                                // R3
+      Array(COLS).fill(""),                                                    // R4
+      Array(COLS).fill(""),                                                    // R5
+      Array(COLS).fill(""),                                                    // R6
+      ["Ingresos Punto Venta y Efectivo", ...Array(COLS - 1).fill("")],        // R7
+      ["Fecha","Nro. Cierre Pto/Liquidacion","TPV Santander","TPV Caixabank","Total  TPV","Efectivo Recibido","Total Venta Diaria","Gastos Menores","Observacion/Note"], // R8
+    ];
+
+    const totals = { tpvS: 0, tpvC: 0, tpv: 0, ef: 0, venta: 0, gastos: 0 };
+
+    for (const r of ingresos) {
+      const f = parseCierreObs(r.meta?.observacion).fields;
+      const tpvS   = parseEUR(f["TPV Santander"] ?? "0");
+      const tpvC   = parseEUR(f["TPV Caixabank"] ?? "0");
+      const tpv    = parseEUR(f["Total TPV"] ?? "0");
+      const ef     = parseEUR(f["Efectivo recibido"] ?? "0");
+      const venta  = parseEUR(f["Total venta diaria"] ?? String(r.monto));
+      const gastos = parseEUR(f["Gastos menores"] ?? "0");
+      const obs    = parseCierreObs(r.meta?.observacion).note || r.concepto || "";
+      const nro    = r.meta?.factura_no ?? "";
+
+      totals.tpvS   += tpvS;
+      totals.tpvC   += tpvC;
+      totals.tpv    += tpv;
+      totals.ef     += ef;
+      totals.venta  += venta;
+      totals.gastos += gastos;
+
+      aoa.push([r.fecha, nro, tpvS || 0, tpvC || 0, tpv || 0, ef || 0, venta, gastos || 0, obs]);
+    }
+
+    aoa.push(["TOTAL", "", totals.tpvS, totals.tpvC, totals.tpv, totals.ef, totals.venta, totals.gastos, ""]);
+
+    const ws: any = XLSXStyle.utils.aoa_to_sheet(aoa);
+
+    // Merges
+    ws["!merges"] = [
+      { s: { r: 1, c: 4 }, e: { r: 1, c: 8 } },
+      { s: { r: 2, c: 4 }, e: { r: 2, c: 8 } },
+      { s: { r: 3, c: 4 }, e: { r: 3, c: 8 } },
+      { s: { r: 7, c: 0 }, e: { r: 7, c: 8 } },
+    ];
+
+    // Anchos de columna
+    ws["!cols"] = [
+      { wch: 13 }, { wch: 27 }, { wch: 15 }, { wch: 15 },
+      { wch: 13 }, { wch: 17 }, { wch: 19 }, { wch: 15 }, { wch: 42 },
+    ];
+
+    // Altura de filas
+    ws["!rows"] = Array(aoa.length).fill({ hpt: 18 });
+    ws["!rows"][8] = { hpt: 30 }; // header row taller
+
+    // Función para asegurar que la celda existe y aplicar estilo
+    const applyStyle = (r: number, c: number, s: any) => {
+      const ref = XLSXStyle.utils.encode_cell({ r, c });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = s;
+    };
+
+    // Títulos empresa
+    [1, 2, 3].forEach((row) => {
+      const sz = row === 1 ? 16 : row === 3 ? 13 : 12;
+      applyStyle(row, 4, titleStyle(sz));
+    });
+
+    // Sección header (R7) y col headers (R8)
+    for (let c = 0; c < COLS; c++) {
+      applyStyle(7, c, sectionStyle);
+      applyStyle(8, c, colHdrStyle);
+    }
+
+    // Filas de datos
+    const DATA_START = 9;
+    for (let i = 0; i < ingresos.length; i++) {
+      const r = ingresos[i];
+      const isCerrado = (r.concepto ?? "").toUpperCase().includes("CERRADO");
+      for (let c = 0; c < COLS; c++) {
+        const ref = XLSXStyle.utils.encode_cell({ r: DATA_START + i, c });
+        if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+        ws[ref].s = isCerrado ? cerradoStyle : dataStyle;
+        if (c >= 2 && c <= 7 && typeof ws[ref].v === "number") ws[ref].z = numFmt;
+      }
+    }
+
+    // Fila TOTAL
+    const totRow = DATA_START + ingresos.length;
+    for (let c = 0; c < COLS; c++) {
+      const ref = XLSXStyle.utils.encode_cell({ r: totRow, c });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = totalsStyle;
+      if (c >= 2 && c <= 7 && typeof ws[ref].v === "number") ws[ref].z = numFmt;
+    }
+
+    const wb = XLSXStyle.utils.book_new();
+    XLSXStyle.utils.book_append_sheet(wb, ws, "Ingresos");
+    XLSXStyle.writeFile(wb, `ingresos_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const printLibro = () => {
@@ -1527,7 +1820,14 @@ export default function ContabilidadPage() {
                   🔄 Refrescar
                 </button>
                 <button onClick={exportGastosCSV} style={s.btn} disabled={gLoading || gBusy || gastosAll.length === 0}>
-                  📥 Excel (CSV)
+                  📥 CSV
+                </button>
+                <button
+                  onClick={exportGastosXLSX}
+                  style={{ ...s.btn, background: "rgba(234,179,8,.18)", border: "1px solid rgba(234,179,8,.35)", color: "#fde68a" }}
+                  disabled={gLoading || gBusy || gastosAll.length === 0}
+                >
+                  📊 Excel Gastos
                 </button>
                 <button onClick={printGastos} style={s.btn} disabled={gLoading || gBusy || gastosAll.length === 0}>
                   🖨️ PDF / Imprimir
@@ -1879,7 +2179,14 @@ export default function ContabilidadPage() {
                   🔄 Refrescar
                 </button>
                 <button onClick={exportLibroCSV} style={s.btn} disabled={lLoading || libroRows.length === 0}>
-                  📥 Excel (CSV)
+                  📥 CSV
+                </button>
+                <button
+                  onClick={exportIngresosXLSX}
+                  style={{ ...s.btn, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.35)", color: "#86efac" }}
+                  disabled={lLoading || libroRows.filter((r) => r.tipo === "INGRESO").length === 0}
+                >
+                  📊 Excel Ingresos
                 </button>
                 <button onClick={printLibro} style={s.btn} disabled={lLoading || libroRows.length === 0}>
                   🖨️ PDF / Imprimir
