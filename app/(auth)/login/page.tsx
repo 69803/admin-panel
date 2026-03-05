@@ -32,10 +32,14 @@ export default function LoginPage() {
       return setError("Contraseña incorrecta.");
     }
 
-    localStorage.setItem(
-      AUTH_KEY,
-      JSON.stringify({ email: normalizedEmail, ts: Date.now() })
-    );
+    try {
+      localStorage.setItem(
+        AUTH_KEY,
+        JSON.stringify({ email: normalizedEmail, ts: Date.now() })
+      );
+    } catch {
+      return setError("Tu navegador bloquea el almacenamiento local. Desactiva el modo privado e intenta de nuevo.");
+    }
 
     router.replace("/admin");
   }
