@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+
+
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
   function handleLogin() {

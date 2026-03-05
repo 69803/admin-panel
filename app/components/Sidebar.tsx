@@ -16,7 +16,7 @@ const items: Item[] = [
   { href: "/admin/kds/mensual", label: "KDS Mensual", icon: "📅" },
   { href: "/admin/reportes", label: "Reportes", icon: "📊" },
   { href: "/admin/analytics", label: "Analytics", icon: "📈" },
-  { href: "/admin/config", label: "Config", icon: "⚙️" },
+  { href: "/admin/config", label: "Configuración", icon: "⚙️" },
 ];
 
 export default function Sidebar() {

@@ -11,6 +11,8 @@ type Gasto = {
   created_at?: string | null;
 };
 
+type GastoRow = Gasto & { _fromMov: boolean };
+
 
 type LibroRow = {
   fecha: string; // YYYY-MM-DD
@@ -570,6 +572,7 @@ export default function ContabilidadPage() {
 
       const data = (await res.json()) as Gasto[];
       setGastos(Array.isArray(data) ? data : []);
+      void fetchMovimientos(200);
     } catch (e: any) {
       setGError(e?.message ?? "Error cargando gastos");
     } finally {
@@ -977,14 +980,43 @@ export default function ContabilidadPage() {
     return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
   }, [categoriasDetectadas]);
 
+  const gastosAll = useMemo<GastoRow[]>(() => {
+    const fromGastos: GastoRow[] = gastos.map((g) => ({ ...g, _fromMov: false }));
+    const fromMovs: GastoRow[] = movimientos
+      .filter((m) => {
+        if (m.tipo !== "GASTO") return false;
+        const mFecha = m.fecha ?? "";
+        if (desde.trim() && mFecha && mFecha < desde.trim()) return false;
+        if (hasta.trim() && mFecha && mFecha > hasta.trim()) return false;
+        if (cat.trim() && !up(m.categoria).includes(up(cat))) return false;
+        return true;
+      })
+      .map((m) => ({
+        id: m.id,
+        fecha: m.fecha ?? null,
+        concepto: m.concepto ?? "",
+        monto: safeNum(m.monto),
+        categoria: m.categoria ?? "GASTOS",
+        created_at: m.created_at,
+        _fromMov: true,
+      }));
+
+    const all = [...fromGastos, ...fromMovs];
+    return all.sort((a, b) => {
+      const da = a.fecha ?? a.created_at ?? "";
+      const db = b.fecha ?? b.created_at ?? "";
+      return db.localeCompare(da);
+    });
+  }, [gastos, movimientos, desde, hasta, cat]);
+
   const gastosStats = useMemo(() => {
-    const rows = Array.isArray(gastos) ? gastos : [];
+    const rows = gastosAll;
     const total = rows.reduce((acc, g) => acc + safeNum(g.monto), 0);
     const count = rows.length;
     const avg = count ? total / count : 0;
 
     let max = 0;
-    let maxRow: Gasto | null = null;
+    let maxRow: GastoRow | null = null;
     for (const g of rows) {
       const m = safeNum(g.monto);
       if (m >= max) {
@@ -993,10 +1025,10 @@ export default function ContabilidadPage() {
       }
     }
     return { count, total, avg, max, maxRow };
-  }, [gastos]);
+  }, [gastosAll]);
 
   const exportGastosCSV = () => {
-    const rows = Array.isArray(gastos) ? gastos : [];
+    const rows = gastosAll;
     const header = ["ID", "Fecha", "Concepto", "Monto", "Categoría"];
     const lines = [
       header.map(csvEscape).join(","),
@@ -1024,7 +1056,7 @@ export default function ContabilidadPage() {
   };
 
   const printGastos = () => {
-    const rows = Array.isArray(gastos) ? gastos : [];
+    const rows = gastosAll;
     openPrintWindow({
       title: "Contabilidad — Gastos",
       subtitle: `Filtros: Desde ${desde || "-"} | Hasta ${hasta || "-"} | Categoría ${cat || "-"}`,
@@ -1486,7 +1518,7 @@ export default function ContabilidadPage() {
 
             <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
               <div style={s.row}>
-                <span style={s.badge}>Registros: {gastos.length}</span>
+                <span style={s.badge}>Registros: {gastosAll.length}</span>
                 {gLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}
               </div>
 
@@ -1494,10 +1526,10 @@ export default function ContabilidadPage() {
                 <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
                   🔄 Refrescar
                 </button>
-                <button onClick={exportGastosCSV} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
+                <button onClick={exportGastosCSV} style={s.btn} disabled={gLoading || gBusy || gastosAll.length === 0}>
                   📥 Excel (CSV)
                 </button>
-                <button onClick={printGastos} style={s.btn} disabled={gLoading || gBusy || gastos.length === 0}>
+                <button onClick={printGastos} style={s.btn} disabled={gLoading || gBusy || gastosAll.length === 0}>
                   🖨️ PDF / Imprimir
                 </button>
               </div>
@@ -1576,11 +1608,16 @@ export default function ContabilidadPage() {
                 </thead>
 
                 <tbody>
-                  {gastos.map((g) => {
-                    const isEditing = editingId === g.id;
+                  {gastosAll.map((g) => {
+                    const isEditing = !g._fromMov && editingId === g.id;
                     return (
-                      <tr key={g.id}>
-                        <td style={{ ...s.td, fontWeight: 1000 }}>{g.id}</td>
+                      <tr key={`${g._fromMov ? "mov" : "gasto"}-${g.id}`}>
+                        <td style={{ ...s.td, fontWeight: 1000 }}>
+                          {g.id}
+                          {g._fromMov && (
+                            <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.55, fontWeight: 700 }}>LB</span>
+                          )}
+                        </td>
 
                         <td style={s.td}>
                           {isEditing ? (
@@ -1621,7 +1658,35 @@ export default function ContabilidadPage() {
                         </td>
 
                         <td style={s.td}>
-                          {!isEditing ? (
+                          {g._fromMov ? (
+                            <div style={s.row}>
+                              <button
+                                onClick={() => {
+                                  const mov = movimientos.find((m) => m.id === g.id);
+                                  setOpTipo("GASTO");
+                                  setOp({
+                                    fecha: mov?.fecha ?? g.fecha ?? "",
+                                    proveedor: mov?.proveedor ?? "",
+                                    factura_no: mov?.factura_no ?? "",
+                                    productos_servicios: mov?.productos_servicios ?? mov?.concepto ?? g.concepto ?? "",
+                                    monto_total: safeNum(mov?.monto ?? g.monto),
+                                    iva: safeNum(mov?.iva ?? 0),
+                                    modo_pago: mov?.modo_pago ?? "Transferencia",
+                                    observacion: mov?.observacion ?? "",
+                                  });
+                                  setOpEdit({ refType: "MOV", id: g.id });
+                                  setOpOpen(true);
+                                }}
+                                style={s.btn}
+                                disabled={gBusy}
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button onClick={() => deleteMovimiento(g.id)} style={s.btnDanger} disabled={gBusy}>
+                                ✖ Borrar
+                              </button>
+                            </div>
+                          ) : !isEditing ? (
                             <div style={s.row}>
                               <button onClick={() => startEdit(g)} style={s.btn} disabled={gBusy}>
                                 ✏️ Editar
@@ -1645,7 +1710,7 @@ export default function ContabilidadPage() {
                     );
                   })}
 
-                  {gastos.length === 0 && !gLoading && (
+                  {gastosAll.length === 0 && !gLoading && (
                     <tr>
                       <td colSpan={6} style={{ ...s.td, opacity: 0.8 }}>
                         No hay gastos todavía.

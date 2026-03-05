@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const planes = [
   {
@@ -87,6 +88,7 @@ const faqs = [
 export default function PricingPage() {
   const [anual, setAnual] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const router = useRouter();
 
   return (
     <main
@@ -335,6 +337,7 @@ export default function PricingPage() {
 
               {/* Botón */}
               <button
+                onClick={() => router.push(`/checkout?plan=${encodeURIComponent(plan.nombre)}&precio=${precio}`)}
                 style={{
                   width: "100%",
                   padding: "13px 0",
@@ -349,7 +352,7 @@ export default function PricingPage() {
                   letterSpacing: ".02em",
                 }}
               >
-                Empezar gratis 14 días
+                Comprar
               </button>
 
               {/* Separador */}
@@ -610,7 +613,7 @@ export default function PricingPage() {
             letterSpacing: ".02em",
           }}
         >
-          Empezar gratis ahora →
+          Ver planes →
         </button>
         <div style={{ marginTop: 14, fontSize: 13, opacity: 0.4 }}>
           Sin permanencia · Cancela cuando quieras
