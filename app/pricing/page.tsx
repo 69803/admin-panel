@@ -584,23 +584,78 @@ export default function PricingPage() {
         ))}
       </div>
 
-      {/* ── CTA FINAL ── */}
-      <div
-        style={{
-          maxWidth: 600,
-          margin: "60px auto 0",
-          padding: "0 24px",
-          textAlign: "center",
-        }}
-      >
-        <h2 style={{ fontSize: 32, fontWeight: 1000, marginBottom: 12 }}>
-          ¿Listo para empezar?
+      {/* ── QUÉ INCLUYE ── */}
+      <div style={{ maxWidth: 900, margin: "60px auto 0", padding: "0 24px" }}>
+        <h2 style={{ fontSize: 28, fontWeight: 1000, textAlign: "center", marginBottom: 8 }}>
+          ¿Qué incluye el producto?
         </h2>
-        <p style={{ opacity: 0.6, fontSize: 16, marginBottom: 28 }}>
+        <p style={{ textAlign: "center", opacity: 0.55, fontSize: 14, marginBottom: 32 }}>
+          Un panel web completo para la gestión diaria de tu restaurante, accesible desde cualquier dispositivo con navegador.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+          {[
+            { icon: "🍽️", titulo: "Gestión de menú", desc: "Crea, edita y organiza tu carta con categorías, precios e imágenes. Sin límite de platos." },
+            { icon: "📋", titulo: "Pedidos en tiempo real", desc: "Los pedidos llegan al instante al panel y a la cocina. Sin papel, sin errores." },
+            { icon: "👨‍🍳", titulo: "KDS Cocina (Kitchen Display)", desc: "Pantalla de cocina digital con prioridades, tiempos y estados por pedido." },
+            { icon: "📊", titulo: "Reportes y estadísticas", desc: "Ventas diarias, semanales y mensuales. Exporta a Excel o PDF con un clic." },
+            { icon: "📒", titulo: "Contabilidad y libro diario", desc: "Registra ingresos, gastos y cierres de caja. Balance mensual automático." },
+            { icon: "🔒", titulo: "Acceso seguro HTTPS", desc: "Panel protegido con autenticación y conexión cifrada SSL/TLS en todo momento." },
+          ].map((item) => (
+            <div key={item.titulo} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, padding: "22px 20px" }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
+              <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 6 }}>{item.titulo}</div>
+              <div style={{ opacity: 0.55, fontSize: 13, lineHeight: 1.6 }}>{item.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CTA FINAL ── */}
+      <div style={{ maxWidth: 600, margin: "60px auto 0", padding: "0 24px", textAlign: "center" }}>
+        <h2 style={{ fontSize: 32, fontWeight: 1000, marginBottom: 12 }}>¿Listo para empezar?</h2>
+        <p style={{ opacity: 0.6, fontSize: 16, marginBottom: 12 }}>
           14 días gratis, sin tarjeta de crédito. Configura tu restaurante en menos de 5 minutos.
         </p>
-        <div style={{ fontSize: 13, opacity: 0.4 }}>
-          Sin permanencia · Cancela cuando quieras
+        <div style={{ fontSize: 13, opacity: 0.4 }}>Sin permanencia · Cancela cuando quieras</div>
+      </div>
+
+      {/* ── INFO DESARROLLADOR ── */}
+      <div style={{ maxWidth: 700, margin: "60px auto 0", padding: "0 24px" }}>
+        <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 16, padding: "28px 32px" }}>
+          <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 16, opacity: 0.8 }}>Información del desarrollador</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+            {[
+              { label: "Producto", value: "Panel de Gestión para Restaurantes" },
+              { label: "Desarrollador", value: "Kristian Barrios" },
+              { label: "Contacto", value: "kristianbarrios8@gmail.com" },
+              { label: "Tecnología", value: "Next.js · Vercel · Node.js" },
+              { label: "Seguridad", value: "🔒 HTTPS · SSL/TLS cifrado" },
+              { label: "Disponibilidad", value: "24/7 · 99.9% uptime" },
+            ].map((d) => (
+              <div key={d.label}>
+                <div style={{ fontSize: 11, opacity: 0.4, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 3 }}>{d.label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{d.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── FOOTER LEGAL ── */}
+      <div style={{ maxWidth: 700, margin: "48px auto 0", padding: "0 24px 40px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 32 }}>
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "8px 24px", marginBottom: 14 }}>
+          {[
+            { label: "Política de Privacidad", href: "/privacy" },
+            { label: "Términos de Servicio", href: "/terms" },
+            { label: "Política de Reembolso", href: "/refund" },
+          ].map((link) => (
+            <a key={link.href} href={link.href} style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none", opacity: 0.8 }}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div style={{ fontSize: 12, opacity: 0.35 }}>
+          © {new Date().getFullYear()} Panel Restaurante · Desarrollado por Kristian Barrios · Todos los derechos reservados
         </div>
       </div>
     </main>
