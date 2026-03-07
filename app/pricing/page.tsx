@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 const planes = [
   {
     nombre: "Básico",
-    precio: { mensual: 29, anual: 23 },
+    precio: { mensual: 39, anual: 31 },
     descripcion: "Perfecto para empezar y crecer sin complicaciones.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
