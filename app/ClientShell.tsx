@@ -41,15 +41,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     setAuthed(readAuthedFromLS());
   }, [mounted, pathname]);
 
-  // ✅ Redirección segura — lee localStorage directamente para evitar estado desactualizado
-  useEffect(() => {
-    if (!mounted) return;
-    if (isLoginRoute) return;
-
-    if (isProtected && !readAuthedFromLS()) {
-      router.replace("/login");
-    }
-  }, [mounted, isLoginRoute, isProtected, pathname, router]);
+  // LOGIN DESACTIVADO — volver a activar cuando el usuario lo indique
 
   // Mientras monta: render estable (evita hydration mismatch)
   if (!mounted) {
@@ -62,9 +54,6 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   // Login: sin sidebar
   if (isLoginRoute) return <>{children}</>;
-
-  // Si está intentando entrar a /admin sin auth, no mostramos nada (evita que "cargue" la página)
-  if (isProtected && !authed) return null;
 
   // Resto: con sidebar
   return (
