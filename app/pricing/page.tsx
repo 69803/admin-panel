@@ -25,7 +25,7 @@ const planes = [
   },
   {
     nombre: "Pro",
-    precio: { mensual: 59, anual: 47 },
+    precio: { mensual: 69, anual: 55 },
     descripcion: "La elección de los restaurantes que quieren escalar.",
     color: "linear-gradient(135deg, rgba(124,58,237,.18) 0%, rgba(59,130,246,.18) 100%)",
     border: "rgba(124,58,237,.6)",
