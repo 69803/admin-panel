@@ -679,9 +679,9 @@ export default function PricingPage() {
       <div style={{ maxWidth: 700, margin: "48px auto 0", padding: "0 24px 40px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 32 }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "8px 24px", marginBottom: 14 }}>
           {[
-            { label: "Política de Privacidad", href: "/privacy" },
-            { label: "Términos de Servicio", href: "/terms" },
-            { label: "Política de Reembolso", href: "/refund" },
+            { label: "Privacy Policy", href: "/privacy" },
+            { label: "Terms of Service", href: "/terms" },
+            { label: "Refund Policy", href: "/refunds" },
           ].map((link) => (
             <a key={link.href} href={link.href} style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none", opacity: 0.8 }}>
               {link.label}

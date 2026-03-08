@@ -12,40 +12,52 @@ export default function PrivacyPage() {
   return (
     <main style={s.main}>
       <div style={s.wrap}>
-        <a href="/pricing" style={s.back}>← Volver a Precios</a>
-        <h1 style={s.h1}>Política de Privacidad</h1>
-        <div style={s.date}>Última actualización: marzo 2026</div>
+        <a href="/pricing" style={s.back}>← Back to Pricing</a>
+        <h1 style={s.h1}>Privacy Policy</h1>
+        <div style={s.date}>Last updated: March 2026</div>
 
-        <h2 style={s.h2}>1. Responsable del tratamiento</h2>
-        <p style={s.p}>El responsable del tratamiento de datos personales es Kristian Barrios (en adelante, "el Desarrollador"), contactable en kristianbarrios8@gmail.com.</p>
+        <h2 style={s.h2}>1. Data Controller</h2>
+        <p style={s.p}>The data controller is Kristian Barrios, reachable at kristianbarrios8@gmail.com. We are committed to protecting your personal data and processing it in accordance with applicable data protection law, including the EU General Data Protection Regulation (GDPR).</p>
 
-        <h2 style={s.h2}>2. Datos que recopilamos</h2>
-        <p style={s.p}>Al contratar nuestros servicios, recopilamos los siguientes datos: nombre o razón social, dirección de correo electrónico, referencia de pago bancario y datos de uso del panel (accesos, acciones realizadas).</p>
-        <p style={s.p}>No recopilamos datos de tarjetas de crédito ni información de pago sensible. Los pagos se realizan por transferencia bancaria directa.</p>
+        <h2 style={s.h2}>2. Data We Collect</h2>
+        <p style={s.p}>We collect the following personal data when you use our Service:</p>
+        <p style={s.p}>— <strong>Account data:</strong> name, email address.<br />
+        — <strong>Payment data:</strong> payments are processed by Paddle (paddle.com). We do not store card numbers or sensitive payment details. Paddle acts as our Merchant of Record and handles all payment processing.<br />
+        — <strong>Usage data:</strong> log-ins, actions performed within the panel, browser type, and IP address for security purposes.</p>
 
-        <h2 style={s.h2}>3. Finalidad del tratamiento</h2>
-        <p style={s.p}>Los datos recogidos se utilizan exclusivamente para: gestionar el acceso al panel web contratado, verificar pagos y activar suscripciones, enviar comunicaciones relacionadas con el servicio (activación, facturas, soporte), y cumplir con obligaciones legales.</p>
+        <h2 style={s.h2}>3. Purpose of Processing</h2>
+        <p style={s.p}>We use your data exclusively to: provide and manage access to the Service, process and verify subscription payments via Paddle, send transactional communications (activation, invoices, support), improve service performance and security, and comply with legal obligations.</p>
 
-        <h2 style={s.h2}>4. Base legal</h2>
-        <p style={s.p}>El tratamiento se basa en la ejecución del contrato de servicio aceptado al realizar el pago, y en el interés legítimo del Desarrollador para el correcto funcionamiento del servicio.</p>
+        <h2 style={s.h2}>4. Legal Basis</h2>
+        <p style={s.p}>Processing is based on: the performance of a contract (your subscription), our legitimate interests in operating and securing the Service, and compliance with legal obligations.</p>
 
-        <h2 style={s.h2}>5. Conservación de los datos</h2>
-        <p style={s.p}>Los datos se conservan durante el tiempo en que la suscripción esté activa y hasta 3 años después de su cancelación, salvo obligación legal de conservarlos por más tiempo.</p>
+        <h2 style={s.h2}>5. Data Retention</h2>
+        <p style={s.p}>We retain your data for as long as your subscription is active and for up to 3 years after cancellation, unless a longer retention period is required by law.</p>
 
-        <h2 style={s.h2}>6. Transferencias a terceros</h2>
-        <p style={s.p}>No vendemos ni cedemos datos a terceros. Los datos pueden ser procesados por proveedores de infraestructura (Vercel, servidores de alojamiento) bajo acuerdos de confidencialidad y protección de datos.</p>
+        <h2 style={s.h2}>6. Third-Party Processors</h2>
+        <p style={s.p}>We share data with the following third-party processors under appropriate data protection agreements:</p>
+        <p style={s.p}>— <strong>Paddle (paddle.com):</strong> payment processing and subscription management. Paddle is our Merchant of Record.<br />
+        — <strong>Vercel (vercel.com):</strong> application hosting and infrastructure.<br />
+        — <strong>Render (render.com):</strong> backend API hosting.</p>
+        <p style={s.p}>We do not sell your personal data to any third party.</p>
 
-        <h2 style={s.h2}>7. Seguridad</h2>
-        <p style={s.p}>El panel utiliza conexión cifrada HTTPS (SSL/TLS) en todo momento. El acceso está protegido por credenciales personales. Aplicamos medidas técnicas y organizativas para proteger tus datos frente a accesos no autorizados.</p>
+        <h2 style={s.h2}>7. International Transfers</h2>
+        <p style={s.p}>Some of our processors are based outside the EU/EEA. In such cases, transfers are covered by Standard Contractual Clauses or equivalent safeguards as approved by the European Commission.</p>
 
-        <h2 style={s.h2}>8. Tus derechos</h2>
-        <p style={s.p}>Tienes derecho a acceder, rectificar, suprimir, limitar el tratamiento y portabilidad de tus datos. Para ejercerlos, escribe a kristianbarrios8@gmail.com indicando tu solicitud y datos de identificación.</p>
+        <h2 style={s.h2}>8. Security</h2>
+        <p style={s.p}>We apply appropriate technical and organisational measures to protect your data, including HTTPS/TLS encryption, access controls, and secure authentication. No method of transmission over the internet is 100% secure; we strive to use commercially acceptable means to protect your data.</p>
 
-        <h2 style={s.h2}>9. Cookies</h2>
-        <p style={s.p}>El panel utiliza almacenamiento local (localStorage) únicamente para mantener la sesión activa. No utilizamos cookies de rastreo ni publicidad.</p>
+        <h2 style={s.h2}>9. Your Rights</h2>
+        <p style={s.p}>Under GDPR you have the right to: access your data, correct inaccurate data, request deletion, restrict or object to processing, and data portability. To exercise any of these rights, email kristianbarrios8@gmail.com with your request and proof of identity.</p>
 
-        <h2 style={s.h2}>10. Cambios en esta política</h2>
-        <p style={s.p}>Nos reservamos el derecho de actualizar esta política. Los cambios significativos serán notificados por correo electrónico.</p>
+        <h2 style={s.h2}>10. Cookies</h2>
+        <p style={s.p}>We use localStorage solely to maintain your authenticated session. We do not use tracking cookies or advertising cookies.</p>
+
+        <h2 style={s.h2}>11. Changes to This Policy</h2>
+        <p style={s.p}>We may update this policy from time to time. Significant changes will be communicated by email. Continued use of the Service after the effective date constitutes acceptance of the revised policy.</p>
+
+        <h2 style={s.h2}>12. Contact</h2>
+        <p style={s.p}>For privacy-related enquiries or to exercise your rights, contact us at: kristianbarrios8@gmail.com</p>
       </div>
     </main>
   );

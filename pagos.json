@@ -1,0 +1,31 @@
+[
+  {
+    "id": 1772746650394,
+    "plan": "Básico",
+    "precio": "29€/mes",
+    "referencia": "Test3",
+    "fecha": "2026-03-05T21:37:30.351Z",
+    "recibido": "2026-03-05T21:37:30.394Z",
+    "estado": "verificado"
+  },
+  {
+    "id": 1772749024054,
+    "plan": "Pro",
+    "precio": "59€/mes",
+    "email": "compipana1@gmail.com",
+    "referencia": "mi referencia es un Test",
+    "fecha": "2026-03-05T22:17:00.221Z",
+    "recibido": "2026-03-05T22:17:04.054Z",
+    "estado": "verificado"
+  },
+  {
+    "id": 1772749395497,
+    "plan": "Pro",
+    "precio": "59€/mes",
+    "email": "compipana1@gmail.com",
+    "referencia": "545254",
+    "fecha": "2026-03-05T22:23:15.459Z",
+    "recibido": "2026-03-05T22:23:15.498Z",
+    "estado": "verificado"
+  }
+]
