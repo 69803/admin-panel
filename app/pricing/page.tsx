@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
+declare global {
+  interface Window {
+    Paddle: {
+      Environment: { set: (env: string) => void };
+      Initialize: (opts: { token: string }) => void;
+      Checkout: { open: (opts: { items: { priceId: string; quantity: number }[] }) => void };
+    };
+  }
+}
 
 const planes = [
   {
     nombre: "Básico",
+    priceId: "pri_01kk7g7whpssf3kxm8wvcth4h",
     precio: { mensual: 39, anual: 31 },
     descripcion: "Perfecto para empezar y crecer sin complicaciones.",
     color: "rgba(255,255,255,.07)",
@@ -25,6 +35,7 @@ const planes = [
   },
   {
     nombre: "Pro",
+    priceId: "pri_01kk7ggah21arxbmy0j9bct4hx",
     precio: { mensual: 69, anual: 55 },
     descripcion: "La elección de los restaurantes que quieren escalar.",
     color: "linear-gradient(135deg, rgba(124,58,237,.18) 0%, rgba(59,130,246,.18) 100%)",
@@ -45,6 +56,7 @@ const planes = [
   },
   {
     nombre: "Premium",
+    priceId: "pri_01kk7gj7v1k6x1egznqr98yhc1",
     precio: { mensual: 120, anual: 96 },
     descripcion: "Solución enterprise para cadenas y grupos de restauración.",
     color: "rgba(255,255,255,.07)",
@@ -85,10 +97,32 @@ const faqs = [
   },
 ];
 
+function openPaddleCheckout(priceId: string) {
+  if (typeof window !== "undefined" && window.Paddle) {
+    const items = [{ priceId, quantity: 1 }];
+    window.Paddle.Checkout.open({ items });
+  }
+}
+
 export default function PricingPage() {
   const [anual, setAnual] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
-  const router = useRouter();
+
+  useEffect(() => {
+    if (window.Paddle) {
+      // Ya inicializado (StrictMode double-invoke), no hacer nada
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
+    script.async = true;
+    script.onload = () => {
+      window.Paddle.Initialize({
+        token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? "",
+      });
+    };
+    document.body.appendChild(script);
+  }, []);
 
   return (
     <main
@@ -337,7 +371,7 @@ export default function PricingPage() {
 
               {/* Botón */}
               <button
-                onClick={() => router.push(`/checkout?plan=${encodeURIComponent(plan.nombre)}&precio=${precio}`)}
+                onClick={() => openPaddleCheckout(plan.priceId)}
                 style={{
                   width: "100%",
                   padding: "13px 0",
