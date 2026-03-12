@@ -24,6 +24,7 @@ type LibroRow = {
   ref: string; // "GASTO#id" | "MOV#id"
   saldo: number; // acumulado
   refType: "GASTO" | "MOV";
+  proveedor: string;
   meta?: any;
 };
 
@@ -415,13 +416,14 @@ export default function ContabilidadPage() {
   const [lHasta, setLHasta] = useState("");
   const [lCat, setLCat] = useState("");
   const [lQ, setLQ] = useState("");
+  const [lProv, setLProv] = useState("");
 
   // ---------- BALANCE MENSUAL filtros ----------
   const [bDesde, setBDesde] = useState("");
   const [bHasta, setBHasta] = useState("");
   const [libroPage, setLibroPage] = useState(1);
   const libroPageSize = 10;
-  const [lSortCol, setLSortCol] = useState<"fecha"|"tipo"|"concepto"|"categoria"|"monto"|"saldo">("fecha");
+  const [lSortCol, setLSortCol] = useState<"fecha"|"tipo"|"concepto"|"categoria"|"monto"|"saldo"|"proveedor">("fecha");
   const [lSortDir, setLSortDir] = useState<"desc"|"asc">("desc");
 
   const toggleLibroSort = (col: typeof lSortCol) => {
@@ -990,7 +992,7 @@ export default function ContabilidadPage() {
   useEffect(() => {
     if (tab === "libro") setLibroPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, lDesde, lHasta, lQ]);
+  }, [tab, lDesde, lHasta, lQ, lProv]);
 
   const categoriasOpciones = useMemo(() => {
     const set = new Set<string>();
@@ -1310,6 +1312,7 @@ export default function ContabilidadPage() {
   // ---------- LIBRO DIARIO (Gastos + Movimientos manuales) ----------
   const libroRows: LibroRow[] = useMemo(() => {
     const q = lQ.trim().toLowerCase();
+    const provFilter = lProv.trim().toLowerCase();
 
     const gastosRows: Omit<LibroRow, "saldo">[] = (Array.isArray(libroGastos) ? libroGastos : []).map((g) => {
       const fecha = ymdFromAny(g.fecha ?? g.created_at ?? "");
@@ -1321,6 +1324,7 @@ export default function ContabilidadPage() {
         monto: safeNum(g.monto),
         ref: `GASTO#${g.id}`,
         refType: "GASTO",
+        proveedor: "",
         meta: {
           id: g.id,
           fecha: g.fecha ?? null,
@@ -1343,6 +1347,7 @@ export default function ContabilidadPage() {
         monto: safeNum(m.monto),
         ref: `MOV#${m.id}`,
         refType: "MOV",
+        proveedor: m.proveedor ?? "",
         meta: {
           id: m.id,
           fecha: m.fecha ?? null,
@@ -1367,6 +1372,7 @@ export default function ContabilidadPage() {
       if (!inRange(r.fecha, lDesde, lHasta)) return false;
 
 
+      if (provFilter && !(r.proveedor ?? "").toLowerCase().includes(provFilter)) return false;
       if (q) {
         const hay =
           (r.concepto ?? "").toLowerCase().includes(q) ||
@@ -1390,7 +1396,7 @@ export default function ContabilidadPage() {
       else saldo -= safeNum(r.monto);
       return { ...r, saldo };
     });
-  }, [libroGastos, movimientos, lDesde, lHasta, lQ]);
+  }, [libroGastos, movimientos, lDesde, lHasta, lQ, lProv]);
 
   const libroSorted = useMemo(() => {
     return [...libroRows].sort((a, b) => {
@@ -2933,6 +2939,7 @@ export default function ContabilidadPage() {
               />
 
               <input value={lQ} onChange={(e) => setLQ(e.target.value)} placeholder="Buscar (concepto/categoría/ref/fecha)" style={{ ...s.input, width: 280 }} />
+              <input value={lProv} onChange={(e) => setLProv(e.target.value)} placeholder="Buscar proveedor..." style={{ ...s.input, width: 220 }} />
 
               <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
                 Aplicar filtros
@@ -2944,6 +2951,7 @@ export default function ContabilidadPage() {
                   setLHasta("");
 
                   setLQ("");
+                  setLProv("");
                   setTimeout(fetchLibroAll, 0);
                 }}
                 style={s.btn}
@@ -2963,13 +2971,13 @@ export default function ContabilidadPage() {
               <table style={s.table}>
                 <thead style={{ background: "rgba(255,255,255,.06)" }}>
                   <tr>
-                    {(["fecha","tipo","concepto","categoria","monto","saldo"] as const).map((col) => (
+                    {(["fecha","tipo","concepto","categoria","proveedor","monto","saldo"] as const).map((col) => (
                       <th
                         key={col}
                         style={{ ...s.th, cursor: "pointer", userSelect: "none" }}
                         onClick={() => toggleLibroSort(col)}
                       >
-                        {col.charAt(0).toUpperCase() + col.slice(1)}
+                        {col === "proveedor" ? "Proveedor" : col.charAt(0).toUpperCase() + col.slice(1)}
                         {lSortCol === col ? (lSortDir === "desc" ? " ↓" : " ↑") : " ↕"}
                       </th>
                     ))}
@@ -2980,14 +2988,14 @@ export default function ContabilidadPage() {
                 <tbody>
                   {lLoading && (
                     <tr>
-                      <td colSpan={7} style={{ ...s.td, textAlign: "center", opacity: 0.7, padding: 24 }}>
+                      <td colSpan={8} style={{ ...s.td, textAlign: "center", opacity: 0.7, padding: 24 }}>
                         Cargando...
                       </td>
                     </tr>
                   )}
                   {!lLoading && libroRows.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ ...s.td, opacity: 0.8 }}>
+                      <td colSpan={8} style={{ ...s.td, opacity: 0.8 }}>
                         No hay registros todavía.
                       </td>
                     </tr>
@@ -3003,6 +3011,8 @@ export default function ContabilidadPage() {
                       <td style={s.td}>
                         <span style={s.badge}>{r.categoria}</span>
                       </td>
+
+                      <td style={{ ...s.td, opacity: r.proveedor ? 1 : 0.4 }}>{r.proveedor || "—"}</td>
 
                       <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
 
