@@ -284,7 +284,7 @@ function toYMD(dateValue: string) {
 export default function ContabilidadPage() {
   const baseUrl = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
 
-  const [tab, setTab] = useState<"gastos" | "balance" | "libro">("gastos");
+  const [tab, setTab] = useState<"gastos" | "ingresos" | "balance" | "libro">("gastos");
 
   // ✅ Modal NUEVA OPERACION (Libro diario)
   const [opOpen, setOpOpen] = useState(false);
@@ -400,6 +400,11 @@ export default function ContabilidadPage() {
   const [editMonto, setEditMonto] = useState("");
   const [editCategoria, setEditCategoria] = useState("OTROS");
 
+  // ---------- INGRESOS ----------
+  const [iDesde, setIDesde] = useState("");
+  const [iHasta, setIHasta] = useState("");
+  const [iCat, setICat] = useState("");
+
   // ---------- LIBRO DIARIO ----------
   const [libroGastos, setLibroGastos] = useState<Gasto[]>([]);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
@@ -410,11 +415,28 @@ export default function ContabilidadPage() {
   const [lHasta, setLHasta] = useState("");
   const [lCat, setLCat] = useState("");
   const [lQ, setLQ] = useState("");
+
+  // ---------- BALANCE MENSUAL filtros ----------
+  const [bDesde, setBDesde] = useState("");
+  const [bHasta, setBHasta] = useState("");
   const [libroPage, setLibroPage] = useState(1);
   const libroPageSize = 10;
+  const [lSortCol, setLSortCol] = useState<"fecha"|"tipo"|"concepto"|"categoria"|"monto"|"saldo">("fecha");
+  const [lSortDir, setLSortDir] = useState<"desc"|"asc">("desc");
+
+  const toggleLibroSort = (col: typeof lSortCol) => {
+    if (lSortCol === col) {
+      setLSortDir((d) => d === "desc" ? "asc" : "desc");
+    } else {
+      setLSortCol(col);
+      setLSortDir("desc");
+    }
+    setLibroPage(1);
+  };
 
   // ===== DETALLE LIBRO =====
   const [detailOpen, setDetailOpen] = useState(false);
+  const [balanceMesSel, setBalanceMesSel] = useState<string>("");
   const [detailRow, setDetailRow] = useState<LibroRow | null>(null);
 
   function openDetail(r: LibroRow) {
@@ -560,8 +582,8 @@ export default function ContabilidadPage() {
       const qs = new URLSearchParams();
       if (desde.trim()) qs.set("desde", desde.trim());
       if (hasta.trim()) qs.set("hasta", hasta.trim());
-      if (cat.trim()) qs.set("categoria", cat.trim());
-      qs.set("limit", "200");
+      // concepto search is filtered client-side
+      qs.set("limit", "1000");
 
       const res = await fetch(`${baseUrl}/gastos?${qs.toString()}`, { cache: "no-store" });
 
@@ -572,7 +594,7 @@ export default function ContabilidadPage() {
 
       const data = (await res.json()) as Gasto[];
       setGastos(Array.isArray(data) ? data : []);
-      void fetchMovimientos(200);
+      void fetchMovimientos(1000);
     } catch (e: any) {
       setGError(e?.message ?? "Error cargando gastos");
     } finally {
@@ -583,11 +605,9 @@ export default function ContabilidadPage() {
   const fetchLibroGastos = async () => {
     if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
 
+    // Sin filtros de fecha/categoría: trae TODOS los gastos para libro y balance
     const qs = new URLSearchParams();
-    if (lDesde.trim()) qs.set("desde", lDesde.trim());
-    if (lHasta.trim()) qs.set("hasta", lHasta.trim());
-    if (lCat.trim()) qs.set("categoria", lCat.trim());
-    qs.set("limit", "500");
+    qs.set("limit", "1000");
 
     const res = await fetch(`${baseUrl}/gastos?${qs.toString()}`, { cache: "no-store" });
 
@@ -623,7 +643,7 @@ export default function ContabilidadPage() {
     setLError(null);
 
     try {
-      await Promise.all([fetchLibroGastos(), fetchMovimientos(200)]);
+      await Promise.all([fetchLibroGastos(), fetchMovimientos(1000)]);
       setLLoading(false);
     } catch (e: any) {
       setLError(e?.message ?? "Error cargando libro diario");
@@ -765,7 +785,7 @@ export default function ContabilidadPage() {
       setOpOpen(false);
       opReset();
 
-      void fetchMovimientos(200);
+      void fetchMovimientos(1000);
       if (tab === "libro") void fetchLibroGastos();
 
       alert(isEditing ? "✅ Operación actualizada" : "✅ Operación guardada");
@@ -912,7 +932,7 @@ export default function ContabilidadPage() {
 
       setMovimientos((prev) => prev.filter((m) => m.id !== id));
 
-      void fetchMovimientos(200);
+      void fetchMovimientos(1000);
       if (tab === "gastos") void fetchGastos();
       if (tab === "libro") void fetchLibroAll();
     } catch (e: any) {
@@ -970,7 +990,7 @@ export default function ContabilidadPage() {
   useEffect(() => {
     if (tab === "libro") setLibroPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, lDesde, lHasta, lCat, lQ]);
+  }, [tab, lDesde, lHasta, lQ]);
 
   const categoriasOpciones = useMemo(() => {
     const set = new Set<string>();
@@ -981,14 +1001,19 @@ export default function ContabilidadPage() {
   }, [categoriasDetectadas]);
 
   const gastosAll = useMemo<GastoRow[]>(() => {
-    const fromGastos: GastoRow[] = gastos.map((g) => ({ ...g, _fromMov: false }));
+    const fromGastos: GastoRow[] = gastos
+      .filter((g) => {
+        if (cat.trim() && !up(g.concepto ?? "").includes(up(cat))) return false;
+        return true;
+      })
+      .map((g) => ({ ...g, _fromMov: false }));
     const fromMovs: GastoRow[] = movimientos
       .filter((m) => {
         if (m.tipo !== "GASTO") return false;
         const mFecha = m.fecha ?? "";
         if (desde.trim() && mFecha && mFecha < desde.trim()) return false;
         if (hasta.trim() && mFecha && mFecha > hasta.trim()) return false;
-        if (cat.trim() && !up(m.categoria).includes(up(cat))) return false;
+        if (cat.trim() && !up(m.concepto ?? "").includes(up(cat))) return false;
         return true;
       })
       .map((m) => ({
@@ -1026,6 +1051,75 @@ export default function ContabilidadPage() {
     }
     return { count, total, avg, max, maxRow };
   }, [gastosAll]);
+
+  const ingresosAll = useMemo<Movimiento[]>(() => {
+    return movimientos
+      .filter((m) => {
+        if (m.tipo !== "INGRESO") return false;
+        const mFecha = m.fecha ?? "";
+        if (iDesde.trim() && mFecha && mFecha < iDesde.trim()) return false;
+        if (iHasta.trim() && mFecha && mFecha > iHasta.trim()) return false;
+        if (iCat.trim() && !up(m.concepto ?? "").includes(up(iCat))) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const da = a.fecha ?? a.created_at ?? "";
+        const db = b.fecha ?? b.created_at ?? "";
+        return db.localeCompare(da);
+      });
+  }, [movimientos, iDesde, iHasta, iCat]);
+
+  const ingresosStats = useMemo(() => {
+    const total = ingresosAll.reduce((acc, m) => acc + safeNum(m.monto), 0);
+    const count = ingresosAll.length;
+    const avg = count ? total / count : 0;
+    let max = 0;
+    let maxRow: Movimiento | null = null;
+    for (const m of ingresosAll) {
+      const v = safeNum(m.monto);
+      if (v >= max) { max = v; maxRow = m; }
+    }
+    return { count, total, avg, max, maxRow };
+  }, [ingresosAll]);
+
+  const exportIngresosCSV = () => {
+    const header = ["ID", "Fecha", "Concepto", "Categoría", "Monto", "Modo Pago"];
+    const lines = [
+      header.join(","),
+      ...ingresosAll.map((m) =>
+        [m.id, m.fecha ?? "", `"${(m.concepto ?? "").replace(/"/g, '""')}"`, up(m.categoria), safeNum(m.monto).toFixed(2), m.modo_pago ?? ""].join(",")
+      ),
+      `# Total: ${moneyEUR(ingresosStats.total)}`,
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ingresos_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printIngresos = () => {
+    const rows = ingresosAll;
+    const html = `<html><head><title>Ingresos</title><style>
+      body{font-family:sans-serif;font-size:12px;color:#111}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+      th{background:#f3f4f6;font-weight:700}
+      h2{margin-bottom:4px}p{margin:2px 0 12px}
+    </style></head><body>
+      <h2>Ingresos</h2>
+      <p>Total: <b>${moneyEUR(ingresosStats.total)}</b> · Registros: <b>${ingresosStats.count}</b></p>
+      <table><thead><tr><th>ID</th><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Modo Pago</th></tr></thead><tbody>
+      ${rows.map((m) => `<tr><td>${m.id}</td><td>${m.fecha ?? "-"}</td><td>${m.concepto ?? ""}</td><td>${up(m.categoria)}</td><td>€ ${safeNum(m.monto).toFixed(2)}</td><td>${m.modo_pago ?? ""}</td></tr>`).join("")}
+      </tbody></table></body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.print();
+  };
 
   const exportGastosCSV = () => {
     const rows = gastosAll;
@@ -1213,86 +1307,9 @@ export default function ContabilidadPage() {
     });
   };
 
-  const balanceFromLibro = useMemo(() => {
-    const map = new Map<string, { ingresos: number; gastos: number }>();
-
-    for (const g of libroGastos) {
-      const fecha = ymdFromAny(g.fecha ?? g.created_at ?? "");
-      if (!fecha) continue;
-      const mesKey = fecha.slice(0, 7) + "-01";
-      if (!map.has(mesKey)) map.set(mesKey, { ingresos: 0, gastos: 0 });
-      map.get(mesKey)!.gastos += safeNum(g.monto);
-    }
-
-    for (const m of movimientos) {
-      const fecha = ymdFromAny(m.fecha ?? m.created_at ?? "");
-      if (!fecha) continue;
-      const mesKey = fecha.slice(0, 7) + "-01";
-      if (!map.has(mesKey)) map.set(mesKey, { ingresos: 0, gastos: 0 });
-      if (m.tipo === "INGRESO") {
-        map.get(mesKey)!.ingresos += safeNum(m.monto);
-      } else {
-        map.get(mesKey)!.gastos += safeNum(m.monto);
-      }
-    }
-
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([mes, { ingresos, gastos }]) => ({
-        mes: `${mes}T00:00:00Z`,
-        ingresos,
-        gastos,
-        balance: ingresos - gastos,
-      }));
-  }, [libroGastos, movimientos]);
-
-  const balanceStats = useMemo(() => {
-    const totalIngresos = balanceFromLibro.reduce((acc, r) => acc + safeNum(r.ingresos), 0);
-    const totalGastos = balanceFromLibro.reduce((acc, r) => acc + safeNum(r.gastos), 0);
-    const totalBalance = balanceFromLibro.reduce((acc, r) => acc + safeNum(r.balance), 0);
-    return { meses: balanceFromLibro.length, totalIngresos, totalGastos, totalBalance };
-  }, [balanceFromLibro]);
-
-  const exportBalanceCSV = () => {
-    const header = ["Mes", "Ingresos", "Gastos", "Balance"];
-    const lines = [
-      header.map(csvEscape).join(","),
-      ...balanceFromLibro.map((r) => [r.mes ?? "", safeNum(r.ingresos).toFixed(2), safeNum(r.gastos).toFixed(2), safeNum(r.balance).toFixed(2)].map(csvEscape).join(",")),
-    ];
-    const meta = [
-      `# Export Contabilidad - Balance Mensual`,
-      `# Total ingresos: ${moneyEUR(balanceStats.totalIngresos)}`,
-      `# Total gastos: ${moneyEUR(balanceStats.totalGastos)}`,
-      `# Balance total: ${moneyEUR(balanceStats.totalBalance)}`,
-      ``,
-    ].join("\n");
-    downloadTextFile(
-      `balance_mensual_${new Date().toISOString().slice(0, 10)}.csv`,
-      meta + lines.join("\n"),
-      "text/csv;charset=utf-8"
-    );
-  };
-
-  const printBalance = () => {
-    openPrintWindow({
-      title: "Contabilidad — Balance mensual",
-      subtitle: `Resumen mensual (calculado desde Libro Diario)`,
-      kpis: [
-        { label: "Total ingresos", value: moneyEUR(balanceStats.totalIngresos) },
-        { label: "Total gastos", value: moneyEUR(balanceStats.totalGastos) },
-        { label: "Balance total", value: moneyEUR(balanceStats.totalBalance) },
-        { label: "Meses", value: String(balanceStats.meses) },
-      ],
-      tableHeaders: ["Mes", "Ingresos", "Gastos", "Balance"],
-      tableRows: balanceFromLibro.map((r) => [r.mes ?? "-", moneyEUR(safeNum(r.ingresos)), moneyEUR(safeNum(r.gastos)), moneyEUR(safeNum(r.balance))]),
-      footerNote: "Tip: en el diálogo de impresión elige 'Guardar como PDF'.",
-    });
-  };
-
   // ---------- LIBRO DIARIO (Gastos + Movimientos manuales) ----------
   const libroRows: LibroRow[] = useMemo(() => {
     const q = lQ.trim().toLowerCase();
-    const catFilter = up(lCat);
 
     const gastosRows: Omit<LibroRow, "saldo">[] = (Array.isArray(libroGastos) ? libroGastos : []).map((g) => {
       const fecha = ymdFromAny(g.fecha ?? g.created_at ?? "");
@@ -1349,9 +1366,6 @@ export default function ContabilidadPage() {
       if (!r.fecha) return false;
       if (!inRange(r.fecha, lDesde, lHasta)) return false;
 
-      if (catFilter) {
-        if (!up(r.categoria).includes(catFilter)) return false;
-      }
 
       if (q) {
         const hay =
@@ -1376,7 +1390,19 @@ export default function ContabilidadPage() {
       else saldo -= safeNum(r.monto);
       return { ...r, saldo };
     });
-  }, [libroGastos, movimientos, lDesde, lHasta, lCat, lQ]);
+  }, [libroGastos, movimientos, lDesde, lHasta, lQ]);
+
+  const libroSorted = useMemo(() => {
+    return [...libroRows].sort((a, b) => {
+      let cmp = 0;
+      if (lSortCol === "monto" || lSortCol === "saldo") {
+        cmp = safeNum(a[lSortCol]) - safeNum(b[lSortCol]);
+      } else {
+        cmp = (a[lSortCol] ?? "").localeCompare(b[lSortCol] ?? "");
+      }
+      return lSortDir === "asc" ? cmp : -cmp;
+    });
+  }, [libroRows, lSortCol, lSortDir]);
 
   const libroStats = useMemo(() => {
     const totalIngresos = libroRows.reduce((acc, r) => acc + (r.tipo === "INGRESO" ? safeNum(r.monto) : 0), 0);
@@ -1384,6 +1410,73 @@ export default function ContabilidadPage() {
     const saldoFinal = libroRows.length ? safeNum(libroRows[libroRows.length - 1].saldo) : 0;
     return { count: libroRows.length, totalIngresos, totalGastos, saldoFinal };
   }, [libroRows]);
+
+  // ---------- BALANCE MENSUAL (derivado 100% de libroRows) ----------
+  const balanceFromLibro = useMemo(() => {
+    const map = new Map<string, { ingresos: number; gastos: number }>();
+    for (const r of libroRows) {
+      if (!r.fecha) continue;
+      if (bDesde && r.fecha < bDesde) continue;
+      if (bHasta && r.fecha > bHasta) continue;
+      const mesKey = r.fecha.slice(0, 7) + "-01";
+      if (!map.has(mesKey)) map.set(mesKey, { ingresos: 0, gastos: 0 });
+      if (r.tipo === "INGRESO") {
+        map.get(mesKey)!.ingresos += safeNum(r.monto);
+      } else {
+        map.get(mesKey)!.gastos += safeNum(r.monto);
+      }
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([mes, { ingresos, gastos }]) => ({ mes, ingresos, gastos, balance: ingresos - gastos }));
+  }, [libroRows, bDesde, bHasta]);
+
+  const balanceStats = useMemo(() => {
+    const totalIngresos = balanceFromLibro.reduce((acc, r) => acc + r.ingresos, 0);
+    const totalGastos = balanceFromLibro.reduce((acc, r) => acc + r.gastos, 0);
+    const totalBalance = balanceFromLibro.reduce((acc, r) => acc + r.balance, 0);
+    return { meses: balanceFromLibro.length, totalIngresos, totalGastos, totalBalance };
+  }, [balanceFromLibro]);
+
+  // Detalle del mes seleccionado: todas las transacciones del mes con acumulado diario
+  const balanceMesDetalle = useMemo(() => {
+    if (!balanceMesSel) return [];
+    const rows = libroRows.filter((r) => r.fecha && r.fecha.slice(0, 7) === balanceMesSel.slice(0, 7));
+    let acum = 0;
+    return rows.map((r) => {
+      if (r.tipo === "INGRESO") acum += safeNum(r.monto);
+      else acum -= safeNum(r.monto);
+      return { ...r, acum };
+    });
+  }, [libroRows, balanceMesSel]);
+
+  const exportBalanceCSV = () => {
+    const lines = [
+      ["Mes", "Ingresos", "Gastos", "Balance"].join(","),
+      ...balanceFromLibro.map((r) => [r.mes, r.ingresos.toFixed(2), r.gastos.toFixed(2), r.balance.toFixed(2)].join(",")),
+    ];
+    downloadTextFile(
+      `balance_mensual_${new Date().toISOString().slice(0, 10)}.csv`,
+      lines.join("\n"),
+      "text/csv;charset=utf-8"
+    );
+  };
+
+  const printBalance = () => {
+    openPrintWindow({
+      title: "Contabilidad — Balance mensual",
+      subtitle: "Resumen mensual desde Libro Diario",
+      kpis: [
+        { label: "Total ingresos", value: moneyEUR(balanceStats.totalIngresos) },
+        { label: "Total gastos", value: moneyEUR(balanceStats.totalGastos) },
+        { label: "Balance total", value: moneyEUR(balanceStats.totalBalance) },
+        { label: "Meses", value: String(balanceStats.meses) },
+      ],
+      tableHeaders: ["Mes", "Ingresos", "Gastos", "Balance"],
+      tableRows: balanceFromLibro.map((r) => [r.mes, moneyEUR(r.ingresos), moneyEUR(r.gastos), moneyEUR(r.balance)]),
+      footerNote: "Tip: en el diálogo de impresión elige 'Guardar como PDF'.",
+    });
+  };
 
   const exportLibroCSV = () => {
     const header = ["Fecha", "Tipo", "Concepto", "Categoría", "Monto", "Saldo", "Ref"];
@@ -1413,6 +1506,133 @@ export default function ContabilidadPage() {
       meta + lines.join("\n"),
       "text/csv;charset=utf-8"
     );
+  };
+
+  const exportLibroDiarioXLSX = () => {
+    const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    const mesLabel = lDesde || lHasta || (libroRows[libroRows.length - 1]?.fecha ?? "");
+    const mesStr = mesLabel.length >= 7
+      ? `${meses[parseInt(mesLabel.slice(5, 7)) - 1] ?? ""} ${mesLabel.slice(0, 4)}`
+      : "";
+
+    const COLS = 6;
+    const border = (style = "thin") => ({ style, color: { rgb: "BBBBBB" } });
+
+    const titleStyle = (sz = 14) => ({ font: { bold: true, sz }, alignment: { horizontal: "center" as const, vertical: "center" as const } });
+    const sectionStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const colHdrStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFFF00" } },
+      font: { bold: true, sz: 11 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const, wrapText: true },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    };
+    const dataStyle = (alt: boolean) => ({
+      fill: alt ? { patternType: "solid" as const, fgColor: { rgb: "F9F9F9" } } : undefined,
+      alignment: { vertical: "center" as const },
+      border: { top: border(), bottom: border(), left: border(), right: border() },
+    });
+    const ingresoStyle = (alt: boolean) => ({
+      ...dataStyle(alt),
+      font: { color: { rgb: "166534" }, bold: true },
+    });
+    const gastoStyle = (alt: boolean) => ({
+      ...dataStyle(alt),
+      font: { color: { rgb: "991B1B" }, bold: true },
+    });
+    const totalsStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: { top: border("medium"), bottom: border("medium"), left: border(), right: border() },
+    };
+    const numFmt = "#,##0.00";
+
+    const aoa: any[][] = [
+      Array(COLS).fill(""),
+      ["", "", "EL RINCON DE DOMINGO", "", "", ""],
+      ["", "", "Libro Diario (Ingresos + Gastos)", "", "", ""],
+      ["", "", mesStr, "", "", ""],
+      Array(COLS).fill(""),
+      Array(COLS).fill(""),
+      Array(COLS).fill(""),
+      ["Registro Contable Diario", ...Array(COLS - 1).fill("")],
+      ["Fecha", "Tipo", "Concepto", "Categoría", "Monto", "Saldo"],
+    ];
+
+    let totIngresos = 0, totGastos = 0;
+
+    for (let i = 0; i < libroRows.length; i++) {
+      const r = libroRows[i];
+      const monto = safeNum(r.monto);
+      const saldo = safeNum(r.saldo);
+      if (r.tipo === "INGRESO") totIngresos += monto;
+      else totGastos += monto;
+      aoa.push([r.fecha ?? "", r.tipo ?? "", r.concepto ?? "", r.categoria ?? "", monto, saldo]);
+    }
+
+    aoa.push(["TOTAL", "", `Ingresos: ${moneyEUR(totIngresos)}`, `Gastos: ${moneyEUR(totGastos)}`, totIngresos - totGastos, ""]);
+
+    const ws: any = XLSXStyle.utils.aoa_to_sheet(aoa);
+
+    ws["!merges"] = [
+      { s: { r: 1, c: 2 }, e: { r: 1, c: 5 } },
+      { s: { r: 2, c: 2 }, e: { r: 2, c: 5 } },
+      { s: { r: 3, c: 2 }, e: { r: 3, c: 5 } },
+      { s: { r: 7, c: 0 }, e: { r: 7, c: 5 } },
+    ];
+
+    ws["!cols"] = [
+      { wch: 13 }, { wch: 11 }, { wch: 38 }, { wch: 18 }, { wch: 13 }, { wch: 13 },
+    ];
+
+    ws["!rows"] = Array(aoa.length).fill({ hpt: 18 });
+    ws["!rows"][8] = { hpt: 28 };
+
+    const applyStyle = (r: number, c: number, st: any) => {
+      const cellRef = XLSXStyle.utils.encode_cell({ r, c });
+      if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+      ws[cellRef].s = st;
+    };
+
+    [1, 2, 3].forEach((row) => {
+      const sz = row === 1 ? 15 : row === 2 ? 13 : 11;
+      applyStyle(row, 2, titleStyle(sz));
+    });
+
+    for (let c = 0; c < COLS; c++) {
+      applyStyle(7, c, sectionStyle);
+      applyStyle(8, c, colHdrStyle);
+    }
+
+    const DATA_START = 9;
+    for (let i = 0; i < libroRows.length; i++) {
+      const r = libroRows[i];
+      const alt = i % 2 === 1;
+      const isIngreso = r.tipo === "INGRESO";
+      for (let c = 0; c < COLS; c++) {
+        const cellRef = XLSXStyle.utils.encode_cell({ r: DATA_START + i, c });
+        if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+        ws[cellRef].s = c === 1 ? (isIngreso ? ingresoStyle(alt) : gastoStyle(alt)) : dataStyle(alt);
+        if ((c === 4 || c === 5) && typeof ws[cellRef].v === "number") ws[cellRef].z = numFmt;
+      }
+    }
+
+    const totRow = DATA_START + libroRows.length;
+    for (let c = 0; c < COLS; c++) {
+      const cellRef = XLSXStyle.utils.encode_cell({ r: totRow, c });
+      if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+      ws[cellRef].s = totalsStyle;
+      if (c === 4 && typeof ws[cellRef].v === "number") ws[cellRef].z = numFmt;
+    }
+
+    const wb = XLSXStyle.utils.book_new();
+    XLSXStyle.utils.book_append_sheet(wb, ws, "Libro Diario");
+    XLSXStyle.writeFile(wb, `libro_diario_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const exportIngresosXLSX = () => {
@@ -1590,6 +1810,7 @@ export default function ContabilidadPage() {
 
   useEffect(() => {
     if (tab === "balance" || tab === "libro") fetchLibroAll();
+    if (tab === "ingresos") void fetchMovimientos(1000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
@@ -1668,22 +1889,22 @@ export default function ContabilidadPage() {
       fontWeight: 900,
     } as React.CSSProperties,
     badgeIngreso: {
-      padding: "6px 10px",
+      padding: "5px 12px",
       borderRadius: 999,
-      background: "rgba(34,197,94,.16)",
-      border: "1px solid rgba(34,197,94,.35)",
+      background: "transparent",
+      border: "2px solid rgba(34,197,94,.8)",
       fontSize: 12,
       fontWeight: 900,
-      color: "#bbf7d0",
+      color: "#fff",
     } as React.CSSProperties,
     badgeGasto: {
-      padding: "6px 10px",
+      padding: "5px 12px",
       borderRadius: 999,
-      background: "rgba(239,68,68,.16)",
-      border: "1px solid rgba(239,68,68,.35)",
+      background: "transparent",
+      border: "2px solid rgba(239,68,68,.8)",
       fontSize: 12,
       fontWeight: 900,
-      color: "#fecaca",
+      color: "#fff",
     } as React.CSSProperties,
     table: {
       width: "100%",
@@ -1753,6 +1974,9 @@ export default function ContabilidadPage() {
             <button onClick={() => setTab("gastos")} style={tab === "gastos" ? s.btnPrimary : s.btn}>
               Gastos
             </button>
+            <button onClick={() => setTab("ingresos")} style={tab === "ingresos" ? s.btnPrimary : s.btn}>
+              Ingresos
+            </button>
             <button onClick={() => setTab("balance")} style={tab === "balance" ? s.btnPrimary : s.btn}>
               Balance mensual
             </button>
@@ -1819,9 +2043,6 @@ export default function ContabilidadPage() {
                 <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
                   🔄 Refrescar
                 </button>
-                <button onClick={exportGastosCSV} style={s.btn} disabled={gLoading || gBusy || gastosAll.length === 0}>
-                  📥 CSV
-                </button>
                 <button
                   onClick={exportGastosXLSX}
                   style={{ ...s.btn, background: "rgba(234,179,8,.18)", border: "1px solid rgba(234,179,8,.35)", color: "#fde68a" }}
@@ -1835,42 +2056,11 @@ export default function ContabilidadPage() {
               </div>
             </div>
 
-            <div style={s.section}>
-              <div style={{ fontWeight: 1000, marginBottom: 10 }}>➕ Nuevo gasto</div>
-              <div style={s.row}>
-                <input type="date" value={newFecha} onChange={(e) => setNewFecha(e.target.value)} style={s.input} />
-                <input
-                  value={newConcepto}
-                  onChange={(e) => setNewConcepto(e.target.value)}
-                  placeholder="Concepto (ej: Harina PAN)"
-                  style={{ ...s.input, minWidth: 260 }}
-                />
-                <input
-                  value={newMonto}
-                  onChange={(e) => setNewMonto(e.target.value)}
-                  placeholder="Monto (ej: 12.50)"
-                  inputMode="decimal"
-                  style={{ ...s.input, width: 160 }}
-                />
-
-                <select value={up(newCategoria)} onChange={(e) => setNewCategoria(e.target.value)} style={{ ...s.input, width: 220 }}>
-                  {categoriasOpciones.map((c) => (
-                    <option key={c} value={c} style={{ color: "#111" }}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-
-                <button onClick={createGasto} style={s.btnPrimary} disabled={gBusy}>
-                  Guardar
-                </button>
-              </div>
-            </div>
 
             <div style={{ ...s.row, marginBottom: 12 }}>
               <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={s.input} />
               <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} style={s.input} />
-              <input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Filtrar categoría (opcional)" style={{ ...s.input, width: 240 }} list="cat-sugs" />
+              <input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Buscar por concepto..." style={{ ...s.input, width: 240 }} />
               <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
                 Aplicar filtros
               </button>
@@ -1903,7 +2093,6 @@ export default function ContabilidadPage() {
                     <th style={s.th}>Concepto</th>
                     <th style={s.th}>Monto</th>
                     <th style={s.th}>Categoría</th>
-                    <th style={s.th}>Acciones</th>
                   </tr>
                 </thead>
 
@@ -1953,67 +2142,127 @@ export default function ContabilidadPage() {
                               ))}
                             </select>
                           ) : (
-                            <span style={s.badge}>{up(g.categoria) || "OTROS"}</span>
+                            <span style={s.badgeGasto}>{up(g.categoria) || "OTROS"}</span>
                           )}
                         </td>
 
-                        <td style={s.td}>
-                          {g._fromMov ? (
-                            <div style={s.row}>
-                              <button
-                                onClick={() => {
-                                  const mov = movimientos.find((m) => m.id === g.id);
-                                  setOpTipo("GASTO");
-                                  setOp({
-                                    fecha: mov?.fecha ?? g.fecha ?? "",
-                                    proveedor: mov?.proveedor ?? "",
-                                    factura_no: mov?.factura_no ?? "",
-                                    productos_servicios: mov?.productos_servicios ?? mov?.concepto ?? g.concepto ?? "",
-                                    monto_total: safeNum(mov?.monto ?? g.monto),
-                                    iva: safeNum(mov?.iva ?? 0),
-                                    modo_pago: mov?.modo_pago ?? "Transferencia",
-                                    observacion: mov?.observacion ?? "",
-                                  });
-                                  setOpEdit({ refType: "MOV", id: g.id });
-                                  setOpOpen(true);
-                                }}
-                                style={s.btn}
-                                disabled={gBusy}
-                              >
-                                ✏️ Editar
-                              </button>
-                              <button onClick={() => deleteMovimiento(g.id)} style={s.btnDanger} disabled={gBusy}>
-                                ✖ Borrar
-                              </button>
-                            </div>
-                          ) : !isEditing ? (
-                            <div style={s.row}>
-                              <button onClick={() => startEdit(g)} style={s.btn} disabled={gBusy}>
-                                ✏️ Editar
-                              </button>
-                              <button onClick={() => deleteGasto(g.id)} style={s.btnDanger} disabled={gBusy}>
-                                ✖ Borrar
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={s.row}>
-                              <button onClick={() => saveEdit(g.id)} style={s.btnPrimary} disabled={gBusy}>
-                                💾 Guardar
-                              </button>
-                              <button onClick={cancelEdit} style={s.btn} disabled={gBusy}>
-                                Cancelar
-                              </button>
-                            </div>
-                          )}
-                        </td>
                       </tr>
                     );
                   })}
 
                   {gastosAll.length === 0 && !gLoading && (
                     <tr>
-                      <td colSpan={6} style={{ ...s.td, opacity: 0.8 }}>
+                      <td colSpan={5} style={{ ...s.td, opacity: 0.8 }}>
                         No hay gastos todavía.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : tab === "ingresos" ? (
+          <>
+            <div style={s.statsGrid}>
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Total ingresos (filtrado)</div>
+                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(ingresosStats.total)}</div>
+                <div style={s.statSub}>Suma de los registros mostrados</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Promedio por ingreso</div>
+                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(ingresosStats.avg)}</div>
+                <div style={s.statSub}>Promedio del listado actual</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Ingreso más alto</div>
+                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(ingresosStats.max)}</div>
+                <div style={s.statSub}>{ingresosStats.maxRow ? `${ingresosStats.maxRow.concepto}` : "—"}</div>
+              </div>
+
+              <div style={{ ...s.statCard, gridColumn: "span 3" }}>
+                <div style={s.statLabel}>Registros</div>
+                <div style={s.statValue}>{lLoading ? "…" : ingresosStats.count}</div>
+                <div style={s.statSub}>{lLoading ? "Cargando…" : "Listo"}</div>
+              </div>
+            </div>
+
+            <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={s.row}>
+                <span style={s.badge}>Registros: {ingresosAll.length}</span>
+                {lLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}
+              </div>
+              <div style={s.row}>
+                <button onClick={() => fetchMovimientos(500)} style={s.btn} disabled={lLoading}>
+                  🔄 Refrescar
+                </button>
+                <button
+                  onClick={exportIngresosXLSX}
+                  style={{ ...s.btn, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.35)", color: "#86efac" }}
+                  disabled={lLoading || ingresosAll.length === 0}
+                >
+                  📊 Excel Ingresos
+                </button>
+                <button onClick={printIngresos} style={s.btn} disabled={lLoading || ingresosAll.length === 0}>
+                  🖨️ PDF / Imprimir
+                </button>
+              </div>
+            </div>
+
+            <div style={{ ...s.row, marginBottom: 12 }}>
+              <input type="date" value={iDesde} onChange={(e) => setIDesde(e.target.value)} style={s.input} />
+              <input type="date" value={iHasta} onChange={(e) => setIHasta(e.target.value)} style={s.input} />
+              <input
+                value={iCat}
+                onChange={(e) => setICat(e.target.value)}
+                placeholder="Buscar por concepto..."
+                style={{ ...s.input, width: 240 }}
+              />
+              <button
+                onClick={() => { setIDesde(""); setIHasta(""); setICat(""); }}
+                style={s.btn}
+                disabled={lLoading}
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <div style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, overflow: "hidden" }}>
+              <table style={s.table}>
+                <thead style={{ background: "rgba(255,255,255,.06)" }}>
+                  <tr>
+                    <th style={s.th}>ID</th>
+                    <th style={s.th}>Fecha</th>
+                    <th style={s.th}>Concepto</th>
+                    <th style={s.th}>Categoría</th>
+                    <th style={s.th}>Monto</th>
+                    <th style={s.th}>Modo Pago</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lLoading && (
+                    <tr>
+                      <td colSpan={6} style={{ ...s.td, textAlign: "center", opacity: 0.7, padding: 24 }}>
+                        Cargando...
+                      </td>
+                    </tr>
+                  )}
+                  {!lLoading && ingresosAll.map((m) => (
+                    <tr key={`ing-${m.id}`}>
+                      <td style={{ ...s.td, fontWeight: 1000 }}>{m.id}</td>
+                      <td style={s.td}><span style={{ opacity: 0.9 }}>{m.fecha ?? "-"}</span></td>
+                      <td style={s.td}><span style={{ fontWeight: 800 }}>{m.concepto ?? ""}</span></td>
+                      <td style={s.td}><span style={s.badgeIngreso}>{up(m.categoria) || "INGRESOS"}</span></td>
+                      <td style={s.td}><span style={{ fontWeight: 1000 }}>€ {safeNum(m.monto).toFixed(2)}</span></td>
+                      <td style={s.td}><span style={{ opacity: 0.8 }}>{m.modo_pago ?? "—"}</span></td>
+                    </tr>
+                  ))}
+                  {!lLoading && ingresosAll.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ ...s.td, opacity: 0.8 }}>
+                        No hay ingresos todavía.
                       </td>
                     </tr>
                   )}
@@ -2023,63 +2272,45 @@ export default function ContabilidadPage() {
           </>
         ) : tab === "balance" ? (
           <>
-            {lError && (
-              <div
-                style={{
-                  marginBottom: 12,
-                  padding: 12,
-                  borderRadius: 14,
-                  background: "rgba(239,68,68,.12)",
-                  border: "1px solid rgba(239,68,68,.25)",
-                  color: "#fecaca",
-                  fontWeight: 900,
-                }}
-              >
-                ❌ {lError}
-              </div>
-            )}
-
+            {/* Stats */}
             <div style={s.statsGrid}>
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Total ingresos</div>
-                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(balanceStats.totalIngresos)}</div>
+                <div style={{ ...s.statValue, color: "#86efac" }}>{lLoading ? "…" : moneyEUR(balanceStats.totalIngresos)}</div>
               </div>
-
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Total gastos</div>
-                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(balanceStats.totalGastos)}</div>
+                <div style={{ ...s.statValue, color: "#fca5a5" }}>{lLoading ? "…" : moneyEUR(balanceStats.totalGastos)}</div>
               </div>
-
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Balance total</div>
-                <div style={s.statValue}>{lLoading ? "…" : moneyEUR(balanceStats.totalBalance)}</div>
+                <div style={{ ...s.statValue, color: balanceStats.totalBalance >= 0 ? "#86efac" : "#fca5a5" }}>
+                  {lLoading ? "…" : moneyEUR(balanceStats.totalBalance)}
+                </div>
               </div>
-
               <div style={{ ...s.statCard, gridColumn: "span 3" }}>
                 <div style={s.statLabel}>Meses</div>
                 <div style={s.statValue}>{lLoading ? "…" : balanceStats.meses}</div>
               </div>
             </div>
 
+            {/* Filtro fecha + acciones */}
             <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
               <div style={s.row}>
-                <span style={s.badge}>Meses: {balanceFromLibro.length}</span>
-                {lLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Listo</span>}
+                <input type="date" value={bDesde} onChange={(e) => setBDesde(e.target.value)} style={s.input} title="Desde" />
+                <input type="date" value={bHasta} onChange={(e) => setBHasta(e.target.value)} style={s.input} title="Hasta" />
+                <button onClick={() => { setBDesde(""); setBHasta(""); }} style={s.btn} disabled={!bDesde && !bHasta}>
+                  Limpiar
+                </button>
+                {lLoading ? <span style={s.badge}>Cargando…</span> : <span style={s.badge}>Meses: {balanceFromLibro.length}</span>}
               </div>
-
               <div style={s.row}>
-                <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
-                  🔄 Refrescar
-                </button>
-                <button onClick={exportBalanceCSV} style={s.btn} disabled={lLoading || balanceFromLibro.length === 0}>
-                  📥 Excel (CSV)
-                </button>
-                <button onClick={printBalance} style={s.btn} disabled={lLoading || balanceFromLibro.length === 0}>
-                  🖨️ PDF / Imprimir
-                </button>
+                <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>🔄 Refrescar</button>
+                <button onClick={printBalance} style={s.btn} disabled={lLoading || balanceFromLibro.length === 0}>🖨️ PDF / Imprimir</button>
               </div>
             </div>
 
+            {/* Tabla */}
             <div style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 16, overflow: "hidden" }}>
               <table style={s.table}>
                 <thead style={{ background: "rgba(255,255,255,.06)" }}>
@@ -2093,30 +2324,108 @@ export default function ContabilidadPage() {
                 <tbody>
                   {lLoading && (
                     <tr>
-                      <td colSpan={4} style={{ ...s.td, textAlign: "center", opacity: 0.7, padding: 24 }}>
-                        Cargando...
-                      </td>
+                      <td colSpan={4} style={{ ...s.td, textAlign: "center", opacity: 0.7, padding: 24 }}>Cargando...</td>
                     </tr>
                   )}
-                  {!lLoading && balanceFromLibro.map((r, idx) => (
-                    <tr key={`${r.mes ?? "null"}-${idx}`}>
-                      <td style={{ ...s.td, fontWeight: 1000 }}>{r.mes ? r.mes.slice(0, 7) : "-"}</td>
-                      <td style={s.td}>{moneyEUR(safeNum(r.ingresos))}</td>
-                      <td style={s.td}>{moneyEUR(safeNum(r.gastos))}</td>
-                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(safeNum(r.balance))}</td>
+                  {!lLoading && balanceFromLibro.map((r) => (
+                    <tr
+                      key={r.mes}
+                      onClick={() => setBalanceMesSel(r.mes)}
+                      style={{ cursor: "pointer" }}
+                      title="Click para ver detalle del mes"
+                    >
+                      <td style={{ ...s.td, fontWeight: 900 }}>
+                        {r.mes}
+                        <span style={{ marginLeft: 8, fontSize: 11, opacity: 0.45 }}>▼ ver detalle</span>
+                      </td>
+                      <td style={{ ...s.td, fontWeight: 900, color: "#86efac" }}>{moneyEUR(r.ingresos)}</td>
+                      <td style={{ ...s.td, fontWeight: 900, color: "#fca5a5" }}>{moneyEUR(r.gastos)}</td>
+                      <td style={{ ...s.td, fontWeight: 900, color: r.balance >= 0 ? "#86efac" : "#fca5a5" }}>
+                        {moneyEUR(r.balance)}
+                      </td>
                     </tr>
                   ))}
-
                   {!lLoading && balanceFromLibro.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ ...s.td, opacity: 0.8 }}>
-                        No hay datos de balance todavía.
+                      <td colSpan={4} style={{ ...s.td, opacity: 0.6, textAlign: "center", padding: 24 }}>
+                        No hay datos. Asegúrate de tener registros en el Libro Diario.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+
+            {/* MODAL DETALLE MES */}
+            {balanceMesSel && (
+              <div
+                onClick={() => setBalanceMesSel("")}
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.65)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,.15)", borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,.6)" }}
+                >
+                  {/* Header */}
+                  <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontWeight: 900, fontSize: 18 }}>📅 Detalle de {balanceMesSel.slice(0, 7)}</div>
+                      <div style={{ opacity: 0.55, fontSize: 13, marginTop: 3 }}>{balanceMesDetalle.length} movimientos</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                      <span style={{ color: "#86efac", fontWeight: 900 }}>
+                        ↑ {moneyEUR(balanceMesDetalle.filter(r => r.tipo === "INGRESO").reduce((a, r) => a + r.monto, 0))}
+                      </span>
+                      <span style={{ color: "#fca5a5", fontWeight: 900 }}>
+                        ↓ {moneyEUR(balanceMesDetalle.filter(r => r.tipo === "GASTO").reduce((a, r) => a + r.monto, 0))}
+                      </span>
+                      <span style={{ fontWeight: 900, color: (balanceMesDetalle[balanceMesDetalle.length - 1]?.acum ?? 0) >= 0 ? "#86efac" : "#fca5a5" }}>
+                        = {moneyEUR(balanceMesDetalle[balanceMesDetalle.length - 1]?.acum ?? 0)}
+                      </span>
+                      <button onClick={() => setBalanceMesSel("")} style={{ ...s.btn, padding: "6px 14px" }}>✕ Cerrar</button>
+                    </div>
+                  </div>
+
+                  {/* Tabla */}
+                  <div style={{ overflowY: "auto", flex: 1 }}>
+                    <table style={{ ...s.table, borderRadius: 0 }}>
+                      <thead style={{ background: "rgba(255,255,255,.06)", position: "sticky", top: 0 }}>
+                        <tr>
+                          <th style={s.th}>Fecha</th>
+                          <th style={s.th}>Tipo</th>
+                          <th style={s.th}>Concepto</th>
+                          <th style={s.th}>Monto</th>
+                          <th style={s.th}>Acumulado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {balanceMesDetalle.map((r, i) => {
+                          const isIngreso = r.tipo === "INGRESO";
+                          return (
+                            <tr key={`det-${i}`} style={{ borderLeft: `3px solid ${isIngreso ? "rgba(34,197,94,.5)" : "rgba(239,68,68,.5)"}` }}>
+                              <td style={{ ...s.td, fontWeight: 700, fontSize: 13, opacity: 0.85 }}>{r.fecha}</td>
+                              <td style={s.td}>
+                                <span style={isIngreso ? s.badgeIngreso : s.badgeGasto}>{r.tipo}</span>
+                              </td>
+                              <td style={{ ...s.td, fontWeight: 700, maxWidth: 300 }}>{r.concepto}</td>
+                              <td style={{ ...s.td, fontWeight: 900, color: isIngreso ? "#86efac" : "#fca5a5" }}>
+                                {isIngreso ? "+" : "-"}{moneyEUR(r.monto)}
+                              </td>
+                              <td style={{ ...s.td, fontWeight: 900, color: r.acum >= 0 ? "#86efac" : "#fca5a5" }}>
+                                {moneyEUR(r.acum)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {balanceMesDetalle.length === 0 && (
+                          <tr><td colSpan={5} style={{ ...s.td, opacity: 0.5, textAlign: "center", padding: 24 }}>Sin movimientos este mes.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -2178,15 +2487,12 @@ export default function ContabilidadPage() {
                 <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
                   🔄 Refrescar
                 </button>
-                <button onClick={exportLibroCSV} style={s.btn} disabled={lLoading || libroRows.length === 0}>
-                  📥 CSV
-                </button>
                 <button
-                  onClick={exportIngresosXLSX}
-                  style={{ ...s.btn, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.35)", color: "#86efac" }}
-                  disabled={lLoading || libroRows.filter((r) => r.tipo === "INGRESO").length === 0}
+                  onClick={exportLibroDiarioXLSX}
+                  style={{ ...s.btn, background: "rgba(124,58,237,.18)", border: "1px solid rgba(124,58,237,.35)", color: "#c4b5fd" }}
+                  disabled={lLoading || libroRows.length === 0}
                 >
-                  📊 Excel Ingresos
+                  📊 Excel Libro Diario
                 </button>
                 <button onClick={printLibro} style={s.btn} disabled={lLoading || libroRows.length === 0}>
                   🖨️ PDF / Imprimir
@@ -2445,8 +2751,12 @@ export default function ContabilidadPage() {
                             <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Modo de pago</div>
                             <select value={op.modo_pago} onChange={(e) => opSet("modo_pago", e.target.value)} style={{ ...s.input, width: "100%" }}>
                               <option value="Transferencia">Transferencia</option>
+                              <option value="Transferencia/Santander">Transferencia/Santander</option>
+                              <option value="Transferencia/Caixa">Transferencia/Caixa</option>
                               <option value="Efectivo">Efectivo</option>
                               <option value="Tarjeta">Tarjeta</option>
+                              <option value="Tarjeta/Santander">Tarjeta/Santander</option>
+                              <option value="Tarjeta/Caixa">Tarjeta/Caixa</option>
                               <option value="Otro">Otro</option>
                             </select>
                           </div>
@@ -2622,8 +2932,6 @@ export default function ContabilidadPage() {
                 style={s.input}
               />
 
-              <input value={lCat} onChange={(e) => setLCat(e.target.value)} placeholder="Filtrar categoría (opcional)" style={{ ...s.input, width: 280 }} list="cat-sugs-libro" />
-
               <input value={lQ} onChange={(e) => setLQ(e.target.value)} placeholder="Buscar (concepto/categoría/ref/fecha)" style={{ ...s.input, width: 280 }} />
 
               <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>
@@ -2634,7 +2942,7 @@ export default function ContabilidadPage() {
                 onClick={() => {
                   setLDesde("");
                   setLHasta("");
-                  setLCat("");
+
                   setLQ("");
                   setTimeout(fetchLibroAll, 0);
                 }}
@@ -2655,12 +2963,16 @@ export default function ContabilidadPage() {
               <table style={s.table}>
                 <thead style={{ background: "rgba(255,255,255,.06)" }}>
                   <tr>
-                    <th style={s.th}>Fecha</th>
-                    <th style={s.th}>Tipo</th>
-                    <th style={s.th}>Concepto</th>
-                    <th style={s.th}>Categoría</th>
-                    <th style={s.th}>Monto</th>
-                    <th style={s.th}>Saldo</th>
+                    {(["fecha","tipo","concepto","categoria","monto","saldo"] as const).map((col) => (
+                      <th
+                        key={col}
+                        style={{ ...s.th, cursor: "pointer", userSelect: "none" }}
+                        onClick={() => toggleLibroSort(col)}
+                      >
+                        {col.charAt(0).toUpperCase() + col.slice(1)}
+                        {lSortCol === col ? (lSortDir === "desc" ? " ↓" : " ↑") : " ↕"}
+                      </th>
+                    ))}
                     <th style={s.th}>Acciones</th>
                   </tr>
                 </thead>
@@ -2680,7 +2992,7 @@ export default function ContabilidadPage() {
                       </td>
                     </tr>
                   )}
-                  {!lLoading && libroRows.slice((libroPage - 1) * libroPageSize, libroPage * libroPageSize).map((r) => (
+                  {!lLoading && libroSorted.slice((libroPage - 1) * libroPageSize, libroPage * libroPageSize).map((r) => (
                     <tr key={`row-${r.ref}`} onClick={() => openDetail(r)} style={{ cursor: "pointer" }} title="Ver detalle">
                       <td style={s.td}>{r.fecha}</td>
 
@@ -2776,6 +3088,9 @@ export default function ContabilidadPage() {
         <hr style={{ margin: "16px 0", opacity: 0.3 }} />
 
         <p>
+          <b>Proveedor/Persona:</b> {detailRow.meta.proveedor ?? "-"}
+        </p>
+        <p>
           <b>Factura / Ref:</b> {detailRow.meta.factura_no ?? "-"}
         </p>
         <p>
@@ -2865,17 +3180,17 @@ export default function ContabilidadPage() {
                   <span style={{ opacity: 0.85 }}>Página</span>
                   <b>{libroPage}</b>
                   <span style={{ opacity: 0.65 }}>/</span>
-                  <b>{Math.max(1, Math.ceil(libroRows.length / libroPageSize))}</b>
+                  <b>{Math.max(1, Math.ceil(libroSorted.length / libroPageSize))}</b>
                 </div>
 
                 <button
-                  onClick={() => setLibroPage((p) => Math.min(Math.ceil(libroRows.length / libroPageSize), p + 1))}
-                  disabled={libroPage >= Math.ceil(libroRows.length / libroPageSize)}
+                  onClick={() => setLibroPage((p) => Math.min(Math.ceil(libroSorted.length / libroPageSize), p + 1))}
+                  disabled={libroPage >= Math.ceil(libroSorted.length / libroPageSize)}
                   style={{
                     ...s.btn,
                     minWidth: 46,
-                    opacity: libroPage >= Math.ceil(libroRows.length / libroPageSize) ? 0.45 : 1,
-                    cursor: libroPage >= Math.ceil(libroRows.length / libroPageSize) ? "not-allowed" : "pointer",
+                    opacity: libroPage >= Math.ceil(libroSorted.length / libroPageSize) ? 0.45 : 1,
+                    cursor: libroPage >= Math.ceil(libroSorted.length / libroPageSize) ? "not-allowed" : "pointer",
                   }}
                   title="Siguiente"
                   type="button"
