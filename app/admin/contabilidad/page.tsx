@@ -95,6 +95,12 @@ function moneyEUR(v: number) {
   return `€ ${safeNum(v).toFixed(2)}`;
 }
 
+function fmtFecha(s: string | null | undefined) {
+  if (!s || s.length < 10) return s ?? "";
+  const [y, m, d] = s.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+
 
 function parseCierreObs(raw: any) {
   const text = String(raw ?? "").replace(/\r/g, "");
@@ -2118,7 +2124,7 @@ export default function ContabilidadPage() {
                           {isEditing ? (
                             <input type="date" value={editFecha} onChange={(e) => setEditFecha(e.target.value)} style={s.input} />
                           ) : (
-                            <span style={{ opacity: 0.9 }}>{g.fecha ?? "-"}</span>
+                            <span style={{ opacity: 0.9 }}>{fmtFecha(g.fecha) || "-"}</span>
                           )}
                         </td>
 
@@ -2258,7 +2264,7 @@ export default function ContabilidadPage() {
                   {!lLoading && ingresosAll.map((m) => (
                     <tr key={`ing-${m.id}`}>
                       <td style={{ ...s.td, fontWeight: 1000 }}>{m.id}</td>
-                      <td style={s.td}><span style={{ opacity: 0.9 }}>{m.fecha ?? "-"}</span></td>
+                      <td style={s.td}><span style={{ opacity: 0.9 }}>{fmtFecha(m.fecha) || "-"}</span></td>
                       <td style={s.td}><span style={{ fontWeight: 800 }}>{m.concepto ?? ""}</span></td>
                       <td style={s.td}><span style={s.badgeIngreso}>{up(m.categoria) || "INGRESOS"}</span></td>
                       <td style={s.td}><span style={{ fontWeight: 1000 }}>€ {safeNum(m.monto).toFixed(2)}</span></td>
@@ -2341,7 +2347,7 @@ export default function ContabilidadPage() {
                       title="Click para ver detalle del mes"
                     >
                       <td style={{ ...s.td, fontWeight: 900 }}>
-                        {r.mes}
+                        {r.mes.length >= 7 ? `${r.mes.slice(5,7)}/${r.mes.slice(0,4)}` : r.mes}
                         <span style={{ marginLeft: 8, fontSize: 11, opacity: 0.45 }}>▼ ver detalle</span>
                       </td>
                       <td style={{ ...s.td, fontWeight: 900, color: "#86efac" }}>{moneyEUR(r.ingresos)}</td>
@@ -2409,7 +2415,7 @@ export default function ContabilidadPage() {
                           const isIngreso = r.tipo === "INGRESO";
                           return (
                             <tr key={`det-${i}`} style={{ borderLeft: `3px solid ${isIngreso ? "rgba(34,197,94,.5)" : "rgba(239,68,68,.5)"}` }}>
-                              <td style={{ ...s.td, fontWeight: 700, fontSize: 13, opacity: 0.85 }}>{r.fecha}</td>
+                              <td style={{ ...s.td, fontWeight: 700, fontSize: 13, opacity: 0.85 }}>{fmtFecha(r.fecha)}</td>
                               <td style={s.td}>
                                 <span style={isIngreso ? s.badgeIngreso : s.badgeGasto}>{r.tipo}</span>
                               </td>
@@ -3002,7 +3008,7 @@ export default function ContabilidadPage() {
                   )}
                   {!lLoading && libroSorted.slice((libroPage - 1) * libroPageSize, libroPage * libroPageSize).map((r) => (
                     <tr key={`row-${r.ref}`} onClick={() => openDetail(r)} style={{ cursor: "pointer" }} title="Ver detalle">
-                      <td style={s.td}>{r.fecha}</td>
+                      <td style={s.td}>{fmtFecha(r.fecha)}</td>
 
                       <td style={s.td}>{r.tipo === "INGRESO" ? <span style={s.badgeIngreso}>INGRESO</span> : <span style={s.badgeGasto}>GASTO</span>}</td>
 
@@ -3075,7 +3081,7 @@ export default function ContabilidadPage() {
 
                   <div style={{ lineHeight: 1.6 }}>
                     <p>
-                      <b>Fecha:</b> {detailRow.fecha}
+                      <b>Fecha:</b> {fmtFecha(detailRow.fecha)}
                     </p>
                     <p>
                       <b>Concepto:</b> {detailRow.concepto}
