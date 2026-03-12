@@ -2140,7 +2140,7 @@ export default function ContabilidadPage() {
                           {isEditing ? (
                             <input value={editMonto} onChange={(e) => setEditMonto(e.target.value)} inputMode="decimal" style={{ ...s.input, width: 140 }} />
                           ) : (
-                            <span style={{ fontWeight: 1000 }}>€ {safeNum(g.monto).toFixed(2)}</span>
+                            <span style={{ fontWeight: 1000, whiteSpace: "nowrap" }}>€ {safeNum(g.monto).toFixed(2)}</span>
                           )}
                         </td>
 
@@ -2267,7 +2267,7 @@ export default function ContabilidadPage() {
                       <td style={s.td}><span style={{ opacity: 0.9 }}>{fmtFecha(m.fecha) || "-"}</span></td>
                       <td style={s.td}><span style={{ fontWeight: 800 }}>{m.concepto ?? ""}</span></td>
                       <td style={s.td}><span style={s.badgeIngreso}>{up(m.categoria) || "INGRESOS"}</span></td>
-                      <td style={s.td}><span style={{ fontWeight: 1000 }}>€ {safeNum(m.monto).toFixed(2)}</span></td>
+                      <td style={{ ...s.td, whiteSpace: "nowrap" }}><span style={{ fontWeight: 1000 }}>€ {safeNum(m.monto).toFixed(2)}</span></td>
                       <td style={s.td}><span style={{ opacity: 0.8 }}>{m.modo_pago ?? "—"}</span></td>
                     </tr>
                   ))}
@@ -3020,9 +3020,9 @@ export default function ContabilidadPage() {
 
                       <td style={{ ...s.td, opacity: r.proveedor ? 1 : 0.4 }}>{r.proveedor || "—"}</td>
 
-                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.monto)}</td>
+                      <td style={{ ...s.td, fontWeight: 1000, whiteSpace: "nowrap" }}>{moneyEUR(r.monto)}</td>
 
-                      <td style={{ ...s.td, fontWeight: 1000 }}>{moneyEUR(r.saldo)}</td>
+                      <td style={{ ...s.td, fontWeight: 1000, whiteSpace: "nowrap" }}>{moneyEUR(r.saldo)}</td>
 
                       <td style={s.td}>
                         {((r.ref.startsWith("GASTO#") && r.tipo === "GASTO") || r.ref.startsWith("MOV#")) && (
