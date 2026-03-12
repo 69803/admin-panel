@@ -26,7 +26,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const [mounted, setMounted] = useState(false);
   const [authed, setAuthed] = useState(false);
 
-  const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/");
+  const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/") || pathname === "/hello" || pathname?.startsWith("/hello/");
   const isProtected = pathname === "/admin" || pathname?.startsWith("/admin/");
 
   // ✅ Evita hydration mismatch: nada que dependa de localStorage antes de montar
