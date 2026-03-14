@@ -517,9 +517,9 @@ export default function PricingPage() {
         }}
       >
         {[
-          { valor: "+200", label: "Restaurantes activos" },
+          { valor: "100%", label: "Active" },
           { valor: "99.9%", label: "Uptime garantizado" },
-          { valor: "< 2min", label: "Tiempo de respuesta soporte" },
+          { valor: "24/7", label: "Soporte" },
           { valor: "4.9★", label: "Valoración media" },
         ].map((s) => (
           <div
@@ -660,8 +660,8 @@ export default function PricingPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
             {[
               { label: "Producto", value: "Panel de Gestión para Restaurantes" },
-              { label: "Desarrollador", value: "Kristian Barrios" },
-              { label: "Contacto", value: "kristianbarrios8@gmail.com" },
+              { label: "Desarrolladores", value: "Novaera" },
+              { label: "Contacto", value: "compipana2@gmail.com" },
               { label: "Tecnología", value: "Next.js · Vercel · Node.js" },
               { label: "Seguridad", value: "🔒 HTTPS · SSL/TLS cifrado" },
               { label: "Disponibilidad", value: "24/7 · 99.9% uptime" },
