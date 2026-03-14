@@ -12,7 +12,13 @@ type Gasto = {
   created_at?: string | null;
 };
 
-type GastoRow = Gasto & { _fromMov: boolean };
+type GastoRow = Gasto & {
+  _fromMov: boolean;
+  proveedor?: string | null;
+  factura_no?: string | null;
+  modo_pago?: string | null;
+  observacion?: string | null;
+};
 
 
 type LibroRow = {
@@ -310,7 +316,7 @@ export default function ContabilidadPage() {
     productos_servicios: "",
     monto_total: 0,
     iva: 0,
-    modo_pago: "Transferencia",
+    modo_pago: "Transferencia/Santander",
     observacion: "",
   });
 
@@ -340,7 +346,7 @@ export default function ContabilidadPage() {
       productos_servicios: "",
       monto_total: 0,
       iva: 0,
-      modo_pago: "Transferencia",
+      modo_pago: "Transferencia/Santander",
       observacion: "",
     });
     setCierre({
@@ -407,6 +413,16 @@ export default function ContabilidadPage() {
   const [editMonto, setEditMonto] = useState("");
   const [editCategoria, setEditCategoria] = useState("OTROS");
 
+  // Gastos: proveedor filter
+  const [gProv, setGProv] = useState("");
+  const [showGProvDD, setShowGProvDD] = useState(false);
+  const [gProvIdx, setGProvIdx] = useState(-1);
+  const gProvRef = useRef<HTMLDivElement | null>(null);
+
+  // Gastos: detail modal
+  const [gastoDetailOpen, setGastoDetailOpen] = useState(false);
+  const [gastoDetailRow, setGastoDetailRow] = useState<GastoRow | null>(null);
+
   // ---------- INGRESOS ----------
   const [iDesde, setIDesde] = useState("");
   const [iHasta, setIHasta] = useState("");
@@ -456,6 +472,15 @@ export default function ContabilidadPage() {
     setDetailRow(null);
   }
 
+  function openGastoDetail(r: GastoRow) {
+    setGastoDetailRow(r);
+    setGastoDetailOpen(true);
+  }
+  function closeGastoDetail() {
+    setGastoDetailOpen(false);
+    setGastoDetailRow(null);
+  }
+
   // =====================
   // PROVEEDOR: autocomplete pro (solo GASTO/MOV)
   // =====================
@@ -479,6 +504,12 @@ export default function ContabilidadPage() {
     return proveedoresBase.filter((p) => p.toLowerCase().includes(q));
   }, [proveedorQuery, proveedoresBase]);
 
+  const proveedoresGastosFiltrados = useMemo(() => {
+    const q = gProv.trim().toLowerCase();
+    if (!q) return proveedoresBase;
+    return proveedoresBase.filter((p) => p.toLowerCase().includes(q));
+  }, [gProv, proveedoresBase]);
+
   useEffect(() => {
     function onDocMouseDown(e: MouseEvent) {
       const el = proveedorWrapRef.current;
@@ -486,6 +517,17 @@ export default function ContabilidadPage() {
       if (!el.contains(e.target as Node)) {
         setShowProveedorDropdown(false);
         setProveedorActiveIndex(-1);
+      }
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, []);
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      if (!gProvRef.current?.contains(e.target as Node)) {
+        setShowGProvDD(false);
+        setGProvIdx(-1);
       }
     }
     document.addEventListener("mousedown", onDocMouseDown);
@@ -1012,6 +1054,7 @@ export default function ContabilidadPage() {
     const fromGastos: GastoRow[] = gastos
       .filter((g) => {
         if (cat.trim() && !up(g.concepto ?? "").includes(up(cat))) return false;
+        if (gProv.trim()) return false; // legacy gastos no tienen proveedor
         return true;
       })
       .map((g) => ({ ...g, _fromMov: false }));
@@ -1022,6 +1065,7 @@ export default function ContabilidadPage() {
         if (desde.trim() && mFecha && mFecha < desde.trim()) return false;
         if (hasta.trim() && mFecha && mFecha > hasta.trim()) return false;
         if (cat.trim() && !up(m.concepto ?? "").includes(up(cat))) return false;
+        if (gProv.trim() && !up(String(m.proveedor ?? "")).includes(up(gProv))) return false;
         return true;
       })
       .map((m) => ({
@@ -1032,6 +1076,10 @@ export default function ContabilidadPage() {
         categoria: m.categoria ?? "GASTOS",
         created_at: m.created_at,
         _fromMov: true,
+        proveedor: m.proveedor ?? null,
+        factura_no: m.factura_no ?? null,
+        modo_pago: m.modo_pago ?? null,
+        observacion: m.observacion ?? null,
       }));
 
     const all = [...fromGastos, ...fromMovs];
@@ -1040,7 +1088,7 @@ export default function ContabilidadPage() {
       const db = b.fecha ?? b.created_at ?? "";
       return db.localeCompare(da);
     });
-  }, [gastos, movimientos, desde, hasta, cat]);
+  }, [gastos, movimientos, desde, hasta, cat, gProv]);
 
   const gastosStats = useMemo(() => {
     const rows = gastosAll;
@@ -2069,10 +2117,41 @@ export default function ContabilidadPage() {
             </div>
 
 
-            <div style={{ ...s.row, marginBottom: 12 }}>
+            <div style={{ ...s.row, marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
               <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={s.input} />
               <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} style={s.input} />
-              <input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Buscar por concepto..." style={{ ...s.input, width: 240 }} />
+              <input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Buscar por concepto..." style={{ ...s.input, width: 220 }} />
+              <div ref={gProvRef} style={{ position: "relative" }}>
+                <input
+                  value={gProv}
+                  onChange={(e) => { setGProv(e.target.value); setShowGProvDD(true); setGProvIdx(0); }}
+                  onFocus={() => { setShowGProvDD(true); if (proveedoresGastosFiltrados.length) setGProvIdx(0); }}
+                  onKeyDown={(e) => {
+                    if (!showGProvDD) return;
+                    if (e.key === "ArrowDown") { e.preventDefault(); setGProvIdx((i) => { const n = i + 1; return n >= proveedoresGastosFiltrados.length ? 0 : n; }); }
+                    if (e.key === "ArrowUp") { e.preventDefault(); setGProvIdx((i) => { const p = i - 1; return p < 0 ? Math.max(0, proveedoresGastosFiltrados.length - 1) : p; }); }
+                    if (e.key === "Enter") { e.preventDefault(); const p = proveedoresGastosFiltrados[gProvIdx]; if (p) { setGProv(p); setShowGProvDD(false); } }
+                    if (e.key === "Escape") { setShowGProvDD(false); }
+                  }}
+                  placeholder="Buscar proveedor..."
+                  style={{ ...s.input, width: 200 }}
+                  autoComplete="off"
+                />
+                {showGProvDD && proveedoresGastosFiltrados.length > 0 && (
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 2000, background: "#0b1220", border: "1px solid rgba(255,255,255,.16)", borderRadius: 12, boxShadow: "0 14px 40px rgba(0,0,0,.45)", maxHeight: 220, overflowY: "auto" }}>
+                    {proveedoresGastosFiltrados.slice(0, 50).map((p, idx) => (
+                      <div
+                        key={p}
+                        onMouseEnter={() => setGProvIdx(idx)}
+                        onMouseDown={(e) => { e.preventDefault(); setGProv(p); setShowGProvDD(false); setGProvIdx(-1); }}
+                        style={{ padding: "10px 12px", cursor: "pointer", background: idx === gProvIdx ? "rgba(255,255,255,.08)" : "transparent", borderBottom: "1px solid rgba(255,255,255,.08)", userSelect: "none" }}
+                      >
+                        {renderProveedorLabel(p, gProv)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button onClick={fetchGastos} style={s.btn} disabled={gLoading || gBusy}>
                 Aplicar filtros
               </button>
@@ -2081,6 +2160,7 @@ export default function ContabilidadPage() {
                   setDesde("");
                   setHasta("");
                   setCat("");
+                  setGProv("");
                   setTimeout(fetchGastos, 0);
                 }}
                 style={s.btn}
@@ -2112,7 +2192,12 @@ export default function ContabilidadPage() {
                   {gastosAll.map((g) => {
                     const isEditing = !g._fromMov && editingId === g.id;
                     return (
-                      <tr key={`${g._fromMov ? "mov" : "gasto"}-${g.id}`}>
+                      <tr
+                        key={`${g._fromMov ? "mov" : "gasto"}-${g.id}`}
+                        onClick={() => !isEditing && openGastoDetail(g)}
+                        style={{ cursor: isEditing ? "default" : "pointer" }}
+                        title={isEditing ? undefined : "Ver detalle"}
+                      >
                         <td style={{ ...s.td, fontWeight: 1000 }}>
                           {g.id}
                           {g._fromMov && (
@@ -2172,6 +2257,75 @@ export default function ContabilidadPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* ===== DETALLE GASTO ===== */}
+            {gastoDetailOpen && gastoDetailRow && (
+              <div
+                onClick={closeGastoDetail}
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ background: "#111", padding: 24, borderRadius: 12, width: "90%", maxWidth: 700, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,.6)" }}
+                >
+                  <h2 style={{ marginBottom: 16 }}>Detalle — GASTO</h2>
+                  <div style={{ lineHeight: 1.6 }}>
+                    <p><b>ID:</b> {gastoDetailRow.id}</p>
+                    <p><b>Fecha:</b> {fmtFecha(gastoDetailRow.fecha)}</p>
+                    <p><b>Concepto:</b> {gastoDetailRow.concepto}</p>
+                    <p><b>Categoría:</b> {up(gastoDetailRow.categoria) || "OTROS"}</p>
+                    <p><b>Monto:</b> {moneyEUR(gastoDetailRow.monto)}</p>
+                    {gastoDetailRow._fromMov && (
+                      <>
+                        <hr style={{ margin: "16px 0", opacity: 0.3 }} />
+                        <p><b>Proveedor:</b> {gastoDetailRow.proveedor ?? "-"}</p>
+                        <p><b>Factura / Ref:</b> {gastoDetailRow.factura_no ?? "-"}</p>
+                        <p><b>Modo pago:</b> {gastoDetailRow.modo_pago ?? "-"}</p>
+                        <p style={{ whiteSpace: "pre-line" }}><b>Observación:</b> {gastoDetailRow.observacion ?? "-"}</p>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 24, textAlign: "right" }}>
+                    <button
+                      onClick={() => {
+                        closeGastoDetail();
+                        if (gastoDetailRow._fromMov) {
+                          openEditFromDetail({
+                            refType: "MOV",
+                            ref: `MOV#${gastoDetailRow.id}`,
+                            tipo: "GASTO",
+                            fecha: gastoDetailRow.fecha,
+                            concepto: gastoDetailRow.concepto,
+                            monto: gastoDetailRow.monto,
+                            meta: {
+                              proveedor: gastoDetailRow.proveedor,
+                              factura_no: gastoDetailRow.factura_no,
+                              modo_pago: gastoDetailRow.modo_pago,
+                              observacion: gastoDetailRow.observacion,
+                            },
+                          });
+                        } else {
+                          setEditingId(gastoDetailRow.id);
+                          setEditFecha(gastoDetailRow.fecha ?? "");
+                          setEditConcepto(gastoDetailRow.concepto);
+                          setEditMonto(String(gastoDetailRow.monto));
+                          setEditCategoria(up(gastoDetailRow.categoria) || "OTROS");
+                        }
+                      }}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,.18)", background: "rgba(255,255,255,.08)", color: "#fff", cursor: "pointer", marginRight: 10, fontWeight: 900 }}
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={closeGastoDetail}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: "#444", color: "#fff", cursor: "pointer" }}
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : tab === "ingresos" ? (
           <>
@@ -2762,11 +2916,9 @@ export default function ContabilidadPage() {
                           <div style={{ gridColumn: "span 3" }}>
                             <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Modo de pago</div>
                             <select value={op.modo_pago} onChange={(e) => opSet("modo_pago", e.target.value)} style={{ ...s.input, width: "100%" }}>
-                              <option value="Transferencia">Transferencia</option>
                               <option value="Transferencia/Santander">Transferencia/Santander</option>
                               <option value="Transferencia/Caixa">Transferencia/Caixa</option>
                               <option value="Efectivo">Efectivo</option>
-                              <option value="Tarjeta">Tarjeta</option>
                               <option value="Tarjeta/Santander">Tarjeta/Santander</option>
                               <option value="Tarjeta/Caixa">Tarjeta/Caixa</option>
                               <option value="Otro">Otro</option>

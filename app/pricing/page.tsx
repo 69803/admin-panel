@@ -57,7 +57,7 @@ const planes = [
   {
     nombre: "Premium",
     priceId: "pri_01kk7gj7v1k6x1egznqr98yhc1",
-    precio: { mensual: 120, anual: 96 },
+    precio: { mensual: 99, anual: 79 },
     descripcion: "Solución enterprise para cadenas y grupos de restauración.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
