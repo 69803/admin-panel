@@ -29,7 +29,6 @@ const planes = [
       "Gestión de menú ilimitada",
       "Pedidos en tiempo real",
       "1 dispositivo KDS",
-      "Soporte por email",
     ],
     noFeatures: ["Reportes avanzados", "Contabilidad", "Multi restaurante", "Soporte prioritario"],
   },
@@ -50,7 +49,6 @@ const planes = [
       "Reportes y estadísticas",
       "Contabilidad y libro diario",
       "Hasta 3 dispositivos KDS",
-      "Soporte por chat",
     ],
     noFeatures: ["Multi restaurante", "Soporte prioritario"],
   },
@@ -68,10 +66,11 @@ const planes = [
     features: [
       "Todo lo del plan Pro",
       "Multi restaurante (ilimitado)",
-      "Analytics avanzados con IA",
+
       "KDS ilimitados",
       "API personalizada",
       "Manager dedicado",
+      "Base de datos de gran capacidad",
       "Soporte prioritario 24/7",
     ],
     noFeatures: [],
