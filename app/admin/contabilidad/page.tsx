@@ -423,6 +423,10 @@ export default function ContabilidadPage() {
   const [gastoDetailOpen, setGastoDetailOpen] = useState(false);
   const [gastoDetailRow, setGastoDetailRow] = useState<GastoRow | null>(null);
 
+  // Ingresos: detail modal
+  const [ingresoDetailOpen, setIngresoDetailOpen] = useState(false);
+  const [ingresoDetailRow, setIngresoDetailRow] = useState<Movimiento | null>(null);
+
   // ---------- INGRESOS ----------
   const [iDesde, setIDesde] = useState("");
   const [iHasta, setIHasta] = useState("");
@@ -443,6 +447,12 @@ export default function ContabilidadPage() {
   // ---------- BALANCE MENSUAL filtros ----------
   const [bDesde, setBDesde] = useState("");
   const [bHasta, setBHasta] = useState("");
+  const [gastoPage, setGastoPage] = useState(1);
+  const gastoPageSize = 20;
+
+  const [ingresoPage, setIngresoPage] = useState(1);
+  const ingresoPageSize = 20;
+
   const [libroPage, setLibroPage] = useState(1);
   const libroPageSize = 10;
   const [lSortCol, setLSortCol] = useState<"fecha"|"tipo"|"concepto"|"categoria"|"monto"|"saldo"|"proveedor">("fecha");
@@ -479,6 +489,15 @@ export default function ContabilidadPage() {
   function closeGastoDetail() {
     setGastoDetailOpen(false);
     setGastoDetailRow(null);
+  }
+
+  function openIngresoDetail(r: Movimiento) {
+    setIngresoDetailRow(r);
+    setIngresoDetailOpen(true);
+  }
+  function closeIngresoDetail() {
+    setIngresoDetailOpen(false);
+    setIngresoDetailRow(null);
   }
 
   // =====================
@@ -1041,6 +1060,9 @@ export default function ContabilidadPage() {
     if (tab === "libro") setLibroPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, lDesde, lHasta, lQ, lProv]);
+
+  useEffect(() => { setGastoPage(1); }, [desde, hasta, cat, gProv]);
+  useEffect(() => { setIngresoPage(1); }, [iDesde, iHasta, iCat]);
 
   const categoriasOpciones = useMemo(() => {
     const set = new Set<string>();
@@ -2189,7 +2211,7 @@ export default function ContabilidadPage() {
                 </thead>
 
                 <tbody>
-                  {gastosAll.map((g) => {
+                  {gastosAll.slice((gastoPage - 1) * gastoPageSize, gastoPage * gastoPageSize).map((g) => {
                     const isEditing = !g._fromMov && editingId === g.id;
                     return (
                       <tr
@@ -2257,6 +2279,30 @@ export default function ContabilidadPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Paginador Gastos */}
+            {gastosAll.length > gastoPageSize && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 14 }}>
+                <button
+                  onClick={() => setGastoPage((p) => Math.max(1, p - 1))}
+                  disabled={gastoPage <= 1}
+                  style={{ ...s.btn, minWidth: 46, opacity: gastoPage <= 1 ? 0.45 : 1, cursor: gastoPage <= 1 ? "not-allowed" : "pointer" }}
+                  type="button"
+                >←</button>
+                <div style={{ ...s.badge, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px" }}>
+                  <span style={{ opacity: 0.85 }}>Página</span>
+                  <b>{gastoPage}</b>
+                  <span style={{ opacity: 0.65 }}>/</span>
+                  <b>{Math.max(1, Math.ceil(gastosAll.length / gastoPageSize))}</b>
+                </div>
+                <button
+                  onClick={() => setGastoPage((p) => Math.min(Math.ceil(gastosAll.length / gastoPageSize), p + 1))}
+                  disabled={gastoPage >= Math.ceil(gastosAll.length / gastoPageSize)}
+                  style={{ ...s.btn, minWidth: 46, opacity: gastoPage >= Math.ceil(gastosAll.length / gastoPageSize) ? 0.45 : 1, cursor: gastoPage >= Math.ceil(gastosAll.length / gastoPageSize) ? "not-allowed" : "pointer" }}
+                  type="button"
+                >→</button>
+              </div>
+            )}
 
             {/* ===== DETALLE GASTO ===== */}
             {gastoDetailOpen && gastoDetailRow && (
@@ -2415,8 +2461,8 @@ export default function ContabilidadPage() {
                       </td>
                     </tr>
                   )}
-                  {!lLoading && ingresosAll.map((m) => (
-                    <tr key={`ing-${m.id}`}>
+                  {!lLoading && ingresosAll.slice((ingresoPage - 1) * ingresoPageSize, ingresoPage * ingresoPageSize).map((m) => (
+                    <tr key={`ing-${m.id}`} onClick={() => openIngresoDetail(m)} style={{ cursor: "pointer" }} title="Ver detalle">
                       <td style={{ ...s.td, fontWeight: 1000 }}>{m.id}</td>
                       <td style={s.td}><span style={{ opacity: 0.9 }}>{fmtFecha(m.fecha) || "-"}</span></td>
                       <td style={s.td}><span style={{ fontWeight: 800 }}>{m.concepto ?? ""}</span></td>
@@ -2435,6 +2481,111 @@ export default function ContabilidadPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* ===== DETALLE INGRESO ===== */}
+            {ingresoDetailOpen && ingresoDetailRow && (
+              <div
+                onClick={closeIngresoDetail}
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ background: "#111", padding: 24, borderRadius: 12, width: "90%", maxWidth: 700, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,.6)" }}
+                >
+                  <h2 style={{ marginBottom: 16 }}>Detalle — INGRESO</h2>
+                  <div style={{ lineHeight: 1.6 }}>
+                    <p><b>ID:</b> {ingresoDetailRow.id}</p>
+                    <p><b>Fecha:</b> {fmtFecha(ingresoDetailRow.fecha)}</p>
+                    <p><b>Concepto:</b> {ingresoDetailRow.concepto}</p>
+                    <p><b>Categoría:</b> {up(ingresoDetailRow.categoria) || "INGRESOS"}</p>
+                    <p><b>Monto:</b> {moneyEUR(ingresoDetailRow.monto)}</p>
+                    <p><b>Modo pago:</b> {ingresoDetailRow.modo_pago ?? "-"}</p>
+                    {(ingresoDetailRow.observacion || ingresoDetailRow.factura_no || ingresoDetailRow.productos_servicios) && (
+                      <>
+                        <hr style={{ margin: "16px 0", opacity: 0.3 }} />
+                        {ingresoDetailRow.factura_no && <p><b>Factura / Ref:</b> {ingresoDetailRow.factura_no}</p>}
+                        {ingresoDetailRow.productos_servicios && <p><b>Productos / Servicios:</b> {ingresoDetailRow.productos_servicios}</p>}
+                        {ingresoDetailRow.observacion && (
+                          <>
+                            {(() => {
+                              const parsed = parseCierreObs(ingresoDetailRow.observacion);
+                              const f = parsed.fields || {};
+                              const hasFields = Object.keys(f).length > 0;
+                              return (
+                                <>
+                                  {parsed.note && <p style={{ whiteSpace: "pre-line" }}><b>Observación:</b> {parsed.note}</p>}
+                                  {hasFields && (
+                                    <div style={{ marginTop: 10 }}>
+                                      {["Nro Cierre","TPV Santander","TPV Caixabank","Total TPV","Efectivo recibido","Total venta diaria","Gastos menores"].map((k) =>
+                                        f[k] ? <p key={k} style={{ margin: "6px 0" }}><b>{k}:</b> {f[k]}</p> : null
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 24, textAlign: "right" }}>
+                    <button
+                      onClick={() => {
+                        closeIngresoDetail();
+                        openEditFromDetail({
+                          refType: "MOV",
+                          ref: `MOV#${ingresoDetailRow.id}`,
+                          tipo: "INGRESO",
+                          fecha: ingresoDetailRow.fecha,
+                          concepto: ingresoDetailRow.concepto,
+                          monto: ingresoDetailRow.monto,
+                          meta: {
+                            factura_no: ingresoDetailRow.factura_no,
+                            productos_servicios: ingresoDetailRow.productos_servicios,
+                            modo_pago: ingresoDetailRow.modo_pago,
+                            observacion: ingresoDetailRow.observacion,
+                          },
+                        });
+                      }}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,.18)", background: "rgba(255,255,255,.08)", color: "#fff", cursor: "pointer", marginRight: 10, fontWeight: 900 }}
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={closeIngresoDetail}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: "#444", color: "#fff", cursor: "pointer" }}
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Paginador Ingresos */}
+            {ingresosAll.length > ingresoPageSize && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 14 }}>
+                <button
+                  onClick={() => setIngresoPage((p) => Math.max(1, p - 1))}
+                  disabled={ingresoPage <= 1}
+                  style={{ ...s.btn, minWidth: 46, opacity: ingresoPage <= 1 ? 0.45 : 1, cursor: ingresoPage <= 1 ? "not-allowed" : "pointer" }}
+                  type="button"
+                >←</button>
+                <div style={{ ...s.badge, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px" }}>
+                  <span style={{ opacity: 0.85 }}>Página</span>
+                  <b>{ingresoPage}</b>
+                  <span style={{ opacity: 0.65 }}>/</span>
+                  <b>{Math.max(1, Math.ceil(ingresosAll.length / ingresoPageSize))}</b>
+                </div>
+                <button
+                  onClick={() => setIngresoPage((p) => Math.min(Math.ceil(ingresosAll.length / ingresoPageSize), p + 1))}
+                  disabled={ingresoPage >= Math.ceil(ingresosAll.length / ingresoPageSize)}
+                  style={{ ...s.btn, minWidth: 46, opacity: ingresoPage >= Math.ceil(ingresosAll.length / ingresoPageSize) ? 0.45 : 1, cursor: ingresoPage >= Math.ceil(ingresosAll.length / ingresoPageSize) ? "not-allowed" : "pointer" }}
+                  type="button"
+                >→</button>
+              </div>
+            )}
           </>
         ) : tab === "balance" ? (
           <>

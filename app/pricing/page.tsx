@@ -15,7 +15,7 @@ declare global {
 const planes = [
   {
     nombre: "Básico",
-    priceId: "pri_01kk7g7whpssf3kxm8wvcth4h",
+    priceId: "pri_01kk7g7whpssf3kxm8wvcth4th",
     precio: { mensual: 39, anual: 31 },
     descripcion: "Perfecto para empezar y crecer sin complicaciones.",
     color: "rgba(255,255,255,.07)",
@@ -55,7 +55,7 @@ const planes = [
   {
     nombre: "Premium",
     priceId: "pri_01kk7gj7v1k6x1egznqr98yhc1",
-    precio: { mensual: 99, anual: 79 },
+    precio: { mensual: 99, anual: 99 },
     descripcion: "Solución enterprise para cadenas y grupos de restauración.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
@@ -96,16 +96,23 @@ const faqs = [
   },
 ];
 
-function openPaddleCheckout(priceId: string) {
-  if (typeof window !== "undefined" && window.Paddle) {
-    const items = [{ priceId, quantity: 1 }];
-    window.Paddle.Checkout.open({ items });
-  }
-}
-
 export default function PricingPage() {
   const [anual, setAnual] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+
+  function openPaddleCheckout(planNombre: string, priceId: string) {
+    console.log("PLAN CLICKED:", planNombre);
+    console.log("BILLING MODE:", anual ? "annual" : "monthly");
+    console.log("PRICE ID SENT:", priceId);
+    console.log("CHECKOUT ITEMS:", [{ priceId, quantity: 1 }]);
+
+    if (typeof window !== "undefined" && window.Paddle) {
+      const items = [{ priceId, quantity: 1 }];
+      window.Paddle.Checkout.open({ items });
+    } else {
+      console.error("Paddle not initialized when checkout was attempted");
+    }
+  }
 
   useEffect(() => {
     if (window.Paddle) {
@@ -116,6 +123,7 @@ export default function PricingPage() {
     script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
     script.async = true;
     script.onload = () => {
+      window.Paddle.Environment.set("production");
       window.Paddle.Initialize({
         token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? "",
       });
@@ -370,7 +378,7 @@ export default function PricingPage() {
 
               {/* Botón */}
               <button
-                onClick={() => openPaddleCheckout(plan.priceId)}
+                onClick={() => openPaddleCheckout(plan.nombre, plan.priceId)}
                 style={{
                   width: "100%",
                   padding: "13px 0",
