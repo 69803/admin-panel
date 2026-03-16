@@ -468,6 +468,24 @@ export default function ContabilidadPage() {
     setLibroPage(1);
   };
 
+  // ── Sort Gastos ──
+  const [gSortCol, setGSortCol] = useState<"id"|"fecha"|"concepto"|"monto">("fecha");
+  const [gSortDir, setGSortDir] = useState<"asc"|"desc">("desc");
+  const toggleGastoSort = (col: typeof gSortCol) => {
+    if (gSortCol === col) setGSortDir((d) => d === "desc" ? "asc" : "desc");
+    else { setGSortCol(col); setGSortDir("desc"); }
+    setGastoPage(1);
+  };
+
+  // ── Sort Ingresos ──
+  const [iSortCol, setISortCol] = useState<"id"|"fecha"|"concepto"|"categoria"|"monto"|"modo_pago">("fecha");
+  const [iSortDir, setISortDir] = useState<"asc"|"desc">("desc");
+  const toggleIngresoSort = (col: typeof iSortCol) => {
+    if (iSortCol === col) setISortDir((d) => d === "desc" ? "asc" : "desc");
+    else { setISortCol(col); setISortDir("desc"); }
+    setIngresoPage(1);
+  };
+
   // ===== DETALLE LIBRO =====
   const [detailOpen, setDetailOpen] = useState(false);
   const [balanceMesSel, setBalanceMesSel] = useState<string>("");
@@ -1146,6 +1164,30 @@ export default function ContabilidadPage() {
         return db.localeCompare(da);
       });
   }, [movimientos, iDesde, iHasta, iCat]);
+
+  const gastosSorted = useMemo(() => {
+    return [...gastosAll].sort((a, b) => {
+      let cmp = 0;
+      if (gSortCol === "id" || gSortCol === "monto") {
+        cmp = safeNum(a[gSortCol]) - safeNum(b[gSortCol]);
+      } else {
+        cmp = (String(a[gSortCol] ?? "")).localeCompare(String(b[gSortCol] ?? ""));
+      }
+      return gSortDir === "asc" ? cmp : -cmp;
+    });
+  }, [gastosAll, gSortCol, gSortDir]);
+
+  const ingresosSorted = useMemo(() => {
+    return [...ingresosAll].sort((a, b) => {
+      let cmp = 0;
+      if (iSortCol === "id" || iSortCol === "monto") {
+        cmp = safeNum(a[iSortCol]) - safeNum(b[iSortCol]);
+      } else {
+        cmp = (String(a[iSortCol] ?? "")).localeCompare(String(b[iSortCol] ?? ""));
+      }
+      return iSortDir === "asc" ? cmp : -cmp;
+    });
+  }, [ingresosAll, iSortCol, iSortDir]);
 
   const ingresosStats = useMemo(() => {
     const total = ingresosAll.reduce((acc, m) => acc + safeNum(m.monto), 0);
@@ -2211,16 +2253,19 @@ export default function ContabilidadPage() {
               <table style={s.table}>
                 <thead style={{ background: "#F8F9FB" }}>
                   <tr>
-                    <th style={s.th}>ID</th>
-                    <th style={s.th}>Fecha</th>
-                    <th style={s.th}>Concepto</th>
-                    <th style={s.th}>Monto</th>
+                    {(["id","fecha","concepto","monto"] as const).map((col) => (
+                      <th key={col} style={{ ...s.th, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                        onClick={() => toggleGastoSort(col)}>
+                        {col === "id" ? "ID" : col.charAt(0).toUpperCase() + col.slice(1)}
+                        {gSortCol === col ? (gSortDir === "desc" ? " ↓" : " ↑") : " ↕"}
+                      </th>
+                    ))}
                     <th style={s.th}>Categoría</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {gastosAll.slice((gastoPage - 1) * gastoPageSize, gastoPage * gastoPageSize).map((g) => {
+                  {gastosSorted.slice((gastoPage - 1) * gastoPageSize, gastoPage * gastoPageSize).map((g) => {
                     const isEditing = !g._fromMov && editingId === g.id;
                     return (
                       <tr
@@ -2454,12 +2499,13 @@ export default function ContabilidadPage() {
               <table style={s.table}>
                 <thead style={{ background: "#F8F9FB" }}>
                   <tr>
-                    <th style={s.th}>ID</th>
-                    <th style={s.th}>Fecha</th>
-                    <th style={s.th}>Concepto</th>
-                    <th style={s.th}>Categoría</th>
-                    <th style={s.th}>Monto</th>
-                    <th style={s.th}>Modo Pago</th>
+                    {(["id","fecha","concepto","categoria","monto","modo_pago"] as const).map((col) => (
+                      <th key={col} style={{ ...s.th, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                        onClick={() => toggleIngresoSort(col)}>
+                        {col === "id" ? "ID" : col === "modo_pago" ? "Modo Pago" : col.charAt(0).toUpperCase() + col.slice(1)}
+                        {iSortCol === col ? (iSortDir === "desc" ? " ↓" : " ↑") : " ↕"}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -2470,7 +2516,7 @@ export default function ContabilidadPage() {
                       </td>
                     </tr>
                   )}
-                  {!lLoading && ingresosAll.slice((ingresoPage - 1) * ingresoPageSize, ingresoPage * ingresoPageSize).map((m) => (
+                  {!lLoading && ingresosSorted.slice((ingresoPage - 1) * ingresoPageSize, ingresoPage * ingresoPageSize).map((m) => (
                     <tr key={`ing-${m.id}`} onClick={() => openIngresoDetail(m)} style={{ cursor: "pointer" }} title="Ver detalle">
                       <td style={{ ...s.td, fontWeight: 1000 }}>{m.id}</td>
                       <td style={s.td}><span style={{ opacity: 0.9 }}>{fmtFecha(m.fecha) || "-"}</span></td>
