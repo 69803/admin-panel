@@ -1276,10 +1276,13 @@ export default function ContabilidadPage() {
       ["Fecha","Proveedor/Persona","Factura No","Productos/servicios","Monto Total","IVA","Neto","Modo de Pago","Ref/Nro.","Observacion"],
     ];
 
+    const fmtDate = (s: string) => s?.length >= 10 ? `${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}` : (s ?? "");
+    const sortedGastos = [...gastosAll].sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+
     let totMonto = 0, totIVA = 0, totNeto = 0;
 
-    for (let i = 0; i < gastosAll.length; i++) {
-      const g = gastosAll[i];
+    for (let i = 0; i < sortedGastos.length; i++) {
+      const g = sortedGastos[i];
       let proveedor = "", factura = "", productos = g.concepto ?? "", modoPago = "", ref = "", obs = "";
       let iva = 0, neto = 0;
 
@@ -1301,7 +1304,7 @@ export default function ContabilidadPage() {
       totIVA   += iva;
       totNeto  += neto;
 
-      aoa.push([g.fecha ?? "", proveedor, factura, productos, safeNum(g.monto), iva || "", neto || "", modoPago, ref, obs]);
+      aoa.push([fmtDate(g.fecha ?? ""), proveedor, factura, productos, safeNum(g.monto), iva || "", neto || "", modoPago, ref, obs]);
     }
 
     aoa.push(["TOTAL", "", "", "", totMonto, totIVA || "", totNeto || "", "", "", ""]);
@@ -1646,15 +1649,18 @@ export default function ContabilidadPage() {
       ["Fecha", "Tipo", "Concepto", "Categoría", "Monto", "Saldo"],
     ];
 
+    const fmtDate = (s: string) => s?.length >= 10 ? `${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}` : (s ?? "");
+    const sortedLibro = [...libroRows].sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+
     let totIngresos = 0, totGastos = 0;
 
-    for (let i = 0; i < libroRows.length; i++) {
-      const r = libroRows[i];
+    for (let i = 0; i < sortedLibro.length; i++) {
+      const r = sortedLibro[i];
       const monto = safeNum(r.monto);
       const saldo = safeNum(r.saldo);
       if (r.tipo === "INGRESO") totIngresos += monto;
       else totGastos += monto;
-      aoa.push([r.fecha ?? "", r.tipo ?? "", r.concepto ?? "", r.categoria ?? "", monto, saldo]);
+      aoa.push([fmtDate(r.fecha ?? ""), r.tipo ?? "", r.concepto ?? "", r.categoria ?? "", monto, saldo]);
     }
 
     aoa.push(["TOTAL", "", `Ingresos: ${moneyEUR(totIngresos)}`, `Gastos: ${moneyEUR(totGastos)}`, totIngresos - totGastos, ""]);
@@ -1720,7 +1726,8 @@ export default function ContabilidadPage() {
   const exportIngresosXLSX = () => {
     const parseEUR = (s: string) => parseFloat((s ?? "").replace(/[^0-9.,-]/g, "").replace(",", ".")) || 0;
 
-    const ingresos = libroRows.filter((r) => r.tipo === "INGRESO");
+    const fmtDate = (s: string) => s?.length >= 10 ? `${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}` : (s ?? "");
+    const ingresos = libroRows.filter((r) => r.tipo === "INGRESO").sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
 
     // Calcular mes para el encabezado
     const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
@@ -1798,7 +1805,7 @@ export default function ContabilidadPage() {
       totals.venta  += venta;
       totals.gastos += gastos;
 
-      aoa.push([r.fecha, nro, tpvS || 0, tpvC || 0, tpv || 0, ef || 0, venta, gastos || 0, obs]);
+      aoa.push([fmtDate(r.fecha ?? ""), nro, tpvS || 0, tpvC || 0, tpv || 0, ef || 0, venta, gastos || 0, obs]);
     }
 
     aoa.push(["TOTAL", "", totals.tpvS, totals.tpvC, totals.tpv, totals.ef, totals.venta, totals.gastos, ""]);
@@ -3051,10 +3058,12 @@ export default function ContabilidadPage() {
                           <div style={{ gridColumn: "span 3" }}>
                             <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>IVA</div>
                             <input
+                              key={`iva-${opOpen}-${opEdit?.id ?? "new"}`}
                               type="number"
                               step="0.01"
-                              value={String(op.iva)}
+                              defaultValue={op.iva}
                               onChange={(e) => opSet("iva", safeNum(e.target.value))}
+                              onBlur={(e) => opSet("iva", safeNum(e.target.value))}
                               style={{ ...s.input, width: "100%" }}
                             />
                           </div>
