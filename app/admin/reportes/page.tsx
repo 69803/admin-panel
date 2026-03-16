@@ -150,23 +150,24 @@ export default function ReportesPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#E4E8EC",
+    background: "#F4F6FA",
     minHeight: "100vh",
     color: "#111111",
   };
 
   const card: React.CSSProperties = {
-    background: "#EDF0F3",
-    border: "1px solid #C8CDD4",
+    background: "#FFFFFF",
+    border: "1px solid rgba(0,0,0,0.04)",
     borderRadius: 16,
     padding: 12,
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)",
   };
 
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #C8CDD4",
-    background: "#F2F4F6",
+    border: "1px solid #DDE3E8",
+    background: "#FFFFFF",
     color: "#111111",
     fontWeight: 800,
     cursor: "pointer",
@@ -196,7 +197,7 @@ export default function ReportesPage() {
     width: 38,
     height: 38,
     borderRadius: 999,
-    background: "#F2F4F6",
+    background: "#F8F9FB",
     display: "grid",
     placeItems: "center",
     fontWeight: 900,
@@ -219,7 +220,7 @@ export default function ReportesPage() {
       >
         <div>
           <div style={{ fontSize: 20, fontWeight: 900 }}>Reportes</div>
-          <div style={{ color: "#555555", fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#777777", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -245,15 +246,15 @@ export default function ReportesPage() {
       <div style={{ ...card, marginBottom: 12 }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ color: "#555555", fontSize: 13 }}>Periodo</span>
+            <span style={{ color: "#777777", fontSize: 13 }}>Periodo</span>
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value as Periodo)}
               style={{
                 padding: "10px 10px",
                 borderRadius: 12,
-                border: "1px solid #C8CDD4",
-                background: "#E4E8EC",
+                border: "1px solid #DDE3E8",
+                background: "#FFFFFF",
                 color: "#111111",
                 fontWeight: 800,
               }}
@@ -265,7 +266,7 @@ export default function ReportesPage() {
           </label>
 
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ color: "#555555", fontSize: 13 }}>Fecha</span>
+            <span style={{ color: "#777777", fontSize: 13 }}>Fecha</span>
             <input
               type="date"
               value={fechaISO}
@@ -273,15 +274,15 @@ export default function ReportesPage() {
               style={{
                 padding: "10px 10px",
                 borderRadius: 12,
-                border: "1px solid #C8CDD4",
-                background: "#E4E8EC",
+                border: "1px solid #DDE3E8",
+                background: "#FFFFFF",
                 color: "#111111",
                 fontWeight: 800,
               }}
             />
           </label>
 
-          {loading ? <span style={{ color: "#555555" }}>Cargando…</span> : null}
+          {loading ? <span style={{ color: "#777777" }}>Cargando…</span> : null}
         </div>
       </div>
 
@@ -308,7 +309,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>🍽️</div>
               <div>
-                <div style={{ color: "#555555", fontSize: 12 }}>Platos vendidos</div>
+                <div style={{ color: "#777777", fontSize: 12 }}>Platos vendidos</div>
                 <div style={{ fontSize: 18, fontWeight: 900 }}>{data.total_platos_vendidos}</div>
               </div>
             </div>
@@ -316,7 +317,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>💰</div>
               <div>
-                <div style={{ color: "#555555", fontSize: 12 }}>Ganancia</div>
+                <div style={{ color: "#777777", fontSize: 12 }}>Ganancia</div>
                 <div style={{ fontSize: 18, fontWeight: 900 }}>{fmtMoney(Number(data.total_ganancia) || 0)}</div>
               </div>
             </div>
@@ -324,7 +325,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>⏱️</div>
               <div>
-                <div style={{ color: "#555555", fontSize: 12 }}>Desde</div>
+                <div style={{ color: "#777777", fontSize: 12 }}>Desde</div>
                 <div style={{ fontSize: 16, fontWeight: 900 }}>{data.desde}</div>
               </div>
             </div>
@@ -332,7 +333,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>🗓️</div>
               <div>
-                <div style={{ color: "#555555", fontSize: 12 }}>Hasta</div>
+                <div style={{ color: "#777777", fontSize: 12 }}>Hasta</div>
                 <div style={{ fontSize: 16, fontWeight: 900 }}>{data.hasta}</div>
               </div>
             </div>
@@ -345,14 +346,14 @@ export default function ReportesPage() {
             </div>
 
             {top.length === 0 ? (
-              <div style={{ color: "#555555" }}>Sin ventas en el periodo</div>
+              <div style={{ color: "#777777" }}>Sin ventas en el periodo</div>
             ) : (
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end", overflowX: "auto", paddingBottom: 6 }}>
                 {top.slice(0, 12).map((t) => {
                   const h = Math.round(((Number(t.cantidad) || 0) / maxCantidad) * 180);
                   return (
                     <div key={t.plato_id} style={{ minWidth: 90 }}>
-                      <div style={{ color: "#555555", fontSize: 12, marginBottom: 6, textAlign: "center" }}>
+                      <div style={{ color: "#777777", fontSize: 12, marginBottom: 6, textAlign: "center" }}>
                         {t.cantidad}
                       </div>
                       <div
@@ -363,7 +364,7 @@ export default function ReportesPage() {
                           border: "1px solid rgba(59,130,246,0.35)",
                         }}
                       />
-                      <div style={{ marginTop: 8, fontSize: 12, color: "#555555", textAlign: "center" }}>
+                      <div style={{ marginTop: 8, fontSize: 12, color: "#777777", textAlign: "center" }}>
                         {(t.nombre ?? `Plato ${t.plato_id}`).toString().slice(0, 12)}
                       </div>
                     </div>
@@ -377,7 +378,7 @@ export default function ReportesPage() {
           <div style={card}>
             <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>Top platos (lista)</div>
             {top.length === 0 ? (
-              <div style={{ color: "#555555" }}>Sin ventas en el periodo</div>
+              <div style={{ color: "#777777" }}>Sin ventas en el periodo</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {top.map((t) => (
@@ -386,8 +387,8 @@ export default function ReportesPage() {
                     style={{
                       padding: 10,
                       borderRadius: 14,
-                      background: "#E4E8EC",
-                      border: "1px solid #C8CDD4",
+                      background: "#F8F9FB",
+                      border: "1px solid #EAECF0",
                       display: "flex",
                       justifyContent: "space-between",
                       gap: 10,
@@ -398,7 +399,7 @@ export default function ReportesPage() {
                       <div style={{ fontWeight: 900 }}>
                         #{t.plato_id} — {(t.nombre ?? "").toString() || `Plato ${t.plato_id}`}
                       </div>
-                      <div style={{ color: "#555555", fontSize: 13 }}>Cantidad: {t.cantidad}</div>
+                      <div style={{ color: "#777777", fontSize: 13 }}>Cantidad: {t.cantidad}</div>
                     </div>
                     <div style={{ fontWeight: 900 }}>{fmtMoney(Number(t.ingreso) || 0)}</div>
                   </div>

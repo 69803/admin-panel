@@ -293,8 +293,8 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
       ref={ref}
       style={{
         borderRadius: 18,
-        border: "1px solid #C8CDD4",
-        background: "#EDF0F3",
+        border: "1px solid rgba(0,0,0,0.04)",
+        background: "#FFFFFF",
         overflow: "hidden",
       }}
     >
@@ -308,7 +308,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
                 ? "Pedidos"
                 : "Ticket promedio"}
         </div>
-        <div style={{ color: "#555555", fontSize: 12 }}>
+        <div style={{ color: "#777777", fontSize: 12 }}>
           {current ? (
             <>
               <span style={{ fontWeight: 900 }}>{current.label}</span> ·{" "}
@@ -349,7 +349,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
         {/* grid */}
         {ticks.map((t) => {
           const y = padT + (t / gridLines) * innerH;
-          return <line key={t} x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#C8CDD4" />;
+          return <line key={t} x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#EEEEEE" />;
         })}
 
         {/* y labels */}
@@ -357,7 +357,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
           const v = max - (t / gridLines) * (max - min);
           const y = padT + (t / gridLines) * innerH;
           return (
-            <text key={`yl-${t}`} x={padL - 8} y={y + 4} fill="#555555" fontSize="11" textAnchor="end">
+            <text key={`yl-${t}`} x={padL - 8} y={y + 4} fill="#AAAAAA" fontSize="11" textAnchor="end">
               {metric === "monto" ? (v >= 0 ? `€${Math.round(v)}` : `-€${Math.round(Math.abs(v))}`) : Math.round(v)}
             </text>
           );
@@ -378,7 +378,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
                   key={`xl-${i}`}
                   x={xAt(i)}
                   y={padT + innerH + 22}
-                  fill="#555555"
+                  fill="#AAAAAA"
                   fontSize="11"
                   textAnchor="middle"
                 >
@@ -390,7 +390,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
         {/* hover */}
         {hover != null && points[hover] ? (
           <>
-            <line x1={xAt(hover)} x2={xAt(hover)} y1={padT} y2={padT + innerH} stroke="#C8CDD4" />
+            <line x1={xAt(hover)} x2={xAt(hover)} y1={padT} y2={padT + innerH} stroke="#EEEEEE" />
             <circle
               cx={xAt(hover)}
               cy={yAtVal(values[hover])}
@@ -554,7 +554,7 @@ export default function AnalyticsPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#E4E8EC",
+    background: "#F4F6FA",
     minHeight: "100vh",
     color: "#111111",
   };
@@ -571,8 +571,8 @@ export default function AnalyticsPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #C8CDD4",
-    background: "#F2F4F6",
+    border: "1px solid #DDE3E8",
+    background: "#FFFFFF",
     color: "#111111",
     fontWeight: 900,
     cursor: "pointer",
@@ -585,22 +585,23 @@ export default function AnalyticsPage() {
 
   const ghost: React.CSSProperties = {
     ...btn,
-    background: "#E4E8EC",
+    background: "#F8F9FB",
   };
 
   const card: React.CSSProperties = {
-    background: "#EDF0F3",
-    border: "1px solid #C8CDD4",
+    background: "#FFFFFF",
+    border: "1px solid rgba(0,0,0,0.04)",
     borderRadius: 18,
     padding: 14,
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)",
   };
 
   const chip = (active: boolean): React.CSSProperties => ({
     padding: "8px 10px",
     borderRadius: 999,
-    border: active ? "1px solid #C8CDD4" : "1px solid #C8CDD4",
-    background: active ? "#F2F4F6" : "#E4E8EC",
-    color: active ? "#2C2C2C" : "#555555",
+    border: active ? "1px solid #C4B5FD" : "1px solid #DDE3E8",
+    background: active ? "#F0EEFF" : "#F8F9FB",
+    color: active ? "#6C5CE7" : "#777777",
     fontWeight: 900,
     cursor: "pointer",
     fontSize: 12,
@@ -631,7 +632,7 @@ export default function AnalyticsPage() {
       <div style={topBar}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 950 }}>Analytics — Reportes Pro</div>
-          <div style={{ color: "#555555", fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#777777", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -680,7 +681,7 @@ export default function AnalyticsPage() {
 
           <div style={{ flex: "1 1 12px" }} />
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#555555" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#777777" }}>
             Desde
             <input
               type="date"
@@ -689,15 +690,15 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #C8CDD4",
-                background: "#E4E8EC",
+                border: "1px solid #DDE3E8",
+                background: "#FFFFFF",
                 color: "#111111",
                 fontWeight: 900,
               }}
             />
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#555555" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#777777" }}>
             Hasta
             <input
               type="date"
@@ -706,15 +707,15 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #C8CDD4",
-                background: "#E4E8EC",
+                border: "1px solid #DDE3E8",
+                background: "#FFFFFF",
                 color: "#111111",
                 fontWeight: 900,
               }}
             />
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#555555" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#777777" }}>
             Plato
             <select
               value={dishId === "ALL" ? "ALL" : String(dishId)}
@@ -725,8 +726,8 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #C8CDD4",
-                background: "#E4E8EC",
+                border: "1px solid #DDE3E8",
+                background: "#FFFFFF",
                 color: "#111111",
                 fontWeight: 900,
                 maxWidth: 260,
@@ -744,7 +745,7 @@ export default function AnalyticsPage() {
             </select>
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#555555" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#777777" }}>
             Métrica
             <select
               value={metric}
@@ -752,8 +753,8 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #C8CDD4",
-                background: "#E4E8EC",
+                border: "1px solid #DDE3E8",
+                background: "#FFFFFF",
                 color: "#111111",
                 fontWeight: 900,
               }}
@@ -766,7 +767,7 @@ export default function AnalyticsPage() {
           </label>
         </div>
 
-        <div style={{ marginTop: 10, color: "#555555", fontSize: 12 }}>
+        <div style={{ marginTop: 10, color: "#777777", fontSize: 12 }}>
           Ventana: <span style={{ fontWeight: 900 }}>{fromISO}</span> → <span style={{ fontWeight: 900 }}>{toISO}</span>{" "}
           · Fuente: <span style={{ fontWeight: 900 }}>/pedidos_historial</span> + <span style={{ fontWeight: 900 }}>/menu</span>
         </div>
@@ -775,7 +776,7 @@ export default function AnalyticsPage() {
       {/* Stats row */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div style={statCard}>
-          <div style={{ color: "#555555", fontSize: 12 }}>Monto total</div>
+          <div style={{ color: "#777777", fontSize: 12 }}>Monto total</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{formatMoney(totals.monto)}</div>
           <div style={deltaStyle(totals.deltaMonto)}>
             {totals.deltaMonto >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaMonto).toFixed(1)}%
@@ -783,7 +784,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div style={statCard}>
-          <div style={{ color: "#555555", fontSize: 12 }}>Items vendidos</div>
+          <div style={{ color: "#777777", fontSize: 12 }}>Items vendidos</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{totals.items.toLocaleString()}</div>
           <div style={deltaStyle(totals.deltaItems)}>
             {totals.deltaItems >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaItems).toFixed(1)}%
@@ -791,7 +792,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div style={statCard}>
-          <div style={{ color: "#555555", fontSize: 12 }}>Pedidos</div>
+          <div style={{ color: "#777777", fontSize: 12 }}>Pedidos</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{totals.pedidos.toLocaleString()}</div>
           <div style={deltaStyle(totals.deltaPedidos)}>
             {totals.deltaPedidos >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaPedidos).toFixed(1)}%
@@ -799,7 +800,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div style={statCard}>
-          <div style={{ color: "#555555", fontSize: 12 }}>Ticket promedio</div>
+          <div style={{ color: "#777777", fontSize: 12 }}>Ticket promedio</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{formatMoney(totals.ticket)}</div>
           <div style={deltaStyle(totals.deltaTicket)}>
             {totals.deltaTicket >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaTicket).toFixed(1)}%
@@ -810,7 +811,7 @@ export default function AnalyticsPage() {
       {/* Chart */}
       {loading ? <div style={card}>Cargando…</div> : <StockChart points={points} metric={metric} />}
 
-      <div style={{ marginTop: 12, color: "#555555", fontSize: 12 }}>
+      <div style={{ marginTop: 12, color: "#777777", fontSize: 12 }}>
         Tip: cambia “Plato” a uno específico para ver su curva como si fuera una acción 📈
       </div>
     </div>

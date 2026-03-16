@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 type Item = {
   href: string;
   label: string;
-  icon: string; // emoji por ahora (simple y seguro)
+  icon: string;
 };
 
 const items: Item[] = [
@@ -31,62 +31,59 @@ export default function Sidebar() {
   return (
     <aside
       style={{
-        width: 84,
+        width: 68,
         height: "100vh",
         position: "sticky",
         top: 0,
-        background: "#EDF0F3",
-        borderRight: "1px solid #C8CDD4",
+        background: "#1A1D2E",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "14px 10px",
-        gap: 12,
+        padding: "18px 0 14px",
+        flexShrink: 0,
       }}
     >
       {/* Logo */}
       <div
         style={{
-          width: 44,
-          height: 44,
-          borderRadius: 14,
-          background: "#F2F4F6",
-          border: "1px solid #C8CDD4",
+          width: 38,
+          height: 38,
+          borderRadius: 10,
+          background: "linear-gradient(135deg, #6C5CE7 0%, #a29bfe 100%)",
           display: "grid",
           placeItems: "center",
-          fontWeight: 950,
-          color: "#2C2C2C",
+          fontWeight: 800,
+          color: "#fff",
+          fontSize: 17,
+          marginBottom: 20,
+          flexShrink: 0,
         }}
         title="Admin Panel"
       >
         A
       </div>
 
-      <div style={{ width: "100%", height: 1, background: "#C8CDD4" }} />
-
-      {/* Items */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+      {/* Nav items */}
+      <nav style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%", padding: "0 8px" }}>
         {items.map((it) => {
-          const active = pathname === it.href || (it.href !== "/" && pathname?.startsWith(it.href));
+          const active =
+            pathname === it.href ||
+            (it.href !== "/" && pathname?.startsWith(it.href));
           return (
             <Link
               key={it.href}
               href={it.href}
               title={it.label}
               style={{
-                width: 54,
-                height: 54,
-                margin: "0 auto",
-                borderRadius: 16,
+                height: 46,
+                borderRadius: 10,
                 display: "grid",
                 placeItems: "center",
                 textDecoration: "none",
-                color: active ? "#2C2C2C" : "#555555",
-                border: active ? "1px solid #C8CDD4" : "1px solid #C8CDD4",
-                background: active ? "#F2F4F6" : "#E4E8EC",
-                transform: active ? "scale(1.03)" : "scale(1)",
-                transition: "all 140ms ease",
                 fontSize: 20,
+                background: active ? "rgba(255,255,255,0.13)" : "transparent",
+                boxShadow: active ? "inset 0 0 0 1px rgba(255,255,255,0.08)" : "none",
+                transition: "background 120ms ease",
               }}
             >
               <span aria-hidden>{it.icon}</span>
@@ -102,24 +99,24 @@ export default function Sidebar() {
         onClick={handleLogout}
         title="Cerrar sesión"
         style={{
-          width: 54,
-          height: 54,
-          margin: "0 auto",
-          borderRadius: 16,
+          width: 46,
+          height: 46,
+          borderRadius: 10,
           display: "grid",
           placeItems: "center",
-          color: "#555555",
-          border: "1px solid #C8CDD4",
-          background: "#E4E8EC",
+          background: "transparent",
+          border: "none",
           cursor: "pointer",
-          fontSize: 20,
+          fontSize: 19,
+          transition: "background 120ms ease",
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
         🔒
       </button>
 
-      {/* Footer */}
-      <div style={{ fontSize: 10, color: "#555555" }}>v1</div>
+      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>v1</div>
     </aside>
   );
 }

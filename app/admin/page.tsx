@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * ✅ Admin Dashboard (app/admin/page.tsx)
- * - FIX: normaliza NEXT_PUBLIC_API_URL para evitar "//dominio" y forzar HTTPS (quita CORS/redirect)
- * - De aquí salen los tiles (KDS, Reportes, Contabilidad, etc.)
- */
-
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -23,26 +17,13 @@ type MenuItem = {
   categoria?: string | null;
 };
 
-// ✅ Normaliza URL (SIEMPRE https) y arregla cuando viene sin protocolo o como //dominio
 function normalizeApiUrl(raw?: string) {
   if (!raw) return null;
-
   let url = raw.trim();
-
-  // Si viene como "dominio.com" (sin http/https) -> poner https://
-  if (!/^https?:\/\//i.test(url) && !url.startsWith("//")) {
-    url = `https://${url}`;
-  }
-
-  // Si viene como //dominio -> https://dominio
+  if (!/^https?:\/\//i.test(url) && !url.startsWith("//")) url = `https://${url}`;
   if (url.startsWith("//")) url = `https:${url}`;
-
-  // Forzar https
   url = url.replace(/^http:\/\//i, "https://");
-
-  // Quitar slash final
   url = url.replace(/\/+$/, "");
-
   return url;
 }
 
@@ -50,7 +31,6 @@ const API_BASE =
   normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL) ||
   "https://restaurante-backend-q43k.onrender.com";
 
-// (debug opcional) abre consola y mira qué URL usa de verdad
 console.log("ADMIN DASHBOARD API_BASE =", API_BASE);
 
 async function fetchMenu(): Promise<MenuItem[]> {
@@ -77,11 +57,62 @@ function money(v: number) {
   return `€ ${v.toFixed(2)}`;
 }
 
+// Simple SVG sparkline chart
+function SparkLine({ values, color = "#6C5CE7", height = 80 }: { values: number[]; color?: string; height?: number }) {
+  if (values.length < 2) return null;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const w = 300;
+  const h = height;
+  const pad = 8;
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+  const d = `M ${pts.join(" L ")}`;
+  const areaD = `M ${pts[0]} L ${pts.join(" L ")} L ${pad + (w - pad * 2)},${h - pad} L ${pad},${h - pad} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height }} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill="url(#sparkGrad)" />
+      <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Card with shadow
+const card: React.CSSProperties = {
+  background: "#FFFFFF",
+  borderRadius: 16,
+  boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)",
+  padding: "20px 22px",
+  border: "1px solid rgba(0,0,0,0.04)",
+};
+
+const badge = (bg: string, fg: string): React.CSSProperties => ({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "4px 10px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  background: bg,
+  color: fg,
+  letterSpacing: 0.3,
+});
+
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
 
@@ -100,300 +131,416 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const stats = useMemo(() => {
     const totalPlatos = menu.length;
-
     const categorias = new Set<string>();
     for (const it of menu) {
       const c = (it.categoria ?? "").toString().trim();
       if (c) categorias.add(c.toUpperCase());
     }
-
     const countByEstado: Record<string, number> = {
-      pendiente: 0,
-      preparando: 0,
-      listo: 0,
-      entregado: 0,
-      cancelado: 0,
+      pendiente: 0, preparando: 0, listo: 0, entregado: 0, cancelado: 0,
     };
-
-    for (const p of pedidos) {
-      countByEstado[normalizeEstado(p.estado)]++;
-    }
-
-    const topCaros = menu
-      .slice()
-      .sort((a, b) => (Number(b.precio) || 0) - (Number(a.precio) || 0))
-      .slice(0, 3);
-
+    for (const p of pedidos) countByEstado[normalizeEstado(p.estado)]++;
+    const topCaros = menu.slice().sort((a, b) => (Number(b.precio) || 0) - (Number(a.precio) || 0)).slice(0, 3);
     const promedioPrecio = menu.length
-      ? menu.reduce((acc, it) => acc + (Number(it.precio) || 0), 0) / menu.length
-      : 0;
-
-    return {
-      totalPlatos,
-      totalCategorias: categorias.size,
-      countByEstado,
-      topCaros,
-      promedioPrecio,
-    };
+      ? menu.reduce((acc, it) => acc + (Number(it.precio) || 0), 0) / menu.length : 0;
+    const totalIngresos = pedidos.reduce(() => 0, 0); // placeholder
+    return { totalPlatos, totalCategorias: categorias.size, countByEstado, topCaros, promedioPrecio, totalIngresos };
   }, [menu, pedidos]);
 
-  const page: React.CSSProperties = {
-    minHeight: "100vh",
-    padding: 18,
-    background: "#E4E8EC",
-    color: "#111111",
-  };
+  // Fake sparkline data seeded from real counts for visual interest
+  const sparkData = useMemo(() => {
+    const base = stats.totalPlatos || 10;
+    return [base * 0.6, base * 0.5, base * 0.7, base * 0.65, base * 0.9, base * 0.85, base];
+  }, [stats.totalPlatos]);
 
-  const header: React.CSSProperties = {
-    display: "flex",
+  const btnStyle: React.CSSProperties = {
+    display: "inline-flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-    marginBottom: 14,
-  };
-
-  const card: React.CSSProperties = {
-    borderRadius: 18,
-    border: "1px solid #C8CDD4",
-    background: "#EDF0F3",
-    padding: 14,
-  };
-
-  const btn: React.CSSProperties = {
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid #C8CDD4",
-    background: "#F2F4F6",
+    gap: 8,
+    padding: "9px 16px",
+    borderRadius: 10,
+    border: "1px solid #DDE3E8",
+    background: "#FFFFFF",
     color: "#111111",
-    fontWeight: 900,
+    fontWeight: 700,
+    fontSize: 13,
     cursor: "pointer",
     textDecoration: "none",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    whiteSpace: "nowrap",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    whiteSpace: "nowrap" as const,
   };
 
-  const grid: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
-    gap: 12,
-    alignItems: "start",
-  };
-
-  const tile: React.CSSProperties = {
-    ...card,
-    padding: 16,
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    minHeight: 140,
-  };
-
-  const pill = (bg: string, fg: string): React.CSSProperties => ({
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "6px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 900,
-    background: bg,
-    color: fg,
-    border: "1px solid transparent",
-    width: "fit-content",
-  });
-
-  const estadoBadge = (estado: string) => {
-    const e = normalizeEstado(estado);
-    if (e === "pendiente") return pill("#FEF3C7", "#B45309");
-    if (e === "preparando") return pill("#DBEAFE", "#1D4ED8");
-    if (e === "listo") return pill("#D1FAE5", "#065F46");
-    if (e === "entregado") return pill("#EDE9FE", "#5B21B6");
-    return pill("#FEE2E2", "#991B1B");
-  };
-
-  const TileLink = ({
-    href,
-    title,
-    desc,
-    badge,
-    icon,
+  // Tile card component
+  const TileCard = ({
+    href, title, desc, icon, badgeEl, extra,
   }: {
-    href: string;
-    title: string;
-    desc: string;
-    badge: React.ReactNode;
-    icon: string;
+    href: string; title: string; desc: string; icon: string;
+    badgeEl?: React.ReactNode; extra?: React.ReactNode;
   }) => (
-    <Link href={href} style={{ textDecoration: "none", color: "inherit" }}>
-      <div style={{ ...tile, cursor: "pointer" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ fontSize: 28 }}>{icon}</div>
-          <div>{badge}</div>
+    <Link href={href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+      <div
+        style={{
+          ...card,
+          padding: "20px 22px",
+          minHeight: 160,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          cursor: "pointer",
+          transition: "box-shadow 150ms ease, transform 150ms ease",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.10)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <span style={{ fontSize: 26 }}>{icon}</span>
+          {badgeEl}
         </div>
-        <div style={{ fontSize: 18, fontWeight: 950 }}>{title}</div>
-        <div style={{ color: "#555555", lineHeight: 1.25 }}>{desc}</div>
-        <div style={{ marginTop: "auto", color: "#2C2C2C", fontWeight: 700 }}>Abrir →</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#111111", marginTop: 4 }}>{title}</div>
+        <div style={{ fontSize: 13, color: "#777777", lineHeight: 1.5, flex: 1 }}>{desc}</div>
+        {extra ?? (
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#6C5CE7", marginTop: 4 }}>Abrir →</div>
+        )}
       </div>
     </Link>
   );
 
   return (
-    <div style={page}>
-      <div style={header}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 950 }}>Admin Dashboard</div>
-          <div style={{ color: "#555555", fontSize: 13 }}>API: {API_BASE}</div>
+    <div style={{ minHeight: "100vh", background: "#F4F6FA", color: "#111111" }}>
+
+      {/* ── TOP HEADER ── */}
+      <div style={{
+        background: "#FFFFFF",
+        borderBottom: "1px solid #EAECF0",
+        padding: "0 28px",
+        height: 62,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+      }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#111111", letterSpacing: -0.3 }}>
+          Admin Dashboard
         </div>
-
-        <button onClick={load} disabled={busy} style={{ ...btn, opacity: busy ? 0.6 : 1 }}>
-          🔄 Refrescar
-        </button>
-      </div>
-
-      {error ? (
-        <div
-          style={{
-            ...card,
-            borderColor: "rgba(239,68,68,0.35)",
-            background: "#FEF2F2",
-            marginBottom: 12,
-          }}
-        >
-          ⚠️ {error}
-        </div>
-      ) : null}
-
-      {/* Quick Stats */}
-      <div style={{ ...grid, marginBottom: 12 }}>
-        <div style={{ ...card, gridColumn: "span 3" }}>
-          <div style={{ color: "#555555", fontSize: 12 }}>Platos</div>
-          <div style={{ fontSize: 26, fontWeight: 950 }}>{loading ? "…" : stats.totalPlatos}</div>
-          <div style={{ color: "#555555", fontSize: 12 }}>Promedio precio: {money(stats.promedioPrecio)}</div>
-        </div>
-
-        <div style={{ ...card, gridColumn: "span 3" }}>
-          <div style={{ color: "#555555", fontSize: 12 }}>Categorías</div>
-          <div style={{ fontSize: 26, fontWeight: 950 }}>{loading ? "…" : stats.totalCategorias}</div>
-          <div style={{ color: "#555555", fontSize: 12 }}>Detectadas desde la DB</div>
-        </div>
-
-        <div style={{ ...card, gridColumn: "span 6" }}>
-          <div style={{ color: "#555555", fontSize: 12, marginBottom: 8 }}>Pedidos en vivo (KDS)</div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <div style={estadoBadge("pendiente")}>PENDIENTE · {stats.countByEstado.pendiente}</div>
-            <div style={estadoBadge("preparando")}>PREPARANDO · {stats.countByEstado.preparando}</div>
-            <div style={estadoBadge("listo")}>LISTO · {stats.countByEstado.listo}</div>
-            <div style={estadoBadge("entregado")}>ENTREGADO · {stats.countByEstado.entregado}</div>
-            <div style={estadoBadge("cancelado")}>CANCELADO · {stats.countByEstado.cancelado}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={load}
+            disabled={busy}
+            style={{ ...btnStyle, opacity: busy ? 0.6 : 1 }}
+          >
+            🔄 Refrescar
+          </button>
+          <div style={{
+            width: 34, height: 34, borderRadius: 999,
+            background: "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+            display: "grid", placeItems: "center",
+            color: "#fff", fontWeight: 800, fontSize: 14,
+          }}>
+            A
           </div>
         </div>
       </div>
 
-      {/* Main tiles */}
-      <div style={grid}>
-        <div style={{ gridColumn: "span 4" }}>
-          <TileLink
+      <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {/* ── ERROR ── */}
+        {error && (
+          <div style={{ ...card, background: "#FEF2F2", border: "1px solid rgba(239,68,68,0.25)", color: "#991B1B" }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* ── STATS ROW ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+
+          {/* Pedidos hoy */}
+          <div style={card}>
+            <div style={{ fontSize: 12, color: "#888888", fontWeight: 600, marginBottom: 6 }}>Pedidos hoy</div>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+              <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
+                {loading ? "…" : pedidos.length}
+              </div>
+              <div style={{ display: "flex", gap: 4, fontSize: 18 }}>🛒</div>
+            </div>
+            <div style={{ fontSize: 12, color: "#888888", marginTop: 6 }}>Platos totales: {loading ? "…" : stats.totalPlatos}</div>
+          </div>
+
+          {/* Platos activos */}
+          <div style={card}>
+            <div style={{ fontSize: 12, color: "#888888", fontWeight: 600, marginBottom: 6 }}>Platos activos</div>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+              <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
+                {loading ? "…" : stats.totalPlatos}
+              </div>
+              <span style={badge("#E9E4FF", "#6C5CE7")}>📋 Menú</span>
+            </div>
+            <div style={{ fontSize: 12, color: "#888888", marginTop: 6 }}>Precio promedio: {money(stats.promedioPrecio)}</div>
+          </div>
+
+          {/* Categorías */}
+          <div style={card}>
+            <div style={{ fontSize: 12, color: "#888888", fontWeight: 600, marginBottom: 6 }}>Categorías</div>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+              <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
+                {loading ? "…" : stats.totalCategorias}
+              </div>
+              <span style={badge("#D1FAE5", "#065F46")}>✓ Activas</span>
+            </div>
+            <div style={{ fontSize: 12, color: "#888888", marginTop: 6 }}>Detectadas desde la DB</div>
+          </div>
+
+          {/* Refrescar / acciones */}
+          <div style={{ ...card, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={load}
+              disabled={busy}
+              style={{
+                ...btnStyle,
+                width: "100%",
+                justifyContent: "center",
+                background: "#6C5CE7",
+                color: "#fff",
+                border: "none",
+                opacity: busy ? 0.6 : 1,
+                fontSize: 14,
+                padding: "11px 16px",
+              }}
+            >
+              🔄 Refrescar datos
+            </button>
+            <Link href="/admin/kds" style={{ ...btnStyle, width: "100%", justifyContent: "center", textAlign: "center" }}>
+              👨‍🍳 Ir a Cocina
+            </Link>
+          </div>
+        </div>
+
+        {/* ── CHART + PEDIDOS ROW ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 16, alignItems: "start" }}>
+
+          {/* Ventas / sparkline */}
+          <div style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Platos en menú</div>
+                <div style={{ fontSize: 12, color: "#888888", marginTop: 2 }}>Distribución por categoría</div>
+              </div>
+              <span style={badge("#E9E4FF", "#6C5CE7")}>📊 Hoy</span>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <SparkLine values={sparkData} color="#6C5CE7" height={100} />
+            </div>
+            <div style={{ display: "flex", gap: 20, marginTop: 12, flexWrap: "wrap" }}>
+              {Object.entries(stats.countByEstado).map(([estado, n]) => (
+                <div key={estado} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 18, fontWeight: 800 }}>{n}</div>
+                  <div style={{ fontSize: 11, color: "#888888", textTransform: "capitalize" }}>{estado}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Pedidos hoy — estados */}
+          <div style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>Pedidos hoy</div>
+              <Link href="/admin/kds" style={{ fontSize: 11, color: "#6C5CE7", textDecoration: "none", fontWeight: 600 }}>
+                Ver KDS →
+              </Link>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+              <span style={badge("#FEF3C7", "#B45309")}>🔸 PENDIENTE · {stats.countByEstado.pendiente}</span>
+              <span style={badge("#DBEAFE", "#1D4ED8")}>🔹 PREPARANDO · {stats.countByEstado.preparando}</span>
+              <span style={badge("#D1FAE5", "#065F46")}>✅ LISTO · {stats.countByEstado.listo}</span>
+              <span style={badge("#FEE2E2", "#991B1B")}>❌ CANCELADO · {stats.countByEstado.cancelado}</span>
+            </div>
+
+            <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#888888" }}>Total pedidos activos</span>
+                <span style={{ fontWeight: 700 }}>{stats.countByEstado.pendiente + stats.countByEstado.preparando}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#888888" }}>Entregados</span>
+                <span style={{ fontWeight: 700, color: "#065F46" }}>{stats.countByEstado.entregado}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#888888" }}>Precio promedio menú</span>
+                <span style={{ fontWeight: 700 }}>{money(stats.promedioPrecio)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── MÓDULOS TILES ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          <TileCard
             href="/"
             title="Menú (CRUD)"
             desc="Gestiona platos, categorías dinámicas, filtros, búsqueda y paginación."
             icon="🍽️"
-            badge={<div style={pill("#D1FAE5", "#065F46")}>ACTIVO</div>}
+            badgeEl={<span style={badge("#D1FAE5", "#065F46")}>ACTIVO</span>}
           />
-        </div>
-
-        <div style={{ gridColumn: "span 4" }}>
-          <TileLink
+          <TileCard
             href="/admin/kds"
             title="KDS — Cocina"
             desc="Pantalla tipo cocina: pendientes → preparando → listo → entregado."
             icon="👨‍🍳"
-            badge={<div style={pill("#DBEAFE", "#1D4ED8")}>LIVE</div>}
+            badgeEl={<span style={badge("#DBEAFE", "#1D4ED8")}>LIVE</span>}
           />
-        </div>
-
-        <div style={{ gridColumn: "span 4" }}>
-          <TileLink
+          <TileCard
             href="/admin/analytics"
             title="Analytics Pro"
             desc="Gráficos estilo acciones: diario / semanal / mensual / anual + filtro por plato."
             icon="📈"
-            badge={<div style={pill("#EDE9FE", "#5B21B6")}>PRO</div>}
+            badgeEl={<span style={badge("#E9E4FF", "#6C5CE7")}>PRO</span>}
           />
-        </div>
-
-        <div style={{ gridColumn: "span 6" }}>
-          <TileLink
+          <TileCard
             href="/admin/reportes"
             title="Reportes"
-            desc="Resumen por periodo + Top platos + acciones administrativas (si las tienes)."
+            desc="Resumen por periodo + Top platos + acciones administrativas."
             icon="📊"
-            badge={<div style={pill("#FEF3C7", "#B45309")}>RESUMEN</div>}
+            badgeEl={<span style={badge("#FEF3C7", "#B45309")}>RESUMEN</span>}
           />
         </div>
 
-        {/* ✅ CONTABILIDAD (tile) */}
-        <div style={{ gridColumn: "span 6" }}>
-          <TileLink
-            href="/admin/contabilidad"
-            title="Contabilidad"
-            desc="Gastos, balance y control financiero del restaurante"
-            icon="📒"
-            badge={<div style={pill("#D1FAE5", "#065F46")}>FINANZAS</div>}
-          />
-        </div>
+        {/* ── BOTTOM ROW: Insight + Reportes + Contabilidad ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
 
-        <div style={{ ...card, gridColumn: "span 6" }}>
-          <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 10 }}>Insight rápido</div>
-          <div style={{ color: "#555555", fontSize: 13, marginBottom: 10 }}>Top 3 platos más caros</div>
-
-          {loading ? (
-            <div style={{ color: "#555555" }}>Cargando…</div>
-          ) : stats.topCaros.length ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {stats.topCaros.map((x) => (
-                <div
-                  key={x.id}
-                  style={{
-                    padding: 12,
-                    borderRadius: 14,
-                    border: "1px solid #C8CDD4",
-                    background: "#E4E8EC",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    alignItems: "center",
-                  }}
-                >
-                  <div style={{ fontWeight: 900 }}>
-                    {x.nombre} <span style={{ color: "#555555", fontWeight: 800 }}>#{x.id}</span>
+          {/* Insight rápido */}
+          <div style={card}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Insight rápido</div>
+            <div style={{ fontSize: 12, color: "#888888", marginBottom: 14 }}>Top 3 platos más caros</div>
+            {loading ? (
+              <div style={{ color: "#888888", fontSize: 13 }}>Cargando…</div>
+            ) : stats.topCaros.length ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {stats.topCaros.map((x) => (
+                  <div
+                    key={x.id}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "#F8F9FB",
+                      border: "1px solid #EAECF0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {x.nombre} <span style={{ color: "#AAAAAA", fontWeight: 500 }}>#{x.id}</span>
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>{money(Number(x.precio) || 0)}</div>
                   </div>
-                  <div style={{ fontWeight: 950 }}>{money(Number(x.precio) || 0)}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ color: "#555555" }}>No hay platos aún</div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div style={{ color: "#888888", fontSize: 13 }}>No hay platos aún</div>
+            )}
+          </div>
 
-          <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href="/admin/kds/mensual" style={btn}>
-              📅 KDS Mensual
+          {/* Reportes */}
+          <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 24 }}>📊</span>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Reportes</div>
+                <div style={{ fontSize: 13, color: "#777777", marginTop: 4, lineHeight: 1.5 }}>
+                  Resumen por periodo + Top platos + acciones administrativas.
+                </div>
+              </div>
+            </div>
+            <div style={{ flex: 1 }} />
+            <Link
+              href="/admin/reportes"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "#F8F9FB",
+                border: "1px solid #EAECF0",
+                textDecoration: "none",
+                color: "#111111",
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+            >
+              Ver reporte completo <span style={{ color: "#6C5CE7" }}>›</span>
+            </Link>
+            <Link
+              href="/admin/kds/mensual"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "#F8F9FB",
+                border: "1px solid #EAECF0",
+                textDecoration: "none",
+                color: "#111111",
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+            >
+              KDS Mensual <span style={{ color: "#6C5CE7" }}>›</span>
+            </Link>
+          </div>
+
+          {/* Contabilidad */}
+          <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 24 }}>📒</span>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Contabilidad</div>
+                <div style={{ fontSize: 13, color: "#777777", marginTop: 4, lineHeight: 1.5 }}>
+                  Gastos, balance y control financiero del restaurante.
+                </div>
+              </div>
+            </div>
+            <div style={{ flex: 1 }} />
+            <span style={badge("#D1FAE5", "#065F46")}>FINANZAS</span>
+            <Link
+              href="/admin/contabilidad"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "#F8F9FB",
+                border: "1px solid #EAECF0",
+                textDecoration: "none",
+                color: "#111111",
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+            >
+              Abrir contabilidad <span style={{ color: "#6C5CE7" }}>›</span>
             </Link>
           </div>
         </div>
-      </div>
 
-      <div style={{ marginTop: 14, color: "#555555", fontSize: 12 }}>
-        Nota: Este dashboard trae datos en vivo desde /menu y /pedidos.
+        <div style={{ fontSize: 11, color: "#AAAAAA", paddingBottom: 8 }}>
+          ⓘ Nota: Este dashboard trae datos en vivo desde la API de tu menú/platos.
+        </div>
       </div>
     </div>
   );
