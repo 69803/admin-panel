@@ -155,7 +155,7 @@ export default function ProfilePage() {
             onClick={() => router.back()}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              fontSize: 18, color: "#555555", display: "flex", alignItems: "center", gap: 6,
+              color: "#555555", display: "flex", alignItems: "center", gap: 6,
               fontWeight: 600, fontSize: 13,
             } as React.CSSProperties}
           >
