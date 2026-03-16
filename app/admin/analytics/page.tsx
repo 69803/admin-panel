@@ -293,13 +293,13 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
       ref={ref}
       style={{
         borderRadius: 18,
-        border: "1px solid rgba(255,255,255,0.10)",
-        background: "rgba(255,255,255,0.06)",
+        border: "1px solid #E2E8F0",
+        background: "#FFFFFF",
         overflow: "hidden",
       }}
     >
       <div style={{ padding: 14, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontWeight: 900, fontSize: 14, opacity: 0.92 }}>
+        <div style={{ fontWeight: 900, fontSize: 14, color: "#0F172A" }}>
           {metric === "monto"
             ? "Monto (ingresos)"
             : metric === "items"
@@ -308,7 +308,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
                 ? "Pedidos"
                 : "Ticket promedio"}
         </div>
-        <div style={{ opacity: 0.85, fontSize: 12 }}>
+        <div style={{ color: "#64748B", fontSize: 12 }}>
           {current ? (
             <>
               <span style={{ fontWeight: 900 }}>{current.label}</span> ·{" "}
@@ -349,7 +349,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
         {/* grid */}
         {ticks.map((t) => {
           const y = padT + (t / gridLines) * innerH;
-          return <line key={t} x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="rgba(255,255,255,0.07)" />;
+          return <line key={t} x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#E2E8F0" />;
         })}
 
         {/* y labels */}
@@ -357,7 +357,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
           const v = max - (t / gridLines) * (max - min);
           const y = padT + (t / gridLines) * innerH;
           return (
-            <text key={`yl-${t}`} x={padL - 8} y={y + 4} fill="rgba(255,255,255,0.55)" fontSize="11" textAnchor="end">
+            <text key={`yl-${t}`} x={padL - 8} y={y + 4} fill="#64748B" fontSize="11" textAnchor="end">
               {metric === "monto" ? (v >= 0 ? `€${Math.round(v)}` : `-€${Math.round(Math.abs(v))}`) : Math.round(v)}
             </text>
           );
@@ -378,7 +378,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
                   key={`xl-${i}`}
                   x={xAt(i)}
                   y={padT + innerH + 22}
-                  fill="rgba(255,255,255,0.60)"
+                  fill="#64748B"
                   fontSize="11"
                   textAnchor="middle"
                 >
@@ -390,12 +390,12 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
         {/* hover */}
         {hover != null && points[hover] ? (
           <>
-            <line x1={xAt(hover)} x2={xAt(hover)} y1={padT} y2={padT + innerH} stroke="rgba(255,255,255,0.16)" />
+            <line x1={xAt(hover)} x2={xAt(hover)} y1={padT} y2={padT + innerH} stroke="#CBD5E1" />
             <circle
               cx={xAt(hover)}
               cy={yAtVal(values[hover])}
               r={4.5}
-              fill="rgba(255,255,255,0.95)"
+              fill="#0F172A"
               stroke="rgba(99,102,241,0.95)"
               strokeWidth={2}
             />
@@ -554,9 +554,9 @@ export default function AnalyticsPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#0b1220",
+    background: "#F8FAFC",
     minHeight: "100vh",
-    color: "white",
+    color: "#0F172A",
   };
 
   const topBar: React.CSSProperties = {
@@ -571,9 +571,9 @@ export default function AnalyticsPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.10)",
-    color: "white",
+    border: "1px solid #CBD5E1",
+    background: "#F1F5F9",
+    color: "#0F172A",
     fontWeight: 900,
     cursor: "pointer",
     textDecoration: "none",
@@ -585,12 +585,12 @@ export default function AnalyticsPage() {
 
   const ghost: React.CSSProperties = {
     ...btn,
-    background: "rgba(255,255,255,0.06)",
+    background: "#F8FAFC",
   };
 
   const card: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
     borderRadius: 18,
     padding: 14,
   };
@@ -598,9 +598,9 @@ export default function AnalyticsPage() {
   const chip = (active: boolean): React.CSSProperties => ({
     padding: "8px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: active ? "rgba(99,102,241,0.22)" : "rgba(255,255,255,0.07)",
-    color: "white",
+    border: active ? "1px solid #C7D2FE" : "1px solid #E2E8F0",
+    background: active ? "#EEF2FF" : "#F8FAFC",
+    color: active ? "#4F46E5" : "#64748B",
     fontWeight: 900,
     cursor: "pointer",
     fontSize: 12,
@@ -618,12 +618,12 @@ export default function AnalyticsPage() {
   const deltaStyle = (v: number): React.CSSProperties => ({
     fontWeight: 900,
     fontSize: 12,
-    opacity: 0.95,
     padding: "3px 8px",
     borderRadius: 999,
     display: "inline-block",
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: v >= 0 ? "rgba(34,197,94,0.16)" : "rgba(239,68,68,0.16)",
+    border: "1px solid transparent",
+    background: v >= 0 ? "#D1FAE5" : "#FEE2E2",
+    color: v >= 0 ? "#065F46" : "#991B1B",
   });
 
   return (
@@ -631,7 +631,7 @@ export default function AnalyticsPage() {
       <div style={topBar}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 950 }}>Analytics — Reportes Pro</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#64748B", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -652,7 +652,8 @@ export default function AnalyticsPage() {
           style={{
             ...card,
             borderColor: "rgba(239,68,68,0.35)",
-            background: "rgba(239,68,68,0.10)",
+            background: "#FEF2F2",
+            color: "#991B1B",
             marginBottom: 12,
           }}
         >
@@ -679,7 +680,7 @@ export default function AnalyticsPage() {
 
           <div style={{ flex: "1 1 12px" }} />
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.95 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             Desde
             <input
               type="date"
@@ -688,15 +689,15 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
                 fontWeight: 900,
               }}
             />
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.95 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             Hasta
             <input
               type="date"
@@ -705,15 +706,15 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
                 fontWeight: 900,
               }}
             />
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.95 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             Plato
             <select
               value={dishId === "ALL" ? "ALL" : String(dishId)}
@@ -724,9 +725,9 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
                 fontWeight: 900,
                 maxWidth: 260,
               }}
@@ -743,7 +744,7 @@ export default function AnalyticsPage() {
             </select>
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.95 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             Métrica
             <select
               value={metric}
@@ -751,9 +752,9 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
                 fontWeight: 900,
               }}
             >
@@ -765,7 +766,7 @@ export default function AnalyticsPage() {
           </label>
         </div>
 
-        <div style={{ marginTop: 10, opacity: 0.85, fontSize: 12 }}>
+        <div style={{ marginTop: 10, color: "#64748B", fontSize: 12 }}>
           Ventana: <span style={{ fontWeight: 900 }}>{fromISO}</span> → <span style={{ fontWeight: 900 }}>{toISO}</span>{" "}
           · Fuente: <span style={{ fontWeight: 900 }}>/pedidos_historial</span> + <span style={{ fontWeight: 900 }}>/menu</span>
         </div>
@@ -774,7 +775,7 @@ export default function AnalyticsPage() {
       {/* Stats row */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div style={statCard}>
-          <div style={{ opacity: 0.82, fontSize: 12 }}>Monto total</div>
+          <div style={{ color: "#64748B", fontSize: 12 }}>Monto total</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{formatMoney(totals.monto)}</div>
           <div style={deltaStyle(totals.deltaMonto)}>
             {totals.deltaMonto >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaMonto).toFixed(1)}%
@@ -782,7 +783,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div style={statCard}>
-          <div style={{ opacity: 0.82, fontSize: 12 }}>Items vendidos</div>
+          <div style={{ color: "#64748B", fontSize: 12 }}>Items vendidos</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{totals.items.toLocaleString()}</div>
           <div style={deltaStyle(totals.deltaItems)}>
             {totals.deltaItems >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaItems).toFixed(1)}%
@@ -790,7 +791,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div style={statCard}>
-          <div style={{ opacity: 0.82, fontSize: 12 }}>Pedidos</div>
+          <div style={{ color: "#64748B", fontSize: 12 }}>Pedidos</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{totals.pedidos.toLocaleString()}</div>
           <div style={deltaStyle(totals.deltaPedidos)}>
             {totals.deltaPedidos >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaPedidos).toFixed(1)}%
@@ -798,7 +799,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div style={statCard}>
-          <div style={{ opacity: 0.82, fontSize: 12 }}>Ticket promedio</div>
+          <div style={{ color: "#64748B", fontSize: 12 }}>Ticket promedio</div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>{formatMoney(totals.ticket)}</div>
           <div style={deltaStyle(totals.deltaTicket)}>
             {totals.deltaTicket >= 0 ? "▲" : "▼"} {Math.abs(totals.deltaTicket).toFixed(1)}%
@@ -809,7 +810,7 @@ export default function AnalyticsPage() {
       {/* Chart */}
       {loading ? <div style={card}>Cargando…</div> : <StockChart points={points} metric={metric} />}
 
-      <div style={{ marginTop: 12, opacity: 0.7, fontSize: 12 }}>
+      <div style={{ marginTop: 12, color: "#94A3B8", fontSize: 12 }}>
         Tip: cambia “Plato” a uno específico para ver su curva como si fuera una acción 📈
       </div>
     </div>

@@ -150,14 +150,14 @@ export default function ReportesPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#0b1220",
+    background: "#F8FAFC",
     minHeight: "100vh",
-    color: "white",
+    color: "#0F172A",
   };
 
   const card: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
     borderRadius: 16,
     padding: 12,
   };
@@ -165,9 +165,9 @@ export default function ReportesPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.10)",
-    color: "white",
+    border: "1px solid #CBD5E1",
+    background: "#F1F5F9",
+    color: "#0F172A",
     fontWeight: 800,
     cursor: "pointer",
     textDecoration: "none",
@@ -178,8 +178,9 @@ export default function ReportesPage() {
 
   const dangerBtn: React.CSSProperties = {
     ...btn,
-    background: "rgba(239,68,68,0.18)",
+    background: "#FEF2F2",
     border: "1px solid rgba(239,68,68,0.35)",
+    color: "#991B1B",
   };
 
   const statBox: React.CSSProperties = {
@@ -195,7 +196,7 @@ export default function ReportesPage() {
     width: 38,
     height: 38,
     borderRadius: 999,
-    background: "rgba(255,255,255,0.08)",
+    background: "#F1F5F9",
     display: "grid",
     placeItems: "center",
     fontWeight: 900,
@@ -218,7 +219,7 @@ export default function ReportesPage() {
       >
         <div>
           <div style={{ fontSize: 20, fontWeight: 900 }}>Reportes</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#64748B", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -244,16 +245,16 @@ export default function ReportesPage() {
       <div style={{ ...card, marginBottom: 12 }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ opacity: 0.85, fontSize: 13 }}>Periodo</span>
+            <span style={{ color: "#64748B", fontSize: 13 }}>Periodo</span>
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value as Periodo)}
               style={{
                 padding: "10px 10px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
                 fontWeight: 800,
               }}
             >
@@ -264,7 +265,7 @@ export default function ReportesPage() {
           </label>
 
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ opacity: 0.85, fontSize: 13 }}>Fecha</span>
+            <span style={{ color: "#64748B", fontSize: 13 }}>Fecha</span>
             <input
               type="date"
               value={fechaISO}
@@ -272,15 +273,15 @@ export default function ReportesPage() {
               style={{
                 padding: "10px 10px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
                 fontWeight: 800,
               }}
             />
           </label>
 
-          {loading ? <span style={{ opacity: 0.85 }}>Cargando…</span> : null}
+          {loading ? <span style={{ color: "#64748B" }}>Cargando…</span> : null}
         </div>
       </div>
 
@@ -289,7 +290,8 @@ export default function ReportesPage() {
           style={{
             ...card,
             borderColor: "rgba(239,68,68,0.35)",
-            background: "rgba(239,68,68,0.10)",
+            background: "#FEF2F2",
+            color: "#991B1B",
             marginBottom: 12,
           }}
         >
@@ -306,7 +308,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>🍽️</div>
               <div>
-                <div style={{ opacity: 0.8, fontSize: 12 }}>Platos vendidos</div>
+                <div style={{ color: "#64748B", fontSize: 12 }}>Platos vendidos</div>
                 <div style={{ fontSize: 18, fontWeight: 900 }}>{data.total_platos_vendidos}</div>
               </div>
             </div>
@@ -314,7 +316,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>💰</div>
               <div>
-                <div style={{ opacity: 0.8, fontSize: 12 }}>Ganancia</div>
+                <div style={{ color: "#64748B", fontSize: 12 }}>Ganancia</div>
                 <div style={{ fontSize: 18, fontWeight: 900 }}>{fmtMoney(Number(data.total_ganancia) || 0)}</div>
               </div>
             </div>
@@ -322,7 +324,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>⏱️</div>
               <div>
-                <div style={{ opacity: 0.8, fontSize: 12 }}>Desde</div>
+                <div style={{ color: "#64748B", fontSize: 12 }}>Desde</div>
                 <div style={{ fontSize: 16, fontWeight: 900 }}>{data.desde}</div>
               </div>
             </div>
@@ -330,7 +332,7 @@ export default function ReportesPage() {
             <div style={statBox}>
               <div style={miniIcon}>🗓️</div>
               <div>
-                <div style={{ opacity: 0.8, fontSize: 12 }}>Hasta</div>
+                <div style={{ color: "#64748B", fontSize: 12 }}>Hasta</div>
                 <div style={{ fontSize: 16, fontWeight: 900 }}>{data.hasta}</div>
               </div>
             </div>
@@ -343,14 +345,14 @@ export default function ReportesPage() {
             </div>
 
             {top.length === 0 ? (
-              <div style={{ opacity: 0.8 }}>Sin ventas en el periodo</div>
+              <div style={{ color: "#64748B" }}>Sin ventas en el periodo</div>
             ) : (
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end", overflowX: "auto", paddingBottom: 6 }}>
                 {top.slice(0, 12).map((t) => {
                   const h = Math.round(((Number(t.cantidad) || 0) / maxCantidad) * 180);
                   return (
                     <div key={t.plato_id} style={{ minWidth: 90 }}>
-                      <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6, textAlign: "center" }}>
+                      <div style={{ color: "#64748B", fontSize: 12, marginBottom: 6, textAlign: "center" }}>
                         {t.cantidad}
                       </div>
                       <div
@@ -361,7 +363,7 @@ export default function ReportesPage() {
                           border: "1px solid rgba(59,130,246,0.35)",
                         }}
                       />
-                      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85, textAlign: "center" }}>
+                      <div style={{ marginTop: 8, fontSize: 12, color: "#64748B", textAlign: "center" }}>
                         {(t.nombre ?? `Plato ${t.plato_id}`).toString().slice(0, 12)}
                       </div>
                     </div>
@@ -375,7 +377,7 @@ export default function ReportesPage() {
           <div style={card}>
             <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>Top platos (lista)</div>
             {top.length === 0 ? (
-              <div style={{ opacity: 0.8 }}>Sin ventas en el periodo</div>
+              <div style={{ color: "#64748B" }}>Sin ventas en el periodo</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {top.map((t) => (
@@ -384,8 +386,8 @@ export default function ReportesPage() {
                     style={{
                       padding: 10,
                       borderRadius: 14,
-                      background: "rgba(0,0,0,0.25)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      background: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
                       display: "flex",
                       justifyContent: "space-between",
                       gap: 10,
@@ -396,7 +398,7 @@ export default function ReportesPage() {
                       <div style={{ fontWeight: 900 }}>
                         #{t.plato_id} — {(t.nombre ?? "").toString() || `Plato ${t.plato_id}`}
                       </div>
-                      <div style={{ opacity: 0.85, fontSize: 13 }}>Cantidad: {t.cantidad}</div>
+                      <div style={{ color: "#64748B", fontSize: 13 }}>Cantidad: {t.cantidad}</div>
                     </div>
                     <div style={{ fontWeight: 900 }}>{fmtMoney(Number(t.ingreso) || 0)}</div>
                   </div>

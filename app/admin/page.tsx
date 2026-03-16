@@ -146,8 +146,8 @@ export default function AdminDashboardPage() {
   const page: React.CSSProperties = {
     minHeight: "100vh",
     padding: 18,
-    background: "#0b1220",
-    color: "white",
+    background: "#F8FAFC",
+    color: "#0F172A",
   };
 
   const header: React.CSSProperties = {
@@ -161,17 +161,17 @@ export default function AdminDashboardPage() {
 
   const card: React.CSSProperties = {
     borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.06)",
+    border: "1px solid #E2E8F0",
+    background: "#FFFFFF",
     padding: 14,
   };
 
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.10)",
-    color: "white",
+    border: "1px solid #CBD5E1",
+    background: "#F1F5F9",
+    color: "#0F172A",
     fontWeight: 900,
     cursor: "pointer",
     textDecoration: "none",
@@ -207,17 +207,17 @@ export default function AdminDashboardPage() {
     fontWeight: 900,
     background: bg,
     color: fg,
-    border: "1px solid rgba(255,255,255,0.10)",
+    border: "1px solid transparent",
     width: "fit-content",
   });
 
   const estadoBadge = (estado: string) => {
     const e = normalizeEstado(estado);
-    if (e === "pendiente") return pill("rgba(245,158,11,0.18)", "#F59E0B");
-    if (e === "preparando") return pill("rgba(59,130,246,0.18)", "#60A5FA");
-    if (e === "listo") return pill("rgba(34,197,94,0.18)", "#34D399");
-    if (e === "entregado") return pill("rgba(168,85,247,0.18)", "#C084FC");
-    return pill("rgba(239,68,68,0.18)", "#F87171");
+    if (e === "pendiente") return pill("#FEF3C7", "#B45309");
+    if (e === "preparando") return pill("#DBEAFE", "#1D4ED8");
+    if (e === "listo") return pill("#D1FAE5", "#065F46");
+    if (e === "entregado") return pill("#EDE9FE", "#5B21B6");
+    return pill("#FEE2E2", "#991B1B");
   };
 
   const TileLink = ({
@@ -240,8 +240,8 @@ export default function AdminDashboardPage() {
           <div>{badge}</div>
         </div>
         <div style={{ fontSize: 18, fontWeight: 950 }}>{title}</div>
-        <div style={{ opacity: 0.82, lineHeight: 1.25 }}>{desc}</div>
-        <div style={{ marginTop: "auto", opacity: 0.9, fontWeight: 900 }}>Abrir →</div>
+        <div style={{ color: "#64748B", lineHeight: 1.25 }}>{desc}</div>
+        <div style={{ marginTop: "auto", color: "#6366F1", fontWeight: 700 }}>Abrir →</div>
       </div>
     </Link>
   );
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
       <div style={header}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>Admin Dashboard</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#64748B", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <button onClick={load} disabled={busy} style={{ ...btn, opacity: busy ? 0.6 : 1 }}>
@@ -264,7 +264,7 @@ export default function AdminDashboardPage() {
           style={{
             ...card,
             borderColor: "rgba(239,68,68,0.35)",
-            background: "rgba(239,68,68,0.10)",
+            background: "#FEF2F2",
             marginBottom: 12,
           }}
         >
@@ -275,19 +275,19 @@ export default function AdminDashboardPage() {
       {/* Quick Stats */}
       <div style={{ ...grid, marginBottom: 12 }}>
         <div style={{ ...card, gridColumn: "span 3" }}>
-          <div style={{ opacity: 0.8, fontSize: 12 }}>Platos</div>
+          <div style={{ color: "#64748B", fontSize: 12 }}>Platos</div>
           <div style={{ fontSize: 26, fontWeight: 950 }}>{loading ? "…" : stats.totalPlatos}</div>
-          <div style={{ opacity: 0.75, fontSize: 12 }}>Promedio precio: {money(stats.promedioPrecio)}</div>
+          <div style={{ color: "#94A3B8", fontSize: 12 }}>Promedio precio: {money(stats.promedioPrecio)}</div>
         </div>
 
         <div style={{ ...card, gridColumn: "span 3" }}>
-          <div style={{ opacity: 0.8, fontSize: 12 }}>Categorías</div>
+          <div style={{ color: "#64748B", fontSize: 12 }}>Categorías</div>
           <div style={{ fontSize: 26, fontWeight: 950 }}>{loading ? "…" : stats.totalCategorias}</div>
-          <div style={{ opacity: 0.75, fontSize: 12 }}>Detectadas desde la DB</div>
+          <div style={{ color: "#94A3B8", fontSize: 12 }}>Detectadas desde la DB</div>
         </div>
 
         <div style={{ ...card, gridColumn: "span 6" }}>
-          <div style={{ opacity: 0.8, fontSize: 12, marginBottom: 8 }}>Pedidos en vivo (KDS)</div>
+          <div style={{ color: "#64748B", fontSize: 12, marginBottom: 8 }}>Pedidos en vivo (KDS)</div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <div style={estadoBadge("pendiente")}>PENDIENTE · {stats.countByEstado.pendiente}</div>
             <div style={estadoBadge("preparando")}>PREPARANDO · {stats.countByEstado.preparando}</div>
@@ -306,7 +306,7 @@ export default function AdminDashboardPage() {
             title="Menú (CRUD)"
             desc="Gestiona platos, categorías dinámicas, filtros, búsqueda y paginación."
             icon="🍽️"
-            badge={<div style={pill("rgba(34,197,94,0.18)", "#34D399")}>ACTIVO</div>}
+            badge={<div style={pill("#D1FAE5", "#065F46")}>ACTIVO</div>}
           />
         </div>
 
@@ -316,7 +316,7 @@ export default function AdminDashboardPage() {
             title="KDS — Cocina"
             desc="Pantalla tipo cocina: pendientes → preparando → listo → entregado."
             icon="👨‍🍳"
-            badge={<div style={pill("rgba(59,130,246,0.18)", "#60A5FA")}>LIVE</div>}
+            badge={<div style={pill("#DBEAFE", "#1D4ED8")}>LIVE</div>}
           />
         </div>
 
@@ -326,7 +326,7 @@ export default function AdminDashboardPage() {
             title="Analytics Pro"
             desc="Gráficos estilo acciones: diario / semanal / mensual / anual + filtro por plato."
             icon="📈"
-            badge={<div style={pill("rgba(168,85,247,0.18)", "#C084FC")}>PRO</div>}
+            badge={<div style={pill("#EDE9FE", "#5B21B6")}>PRO</div>}
           />
         </div>
 
@@ -336,7 +336,7 @@ export default function AdminDashboardPage() {
             title="Reportes"
             desc="Resumen por periodo + Top platos + acciones administrativas (si las tienes)."
             icon="📊"
-            badge={<div style={pill("rgba(245,158,11,0.18)", "#FBBF24")}>RESUMEN</div>}
+            badge={<div style={pill("#FEF3C7", "#B45309")}>RESUMEN</div>}
           />
         </div>
 
@@ -347,16 +347,16 @@ export default function AdminDashboardPage() {
             title="Contabilidad"
             desc="Gastos, balance y control financiero del restaurante"
             icon="📒"
-            badge={<div style={pill("rgba(16,185,129,0.18)", "#10B981")}>FINANZAS</div>}
+            badge={<div style={pill("#D1FAE5", "#065F46")}>FINANZAS</div>}
           />
         </div>
 
         <div style={{ ...card, gridColumn: "span 6" }}>
           <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 10 }}>Insight rápido</div>
-          <div style={{ opacity: 0.85, fontSize: 13, marginBottom: 10 }}>Top 3 platos más caros</div>
+          <div style={{ color: "#64748B", fontSize: 13, marginBottom: 10 }}>Top 3 platos más caros</div>
 
           {loading ? (
-            <div style={{ opacity: 0.75 }}>Cargando…</div>
+            <div style={{ color: "#94A3B8" }}>Cargando…</div>
           ) : stats.topCaros.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {stats.topCaros.map((x) => (
@@ -365,8 +365,8 @@ export default function AdminDashboardPage() {
                   style={{
                     padding: 12,
                     borderRadius: 14,
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background: "rgba(0,0,0,0.20)",
+                    border: "1px solid #E2E8F0",
+                    background: "#F8FAFC",
                     display: "flex",
                     justifyContent: "space-between",
                     gap: 12,
@@ -374,14 +374,14 @@ export default function AdminDashboardPage() {
                   }}
                 >
                   <div style={{ fontWeight: 900 }}>
-                    {x.nombre} <span style={{ opacity: 0.7, fontWeight: 800 }}>#{x.id}</span>
+                    {x.nombre} <span style={{ color: "#94A3B8", fontWeight: 800 }}>#{x.id}</span>
                   </div>
                   <div style={{ fontWeight: 950 }}>{money(Number(x.precio) || 0)}</div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ opacity: 0.75 }}>No hay platos aún</div>
+            <div style={{ color: "#94A3B8" }}>No hay platos aún</div>
           )}
 
           <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -392,7 +392,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div style={{ marginTop: 14, opacity: 0.7, fontSize: 12 }}>
+      <div style={{ marginTop: 14, color: "#94A3B8", fontSize: 12 }}>
         Nota: Este dashboard trae datos en vivo desde /menu y /pedidos.
       </div>
     </div>

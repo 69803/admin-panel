@@ -192,9 +192,9 @@ export default function KdsPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#0b1220",
+    background: "#F8FAFC",
     minHeight: "100vh",
-    color: "white",
+    color: "#0F172A",
   };
 
   const topBar: React.CSSProperties = {
@@ -207,8 +207,8 @@ export default function KdsPage() {
   };
 
   const card: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
     borderRadius: 16,
     padding: 12,
   };
@@ -225,9 +225,9 @@ export default function KdsPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.10)",
-    color: "white",
+    border: "1px solid #CBD5E1",
+    background: "#F1F5F9",
+    color: "#0F172A",
     fontWeight: 800,
     cursor: "pointer",
     textDecoration: "none",
@@ -256,7 +256,7 @@ export default function KdsPage() {
           >
             {estado}
           </span>
-          <span style={{ opacity: 0.85, fontSize: 12 }}>{count}</span>
+          <span style={{ color: "#64748B", fontSize: 12 }}>{count}</span>
         </div>
       </div>
     );
@@ -276,9 +276,9 @@ export default function KdsPage() {
     const btnBase: React.CSSProperties = {
       padding: "8px 10px",
       borderRadius: 10,
-      border: "1px solid rgba(255,255,255,0.14)",
-      background: "rgba(255,255,255,0.08)",
-      color: "white",
+      border: "1px solid #CBD5E1",
+      background: "#F1F5F9",
+      color: "#0F172A",
       fontWeight: 800,
       cursor: "pointer",
       fontSize: 12,
@@ -329,16 +329,16 @@ export default function KdsPage() {
         style={{
           borderRadius: 14,
           padding: 12,
-          background: "rgba(0,0,0,0.25)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          background: "#F8FAFC",
+          border: "1px solid #E2E8F0",
         }}
       >
         <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 10 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 950 }}>
-              Pedido #{p.id} <span style={{ opacity: 0.7, fontWeight: 800 }}>— Mesa {p.mesa_id}</span>
+              Pedido #{p.id} <span style={{ color: "#94A3B8", fontWeight: 800 }}>— Mesa {p.mesa_id}</span>
             </div>
-            <div style={{ opacity: 0.75, fontSize: 12, marginTop: 2 }}>
+            <div style={{ color: "#94A3B8", fontSize: 12, marginTop: 2 }}>
               {fecha ? `🕒 ${fecha}` : ""}
               {itemsCount ? `  •  🍽️ ${itemsCount} ítems` : ""}
             </div>
@@ -368,8 +368,8 @@ export default function KdsPage() {
               marginTop: 10,
               padding: 10,
               borderRadius: 12,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
               fontSize: 13,
               lineHeight: 1.25,
             }}
@@ -387,8 +387,9 @@ export default function KdsPage() {
               onClick={() => onMove(p, "cancelado")}
               style={{
                 ...btnBase,
-                background: "rgba(239,68,68,0.18)",
+                background: "#FEF2F2",
                 border: "1px solid rgba(239,68,68,0.35)",
+                color: "#991B1B",
                 opacity: disabled ? 0.5 : 1,
               }}
             >
@@ -405,7 +406,7 @@ export default function KdsPage() {
       <div style={topBar}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 950 }}>KDS — Cocina</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#64748B", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -417,12 +418,12 @@ export default function KdsPage() {
             📅 Historial mensual
           </Link>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
             Auto
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             Intervalo (s)
             <input
               type="number"
@@ -433,14 +434,14 @@ export default function KdsPage() {
                 width: 70,
                 padding: "8px 10px",
                 borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-                color: "white",
+                border: "1px solid #CBD5E1",
+                background: "#F8FAFC",
+                color: "#0F172A",
               }}
             />
           </label>
 
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#475569" }}>
             <input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} />
             🔔 Sonido
           </label>
@@ -452,8 +453,8 @@ export default function KdsPage() {
           style={{
             ...card,
             borderColor: "rgba(239,68,68,0.35)",
-            background: "rgba(239,68,68,0.10)",
-            color: "white",
+            background: "#FEF2F2",
+            color: "#991B1B",
             marginBottom: 12,
           }}
         >
@@ -469,7 +470,7 @@ export default function KdsPage() {
             <div key={estado} style={card}>
               {colHeader(estado, grouped[estado].length)}
               <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
-                {grouped[estado].length ? grouped[estado].map((p) => pedidoCard(p)) : <div style={{ opacity: 0.7, fontSize: 13 }}>Sin pedidos</div>}
+                {grouped[estado].length ? grouped[estado].map((p) => pedidoCard(p)) : <div style={{ color: "#94A3B8", fontSize: 13 }}>Sin pedidos</div>}
               </div>
             </div>
           ))}
