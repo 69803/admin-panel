@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Pedido = {
   id: number;
@@ -115,6 +115,18 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    if (profileOpen) document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [profileOpen]);
 
   const load = useCallback(async () => {
     try {
@@ -244,13 +256,109 @@ export default function AdminDashboardPage() {
           >
             🔄 Refrescar
           </button>
-          <div style={{
-            width: 34, height: 34, borderRadius: 999,
-            background: "linear-gradient(135deg, #6C5CE7, #a29bfe)",
-            display: "grid", placeItems: "center",
-            color: "#fff", fontWeight: 800, fontSize: 14,
-          }}>
-            A
+          <div ref={profileRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => setProfileOpen((v) => !v)}
+              title="Mi perfil"
+              style={{
+                width: 34, height: 34, borderRadius: 999,
+                background: "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+                display: "grid", placeItems: "center",
+                color: "#fff", fontWeight: 800, fontSize: 14,
+                border: profileOpen ? "2px solid #6C5CE7" : "2px solid transparent",
+                cursor: "pointer",
+                outline: "none",
+                transition: "border 140ms ease",
+              }}
+            >
+              A
+            </button>
+
+            {profileOpen && (
+              <div style={{
+                position: "absolute",
+                right: 0,
+                top: 44,
+                width: 240,
+                background: "#FFFFFF",
+                borderRadius: 14,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)",
+                border: "1px solid #EAECF0",
+                overflow: "hidden",
+                zIndex: 999,
+              }}>
+                {/* Header */}
+                <div style={{
+                  padding: "16px",
+                  background: "linear-gradient(135deg, #6C5CE7 0%, #a29bfe 100%)",
+                  display: "flex", alignItems: "center", gap: 12,
+                }}>
+                  <div style={{
+                    width: 42, height: 42, borderRadius: 999,
+                    background: "rgba(255,255,255,0.25)",
+                    display: "grid", placeItems: "center",
+                    fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0,
+                  }}>A</div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>Admin</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>El Rincón de Domingo</div>
+                  </div>
+                </div>
+
+                {/* Opciones */}
+                {[
+                  { icon: "🖼️", label: "Cambiar foto de perfil" },
+                  { icon: "👤", label: "Datos personales" },
+                  { icon: "💳", label: "Plan de pago", href: "/admin/config" },
+                  { icon: "🔑", label: "Cambiar contraseña" },
+                  { icon: "⚙️", label: "Configuración", href: "/admin/config" },
+                ].map((item) => {
+                  const rowStyle: React.CSSProperties = {
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "11px 16px", cursor: "pointer",
+                    fontSize: 13, color: "#222222", fontWeight: 500,
+                    transition: "background 100ms ease",
+                    textDecoration: "none",
+                  };
+                  const hoverOn = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.background = "#F4F6FA");
+                  const hoverOff = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.background = "transparent");
+
+                  return item.href ? (
+                    <Link key={item.label} href={item.href} style={rowStyle}
+                      onClick={() => setProfileOpen(false)}
+                      onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                      <span style={{ fontSize: 16 }}>{item.icon}</span>{item.label}
+                    </Link>
+                  ) : (
+                    <div key={item.label} style={rowStyle}
+                      onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+                      onClick={() => { setProfileOpen(false); alert(`"${item.label}" próximamente disponible.`); }}>
+                      <span style={{ fontSize: 16 }}>{item.icon}</span>{item.label}
+                    </div>
+                  );
+                })}
+
+                {/* Cerrar sesión */}
+                <div style={{ height: 1, background: "#EAECF0", margin: "4px 0" }} />
+                <div
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "11px 16px", cursor: "pointer",
+                    fontSize: 13, color: "#DC2626", fontWeight: 600,
+                    transition: "background 100ms ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#FEF2F2")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    localStorage.removeItem("admin_auth_v1");
+                    window.location.href = "/login";
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>🚪</span> Cerrar sesión
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
