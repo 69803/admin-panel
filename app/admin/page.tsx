@@ -252,7 +252,7 @@ export default function AdminDashboardPage() {
         background: "#FFFFFF",
         borderBottom: "1px solid #EAECF0",
         padding: "0 36px",
-        height: 68,
+        height: 80,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -263,12 +263,12 @@ export default function AdminDashboardPage() {
         boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
       }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#111111", letterSpacing: -0.4 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#111111", letterSpacing: -0.4 }}>
             El Rincón de Domingo
           </div>
-          <div style={{ fontSize: 11, color: "#AAAAAA", marginTop: 1, fontWeight: 500 }}>Panel de administración</div>
+          <div style={{ fontSize: 12, color: "#AAAAAA", marginTop: 2, fontWeight: 500 }}>Panel de administración</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <button
             onClick={load}
             disabled={busy}
@@ -281,41 +281,49 @@ export default function AdminDashboardPage() {
               onClick={() => setProfileOpen((v) => !v)}
               title="Mi perfil"
               style={{
-                display: "flex", alignItems: "center", gap: 10,
-                background: "none", border: "none", cursor: "pointer", padding: 0,
+                display: "flex", alignItems: "center", gap: 12,
+                background: profileOpen ? "#F4F6FA" : "none",
+                border: "1px solid",
+                borderColor: profileOpen ? "#DDE3E8" : "transparent",
+                borderRadius: 14,
+                cursor: "pointer",
+                padding: "6px 12px 6px 6px",
+                transition: "all 140ms ease",
               }}
             >
-              {/* Avatar */}
+              {/* Avatar grande */}
               <div style={{
-                width: 40, height: 40, borderRadius: 999,
+                width: 52, height: 52, borderRadius: 999,
                 background: profilePhoto ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
                 display: "grid", placeItems: "center",
-                color: "#fff", fontWeight: 800, fontSize: 15,
-                border: profileOpen ? "2.5px solid #6C5CE7" : "2.5px solid #EAECF0",
+                color: "#fff", fontWeight: 800, fontSize: 20,
+                border: profileOpen ? "3px solid #6C5CE7" : "3px solid #EAECF0",
                 overflow: "hidden",
                 transition: "border 140ms ease",
                 flexShrink: 0,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
               }}>
                 {profilePhoto
                   ? <img src={profilePhoto} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   : (profileName ? profileName[0].toUpperCase() : "A")
                 }
               </div>
-              {/* Nombre */}
+              {/* Nombre + rol */}
               <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#111111", lineHeight: 1.2 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#111111", lineHeight: 1.3 }}>
                   {profileName || "Admin"}
                 </div>
-                <div style={{ fontSize: 11, color: "#AAAAAA" }}>Mi perfil</div>
+                <div style={{ fontSize: 11, color: "#888888" }}>El Rincón de Domingo</div>
               </div>
+              <div style={{ fontSize: 10, color: "#BBBBBB", marginLeft: 4 }}>▼</div>
             </button>
 
             {profileOpen && (
               <div style={{
                 position: "absolute",
                 right: 0,
-                top: 44,
-                width: 240,
+                top: 72,
+                width: 250,
                 background: "#FFFFFF",
                 borderRadius: 14,
                 boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)",
