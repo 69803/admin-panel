@@ -116,7 +116,24 @@ export default function AdminDashboardPage() {
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState("");
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Carga foto y nombre desde localStorage
+  useEffect(() => {
+    function readProfile() {
+      try {
+        const raw = localStorage.getItem("admin_profile_v1");
+        const p = raw ? JSON.parse(raw) : {};
+        setProfilePhoto(p.photo ?? null);
+        setProfileName(p.nombre ?? "");
+      } catch {}
+    }
+    readProfile();
+    window.addEventListener("profile-updated", readProfile);
+    return () => window.removeEventListener("profile-updated", readProfile);
+  }, []);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -261,17 +278,20 @@ export default function AdminDashboardPage() {
               onClick={() => setProfileOpen((v) => !v)}
               title="Mi perfil"
               style={{
-                width: 34, height: 34, borderRadius: 999,
-                background: "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+                width: 36, height: 36, borderRadius: 999,
+                background: profilePhoto ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
                 display: "grid", placeItems: "center",
                 color: "#fff", fontWeight: 800, fontSize: 14,
                 border: profileOpen ? "2px solid #6C5CE7" : "2px solid transparent",
-                cursor: "pointer",
-                outline: "none",
+                cursor: "pointer", outline: "none",
+                overflow: "hidden", padding: 0,
                 transition: "border 140ms ease",
               }}
             >
-              A
+              {profilePhoto
+                ? <img src={profilePhoto} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : (profileName ? profileName[0].toUpperCase() : "A")
+              }
             </button>
 
             {profileOpen && (
@@ -307,10 +327,10 @@ export default function AdminDashboardPage() {
 
                 {/* Opciones */}
                 {[
-                  { icon: "🖼️", label: "Cambiar foto de perfil" },
-                  { icon: "👤", label: "Datos personales" },
-                  { icon: "💳", label: "Plan de pago", href: "/admin/config" },
-                  { icon: "🔑", label: "Cambiar contraseña" },
+                  { icon: "🖼️", label: "Cambiar foto de perfil", href: "/admin/profile" },
+                  { icon: "👤", label: "Datos personales", href: "/admin/profile" },
+                  { icon: "💳", label: "Plan de pago", href: "/pricing" },
+                  { icon: "🔑", label: "Cambiar contraseña", href: "/admin/profile" },
                   { icon: "⚙️", label: "Configuración", href: "/admin/config" },
                 ].map((item) => {
                   const rowStyle: React.CSSProperties = {
