@@ -150,14 +150,14 @@ export default function ReportesPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#F3F5F7",
+    background: "#E4E8EC",
     minHeight: "100vh",
     color: "#111111",
   };
 
   const card: React.CSSProperties = {
-    background: "#FFFFFF",
-    border: "1px solid #DDE3E8",
+    background: "#EDF0F3",
+    border: "1px solid #C8CDD4",
     borderRadius: 16,
     padding: 12,
   };
@@ -165,8 +165,8 @@ export default function ReportesPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #DDE3E8",
-    background: "#E9EEF2",
+    border: "1px solid #C8CDD4",
+    background: "#F2F4F6",
     color: "#111111",
     fontWeight: 800,
     cursor: "pointer",
@@ -196,7 +196,7 @@ export default function ReportesPage() {
     width: 38,
     height: 38,
     borderRadius: 999,
-    background: "#E9EEF2",
+    background: "#F2F4F6",
     display: "grid",
     placeItems: "center",
     fontWeight: 900,
@@ -252,8 +252,8 @@ export default function ReportesPage() {
               style={{
                 padding: "10px 10px",
                 borderRadius: 12,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
                 fontWeight: 800,
               }}
@@ -273,8 +273,8 @@ export default function ReportesPage() {
               style={{
                 padding: "10px 10px",
                 borderRadius: 12,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
                 fontWeight: 800,
               }}
@@ -386,8 +386,8 @@ export default function ReportesPage() {
                     style={{
                       padding: 10,
                       borderRadius: 14,
-                      background: "#F3F5F7",
-                      border: "1px solid #DDE3E8",
+                      background: "#E4E8EC",
+                      border: "1px solid #C8CDD4",
                       display: "flex",
                       justifyContent: "space-between",
                       gap: 10,

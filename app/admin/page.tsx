@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
   const page: React.CSSProperties = {
     minHeight: "100vh",
     padding: 18,
-    background: "#F3F5F7",
+    background: "#E4E8EC",
     color: "#111111",
   };
 
@@ -161,16 +161,16 @@ export default function AdminDashboardPage() {
 
   const card: React.CSSProperties = {
     borderRadius: 18,
-    border: "1px solid #DDE3E8",
-    background: "#FFFFFF",
+    border: "1px solid #C8CDD4",
+    background: "#EDF0F3",
     padding: 14,
   };
 
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #DDE3E8",
-    background: "#E9EEF2",
+    border: "1px solid #C8CDD4",
+    background: "#F2F4F6",
     color: "#111111",
     fontWeight: 900,
     cursor: "pointer",
@@ -365,8 +365,8 @@ export default function AdminDashboardPage() {
                   style={{
                     padding: 12,
                     borderRadius: 14,
-                    border: "1px solid #DDE3E8",
-                    background: "#F3F5F7",
+                    border: "1px solid #C8CDD4",
+                    background: "#E4E8EC",
                     display: "flex",
                     justifyContent: "space-between",
                     gap: 12,

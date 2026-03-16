@@ -192,7 +192,7 @@ export default function KdsPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#F3F5F7",
+    background: "#E4E8EC",
     minHeight: "100vh",
     color: "#111111",
   };
@@ -207,8 +207,8 @@ export default function KdsPage() {
   };
 
   const card: React.CSSProperties = {
-    background: "#FFFFFF",
-    border: "1px solid #DDE3E8",
+    background: "#EDF0F3",
+    border: "1px solid #C8CDD4",
     borderRadius: 16,
     padding: 12,
   };
@@ -225,8 +225,8 @@ export default function KdsPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #DDE3E8",
-    background: "#E9EEF2",
+    border: "1px solid #C8CDD4",
+    background: "#F2F4F6",
     color: "#111111",
     fontWeight: 800,
     cursor: "pointer",
@@ -276,8 +276,8 @@ export default function KdsPage() {
     const btnBase: React.CSSProperties = {
       padding: "8px 10px",
       borderRadius: 10,
-      border: "1px solid #DDE3E8",
-      background: "#E9EEF2",
+      border: "1px solid #C8CDD4",
+      background: "#F2F4F6",
       color: "#111111",
       fontWeight: 800,
       cursor: "pointer",
@@ -329,8 +329,8 @@ export default function KdsPage() {
         style={{
           borderRadius: 14,
           padding: 12,
-          background: "#F3F5F7",
-          border: "1px solid #DDE3E8",
+          background: "#E4E8EC",
+          border: "1px solid #C8CDD4",
         }}
       >
         <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 10 }}>
@@ -368,8 +368,8 @@ export default function KdsPage() {
               marginTop: 10,
               padding: 10,
               borderRadius: 12,
-              background: "#F3F5F7",
-              border: "1px solid #DDE3E8",
+              background: "#E4E8EC",
+              border: "1px solid #C8CDD4",
               fontSize: 13,
               lineHeight: 1.25,
             }}
@@ -434,8 +434,8 @@ export default function KdsPage() {
                 width: 70,
                 padding: "8px 10px",
                 borderRadius: 10,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
               }}
             />

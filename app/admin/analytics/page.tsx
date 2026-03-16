@@ -293,8 +293,8 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
       ref={ref}
       style={{
         borderRadius: 18,
-        border: "1px solid #DDE3E8",
-        background: "#FFFFFF",
+        border: "1px solid #C8CDD4",
+        background: "#EDF0F3",
         overflow: "hidden",
       }}
     >
@@ -349,7 +349,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
         {/* grid */}
         {ticks.map((t) => {
           const y = padT + (t / gridLines) * innerH;
-          return <line key={t} x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#DDE3E8" />;
+          return <line key={t} x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#C8CDD4" />;
         })}
 
         {/* y labels */}
@@ -390,7 +390,7 @@ function StockChart({ points, metric }: { points: Point[]; metric: Metric }) {
         {/* hover */}
         {hover != null && points[hover] ? (
           <>
-            <line x1={xAt(hover)} x2={xAt(hover)} y1={padT} y2={padT + innerH} stroke="#DDE3E8" />
+            <line x1={xAt(hover)} x2={xAt(hover)} y1={padT} y2={padT + innerH} stroke="#C8CDD4" />
             <circle
               cx={xAt(hover)}
               cy={yAtVal(values[hover])}
@@ -554,7 +554,7 @@ export default function AnalyticsPage() {
 
   const pageStyle: React.CSSProperties = {
     padding: 16,
-    background: "#F3F5F7",
+    background: "#E4E8EC",
     minHeight: "100vh",
     color: "#111111",
   };
@@ -571,8 +571,8 @@ export default function AnalyticsPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #DDE3E8",
-    background: "#E9EEF2",
+    border: "1px solid #C8CDD4",
+    background: "#F2F4F6",
     color: "#111111",
     fontWeight: 900,
     cursor: "pointer",
@@ -585,12 +585,12 @@ export default function AnalyticsPage() {
 
   const ghost: React.CSSProperties = {
     ...btn,
-    background: "#F3F5F7",
+    background: "#E4E8EC",
   };
 
   const card: React.CSSProperties = {
-    background: "#FFFFFF",
-    border: "1px solid #DDE3E8",
+    background: "#EDF0F3",
+    border: "1px solid #C8CDD4",
     borderRadius: 18,
     padding: 14,
   };
@@ -598,8 +598,8 @@ export default function AnalyticsPage() {
   const chip = (active: boolean): React.CSSProperties => ({
     padding: "8px 10px",
     borderRadius: 999,
-    border: active ? "1px solid #DDE3E8" : "1px solid #DDE3E8",
-    background: active ? "#E9EEF2" : "#F3F5F7",
+    border: active ? "1px solid #C8CDD4" : "1px solid #C8CDD4",
+    background: active ? "#F2F4F6" : "#E4E8EC",
     color: active ? "#2C2C2C" : "#555555",
     fontWeight: 900,
     cursor: "pointer",
@@ -689,8 +689,8 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
                 fontWeight: 900,
               }}
@@ -706,8 +706,8 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
                 fontWeight: 900,
               }}
@@ -725,8 +725,8 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
                 fontWeight: 900,
                 maxWidth: 260,
@@ -752,8 +752,8 @@ export default function AnalyticsPage() {
               style={{
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #DDE3E8",
-                background: "#F3F5F7",
+                border: "1px solid #C8CDD4",
+                background: "#E4E8EC",
                 color: "#111111",
                 fontWeight: 900,
               }}

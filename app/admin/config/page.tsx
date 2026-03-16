@@ -9,7 +9,7 @@ export default function ConfigPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#F3F5F7",
+        background: "#E4E8EC",
         color: "#111111",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         padding: "40px 32px",
@@ -24,8 +24,8 @@ export default function ConfigPage() {
         <div
           onClick={() => router.push("/dev/pagos")}
           style={{
-            background: "#FFFFFF",
-            border: "1px solid #DDE3E8",
+            background: "#EDF0F3",
+            border: "1px solid #C8CDD4",
             borderRadius: 16,
             padding: "22px 24px",
             display: "flex",
@@ -34,8 +34,8 @@ export default function ConfigPage() {
             cursor: "pointer",
             transition: "background .15s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#E5EBF0")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#FFFFFF")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#D8DCE1")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#EDF0F3")}
         >
           <div
             style={{
