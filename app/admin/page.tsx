@@ -146,8 +146,8 @@ export default function AdminDashboardPage() {
   const page: React.CSSProperties = {
     minHeight: "100vh",
     padding: 18,
-    background: "#F8FAFC",
-    color: "#0F172A",
+    background: "#F3F5F7",
+    color: "#111111",
   };
 
   const header: React.CSSProperties = {
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
 
   const card: React.CSSProperties = {
     borderRadius: 18,
-    border: "1px solid #E2E8F0",
+    border: "1px solid #DDE3E8",
     background: "#FFFFFF",
     padding: 14,
   };
@@ -169,9 +169,9 @@ export default function AdminDashboardPage() {
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid #CBD5E1",
-    background: "#F1F5F9",
-    color: "#0F172A",
+    border: "1px solid #DDE3E8",
+    background: "#E9EEF2",
+    color: "#111111",
     fontWeight: 900,
     cursor: "pointer",
     textDecoration: "none",
@@ -240,8 +240,8 @@ export default function AdminDashboardPage() {
           <div>{badge}</div>
         </div>
         <div style={{ fontSize: 18, fontWeight: 950 }}>{title}</div>
-        <div style={{ color: "#64748B", lineHeight: 1.25 }}>{desc}</div>
-        <div style={{ marginTop: "auto", color: "#6366F1", fontWeight: 700 }}>Abrir →</div>
+        <div style={{ color: "#555555", lineHeight: 1.25 }}>{desc}</div>
+        <div style={{ marginTop: "auto", color: "#2C2C2C", fontWeight: 700 }}>Abrir →</div>
       </div>
     </Link>
   );
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
       <div style={header}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 950 }}>Admin Dashboard</div>
-          <div style={{ color: "#64748B", fontSize: 13 }}>API: {API_BASE}</div>
+          <div style={{ color: "#555555", fontSize: 13 }}>API: {API_BASE}</div>
         </div>
 
         <button onClick={load} disabled={busy} style={{ ...btn, opacity: busy ? 0.6 : 1 }}>
@@ -275,19 +275,19 @@ export default function AdminDashboardPage() {
       {/* Quick Stats */}
       <div style={{ ...grid, marginBottom: 12 }}>
         <div style={{ ...card, gridColumn: "span 3" }}>
-          <div style={{ color: "#64748B", fontSize: 12 }}>Platos</div>
+          <div style={{ color: "#555555", fontSize: 12 }}>Platos</div>
           <div style={{ fontSize: 26, fontWeight: 950 }}>{loading ? "…" : stats.totalPlatos}</div>
-          <div style={{ color: "#94A3B8", fontSize: 12 }}>Promedio precio: {money(stats.promedioPrecio)}</div>
+          <div style={{ color: "#555555", fontSize: 12 }}>Promedio precio: {money(stats.promedioPrecio)}</div>
         </div>
 
         <div style={{ ...card, gridColumn: "span 3" }}>
-          <div style={{ color: "#64748B", fontSize: 12 }}>Categorías</div>
+          <div style={{ color: "#555555", fontSize: 12 }}>Categorías</div>
           <div style={{ fontSize: 26, fontWeight: 950 }}>{loading ? "…" : stats.totalCategorias}</div>
-          <div style={{ color: "#94A3B8", fontSize: 12 }}>Detectadas desde la DB</div>
+          <div style={{ color: "#555555", fontSize: 12 }}>Detectadas desde la DB</div>
         </div>
 
         <div style={{ ...card, gridColumn: "span 6" }}>
-          <div style={{ color: "#64748B", fontSize: 12, marginBottom: 8 }}>Pedidos en vivo (KDS)</div>
+          <div style={{ color: "#555555", fontSize: 12, marginBottom: 8 }}>Pedidos en vivo (KDS)</div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <div style={estadoBadge("pendiente")}>PENDIENTE · {stats.countByEstado.pendiente}</div>
             <div style={estadoBadge("preparando")}>PREPARANDO · {stats.countByEstado.preparando}</div>
@@ -353,10 +353,10 @@ export default function AdminDashboardPage() {
 
         <div style={{ ...card, gridColumn: "span 6" }}>
           <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 10 }}>Insight rápido</div>
-          <div style={{ color: "#64748B", fontSize: 13, marginBottom: 10 }}>Top 3 platos más caros</div>
+          <div style={{ color: "#555555", fontSize: 13, marginBottom: 10 }}>Top 3 platos más caros</div>
 
           {loading ? (
-            <div style={{ color: "#94A3B8" }}>Cargando…</div>
+            <div style={{ color: "#555555" }}>Cargando…</div>
           ) : stats.topCaros.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {stats.topCaros.map((x) => (
@@ -365,8 +365,8 @@ export default function AdminDashboardPage() {
                   style={{
                     padding: 12,
                     borderRadius: 14,
-                    border: "1px solid #E2E8F0",
-                    background: "#F8FAFC",
+                    border: "1px solid #DDE3E8",
+                    background: "#F3F5F7",
                     display: "flex",
                     justifyContent: "space-between",
                     gap: 12,
@@ -374,14 +374,14 @@ export default function AdminDashboardPage() {
                   }}
                 >
                   <div style={{ fontWeight: 900 }}>
-                    {x.nombre} <span style={{ color: "#94A3B8", fontWeight: 800 }}>#{x.id}</span>
+                    {x.nombre} <span style={{ color: "#555555", fontWeight: 800 }}>#{x.id}</span>
                   </div>
                   <div style={{ fontWeight: 950 }}>{money(Number(x.precio) || 0)}</div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ color: "#94A3B8" }}>No hay platos aún</div>
+            <div style={{ color: "#555555" }}>No hay platos aún</div>
           )}
 
           <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -392,7 +392,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div style={{ marginTop: 14, color: "#94A3B8", fontSize: 12 }}>
+      <div style={{ marginTop: 14, color: "#555555", fontSize: 12 }}>
         Nota: Este dashboard trae datos en vivo desde /menu y /pedidos.
       </div>
     </div>

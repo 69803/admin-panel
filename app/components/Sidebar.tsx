@@ -36,7 +36,7 @@ export default function Sidebar() {
         position: "sticky",
         top: 0,
         background: "#FFFFFF",
-        borderRight: "1px solid #E2E8F0",
+        borderRight: "1px solid #DDE3E8",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -50,19 +50,19 @@ export default function Sidebar() {
           width: 44,
           height: 44,
           borderRadius: 14,
-          background: "#EEF2FF",
-          border: "1px solid #C7D2FE",
+          background: "#E9EEF2",
+          border: "1px solid #DDE3E8",
           display: "grid",
           placeItems: "center",
           fontWeight: 950,
-          color: "#4F46E5",
+          color: "#2C2C2C",
         }}
         title="Admin Panel"
       >
         A
       </div>
 
-      <div style={{ width: "100%", height: 1, background: "#E2E8F0" }} />
+      <div style={{ width: "100%", height: 1, background: "#DDE3E8" }} />
 
       {/* Items */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
@@ -81,9 +81,9 @@ export default function Sidebar() {
                 display: "grid",
                 placeItems: "center",
                 textDecoration: "none",
-                color: active ? "#4F46E5" : "#64748B",
-                border: active ? "1px solid #C7D2FE" : "1px solid #E2E8F0",
-                background: active ? "#EEF2FF" : "#F8FAFC",
+                color: active ? "#2C2C2C" : "#555555",
+                border: active ? "1px solid #DDE3E8" : "1px solid #DDE3E8",
+                background: active ? "#E9EEF2" : "#F3F5F7",
                 transform: active ? "scale(1.03)" : "scale(1)",
                 transition: "all 140ms ease",
                 fontSize: 20,
@@ -108,9 +108,9 @@ export default function Sidebar() {
           borderRadius: 16,
           display: "grid",
           placeItems: "center",
-          color: "#64748B",
-          border: "1px solid #E2E8F0",
-          background: "#F8FAFC",
+          color: "#555555",
+          border: "1px solid #DDE3E8",
+          background: "#F3F5F7",
           cursor: "pointer",
           fontSize: 20,
         }}
@@ -119,7 +119,7 @@ export default function Sidebar() {
       </button>
 
       {/* Footer */}
-      <div style={{ fontSize: 10, color: "#94A3B8" }}>v1</div>
+      <div style={{ fontSize: 10, color: "#555555" }}>v1</div>
     </aside>
   );
 }

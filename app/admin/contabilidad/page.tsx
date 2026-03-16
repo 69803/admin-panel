@@ -1908,15 +1908,15 @@ export default function ContabilidadPage() {
     wrap: {
       minHeight: "100vh",
       padding: 26,
-      background: "#F8FAFC",
-      color: "#0F172A",
+      background: "#F3F5F7",
+      color: "#111111",
       fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
     } as React.CSSProperties,
     card: {
       maxWidth: 1200,
       margin: "0 auto",
       background: "#FFFFFF",
-      border: "1px solid #E2E8F0",
+      border: "1px solid #DDE3E8",
       borderRadius: 18,
       padding: 18,
       boxShadow: "0 4px 24px rgba(0,0,0,.06)",
@@ -1930,18 +1930,18 @@ export default function ContabilidadPage() {
     input: {
       padding: 10,
       borderRadius: 12,
-      border: "1px solid #CBD5E1",
+      border: "1px solid #DDE3E8",
       background: "#FFFFFF",
-      color: "#0F172A",
+      color: "#111111",
       outline: "none",
       fontSize: 14,
     } as React.CSSProperties,
     btn: {
       padding: "10px 14px",
       borderRadius: 12,
-      border: "1px solid #CBD5E1",
-      background: "#F1F5F9",
-      color: "#0F172A",
+      border: "1px solid #DDE3E8",
+      background: "#E9EEF2",
+      color: "#111111",
       cursor: "pointer",
       fontWeight: 800,
       fontSize: 14,
@@ -1972,11 +1972,11 @@ export default function ContabilidadPage() {
     badge: {
       padding: "6px 10px",
       borderRadius: 999,
-      background: "#F1F5F9",
-      border: "1px solid #E2E8F0",
+      background: "#E9EEF2",
+      border: "1px solid #DDE3E8",
       fontSize: 12,
       fontWeight: 900,
-      color: "#0F172A",
+      color: "#111111",
     } as React.CSSProperties,
     badgeIngreso: {
       padding: "5px 12px",
@@ -2006,11 +2006,11 @@ export default function ContabilidadPage() {
       textAlign: "left",
       padding: 12,
       fontSize: 12,
-      color: "#64748B",
+      color: "#555555",
     } as React.CSSProperties,
     td: {
       padding: 12,
-      borderTop: "1px solid #E2E8F0",
+      borderTop: "1px solid #DDE3E8",
     } as React.CSSProperties,
     statsGrid: {
       display: "grid",
@@ -2020,23 +2020,23 @@ export default function ContabilidadPage() {
     } as React.CSSProperties,
     statCard: {
       borderRadius: 16,
-      border: "1px solid #E2E8F0",
+      border: "1px solid #DDE3E8",
       background: "#FFFFFF",
       padding: 12,
     } as React.CSSProperties,
     statLabel: {
-      color: "#64748B",
+      color: "#555555",
       fontSize: 12,
       marginBottom: 6,
     } as React.CSSProperties,
     statValue: { fontSize: 18, fontWeight: 1000 } as React.CSSProperties,
     statSub: {
-      color: "#64748B",
+      color: "#555555",
       fontSize: 12,
       marginTop: 4,
     } as React.CSSProperties,
     section: {
-      border: "1px solid #E2E8F0",
+      border: "1px solid #DDE3E8",
       background: "#FFFFFF",
       borderRadius: 16,
       padding: 14,
@@ -2055,7 +2055,7 @@ export default function ContabilidadPage() {
         <div style={{ ...s.row, justifyContent: "space-between", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 1000 }}>💰 Contabilidad</div>
-            <div style={{ color: "#64748B", fontSize: 13, marginTop: 4 }}>
+            <div style={{ color: "#555555", fontSize: 13, marginTop: 4 }}>
               API: <span style={{ fontWeight: 900 }}>{baseUrl ?? "(no definido)"}</span>
             </div>
           </div>
@@ -2168,13 +2168,13 @@ export default function ContabilidadPage() {
                   autoComplete="off"
                 />
                 {showGProvDD && proveedoresGastosFiltrados.length > 0 && (
-                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 2000, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.10)", maxHeight: 220, overflowY: "auto" }}>
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 2000, background: "#FFFFFF", border: "1px solid #DDE3E8", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.10)", maxHeight: 220, overflowY: "auto" }}>
                     {proveedoresGastosFiltrados.slice(0, 50).map((p, idx) => (
                       <div
                         key={p}
                         onMouseEnter={() => setGProvIdx(idx)}
                         onMouseDown={(e) => { e.preventDefault(); setGProv(p); setShowGProvDD(false); setGProvIdx(-1); }}
-                        style={{ padding: "10px 12px", cursor: "pointer", background: idx === gProvIdx ? "#F1F5F9" : "transparent", borderBottom: "1px solid #E2E8F0", userSelect: "none", color: "#0F172A" }}
+                        style={{ padding: "10px 12px", cursor: "pointer", background: idx === gProvIdx ? "#E9EEF2" : "transparent", borderBottom: "1px solid #DDE3E8", userSelect: "none", color: "#111111" }}
                       >
                         {renderProveedorLabel(p, gProv)}
                       </div>
@@ -2206,9 +2206,9 @@ export default function ContabilidadPage() {
               ))}
             </datalist>
 
-            <div style={{ border: "1px solid #E2E8F0", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #DDE3E8", borderRadius: 16, overflow: "hidden" }}>
               <table style={s.table}>
-                <thead style={{ background: "#F8FAFC" }}>
+                <thead style={{ background: "#F3F5F7" }}>
                   <tr>
                     <th style={s.th}>ID</th>
                     <th style={s.th}>Fecha</th>
@@ -2320,7 +2320,7 @@ export default function ContabilidadPage() {
               >
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  style={{ background: "#FFFFFF", padding: 24, borderRadius: 16, width: "90%", maxWidth: 700, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,.12)", border: "1px solid #E2E8F0", color: "#0F172A" }}
+                  style={{ background: "#FFFFFF", padding: 24, borderRadius: 16, width: "90%", maxWidth: 700, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,.12)", border: "1px solid #DDE3E8", color: "#111111" }}
                 >
                   <h2 style={{ marginBottom: 16 }}>Detalle — GASTO</h2>
                   <div style={{ lineHeight: 1.6 }}>
@@ -2366,13 +2366,13 @@ export default function ContabilidadPage() {
                           setEditCategoria(up(gastoDetailRow.categoria) || "OTROS");
                         }
                       }}
-                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #CBD5E1", background: "#F1F5F9", color: "#0F172A", cursor: "pointer", marginRight: 10, fontWeight: 900 }}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #DDE3E8", background: "#E9EEF2", color: "#111111", cursor: "pointer", marginRight: 10, fontWeight: 900 }}
                     >
                       ✏️ Editar
                     </button>
                     <button
                       onClick={closeGastoDetail}
-                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #E2E8F0", background: "#F8FAFC", color: "#64748B", cursor: "pointer" }}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #DDE3E8", background: "#F3F5F7", color: "#555555", cursor: "pointer" }}
                     >
                       Cerrar
                     </button>
@@ -2449,9 +2449,9 @@ export default function ContabilidadPage() {
               </button>
             </div>
 
-            <div style={{ border: "1px solid #E2E8F0", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #DDE3E8", borderRadius: 16, overflow: "hidden" }}>
               <table style={s.table}>
-                <thead style={{ background: "#F8FAFC" }}>
+                <thead style={{ background: "#F3F5F7" }}>
                   <tr>
                     <th style={s.th}>ID</th>
                     <th style={s.th}>Fecha</th>
@@ -2464,7 +2464,7 @@ export default function ContabilidadPage() {
                 <tbody>
                   {lLoading && (
                     <tr>
-                      <td colSpan={6} style={{ ...s.td, textAlign: "center", color: "#94A3B8", padding: 24 }}>
+                      <td colSpan={6} style={{ ...s.td, textAlign: "center", color: "#555555", padding: 24 }}>
                         Cargando...
                       </td>
                     </tr>
@@ -2481,7 +2481,7 @@ export default function ContabilidadPage() {
                   ))}
                   {!lLoading && ingresosAll.length === 0 && (
                     <tr>
-                      <td colSpan={6} style={{ ...s.td, color: "#64748B" }}>
+                      <td colSpan={6} style={{ ...s.td, color: "#555555" }}>
                         No hay ingresos todavía.
                       </td>
                     </tr>
@@ -2498,7 +2498,7 @@ export default function ContabilidadPage() {
               >
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  style={{ background: "#FFFFFF", padding: 24, borderRadius: 16, width: "90%", maxWidth: 700, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,.12)", border: "1px solid #E2E8F0", color: "#0F172A" }}
+                  style={{ background: "#FFFFFF", padding: 24, borderRadius: 16, width: "90%", maxWidth: 700, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,.12)", border: "1px solid #DDE3E8", color: "#111111" }}
                 >
                   <h2 style={{ marginBottom: 16 }}>Detalle — INGRESO</h2>
                   <div style={{ lineHeight: 1.6 }}>
@@ -2556,13 +2556,13 @@ export default function ContabilidadPage() {
                           },
                         });
                       }}
-                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #CBD5E1", background: "#F1F5F9", color: "#0F172A", cursor: "pointer", marginRight: 10, fontWeight: 900 }}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #DDE3E8", background: "#E9EEF2", color: "#111111", cursor: "pointer", marginRight: 10, fontWeight: 900 }}
                     >
                       ✏️ Editar
                     </button>
                     <button
                       onClick={closeIngresoDetail}
-                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #E2E8F0", background: "#F8FAFC", color: "#64748B", cursor: "pointer" }}
+                      style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #DDE3E8", background: "#F3F5F7", color: "#555555", cursor: "pointer" }}
                     >
                       Cerrar
                     </button>
@@ -2636,9 +2636,9 @@ export default function ContabilidadPage() {
             </div>
 
             {/* Tabla */}
-            <div style={{ border: "1px solid #E2E8F0", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #DDE3E8", borderRadius: 16, overflow: "hidden" }}>
               <table style={s.table}>
-                <thead style={{ background: "#F8FAFC" }}>
+                <thead style={{ background: "#F3F5F7" }}>
                   <tr>
                     <th style={s.th}>Mes</th>
                     <th style={s.th}>Ingresos</th>
@@ -2649,7 +2649,7 @@ export default function ContabilidadPage() {
                 <tbody>
                   {lLoading && (
                     <tr>
-                      <td colSpan={4} style={{ ...s.td, textAlign: "center", color: "#94A3B8", padding: 24 }}>Cargando...</td>
+                      <td colSpan={4} style={{ ...s.td, textAlign: "center", color: "#555555", padding: 24 }}>Cargando...</td>
                     </tr>
                   )}
                   {!lLoading && balanceFromLibro.map((r) => (
@@ -2661,7 +2661,7 @@ export default function ContabilidadPage() {
                     >
                       <td style={{ ...s.td, fontWeight: 900 }}>
                         {r.mes.length >= 7 ? `${r.mes.slice(5,7)}/${r.mes.slice(0,4)}` : r.mes}
-                        <span style={{ marginLeft: 8, fontSize: 11, color: "#94A3B8" }}>▼ ver detalle</span>
+                        <span style={{ marginLeft: 8, fontSize: 11, color: "#555555" }}>▼ ver detalle</span>
                       </td>
                       <td style={{ ...s.td, fontWeight: 900, color: "#065F46" }}>{moneyEUR(r.ingresos)}</td>
                       <td style={{ ...s.td, fontWeight: 900, color: "#991B1B" }}>{moneyEUR(r.gastos)}</td>
@@ -2672,7 +2672,7 @@ export default function ContabilidadPage() {
                   ))}
                   {!lLoading && balanceFromLibro.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ ...s.td, color: "#94A3B8", textAlign: "center", padding: 24 }}>
+                      <td colSpan={4} style={{ ...s.td, color: "#555555", textAlign: "center", padding: 24 }}>
                         No hay datos. Asegúrate de tener registros en el Libro Diario.
                       </td>
                     </tr>
@@ -2689,13 +2689,13 @@ export default function ContabilidadPage() {
               >
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 8px 40px rgba(0,0,0,.10)", color: "#0F172A" }}
+                  style={{ background: "#FFFFFF", border: "1px solid #DDE3E8", borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 8px 40px rgba(0,0,0,.10)", color: "#111111" }}
                 >
                   {/* Header */}
-                  <div style={{ padding: "18px 24px", borderBottom: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ padding: "18px 24px", borderBottom: "1px solid #DDE3E8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontWeight: 900, fontSize: 18 }}>📅 Detalle de {balanceMesSel.slice(0, 7)}</div>
-                      <div style={{ color: "#94A3B8", fontSize: 13, marginTop: 3 }}>{balanceMesDetalle.length} movimientos</div>
+                      <div style={{ color: "#555555", fontSize: 13, marginTop: 3 }}>{balanceMesDetalle.length} movimientos</div>
                     </div>
                     <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                       <span style={{ color: "#065F46", fontWeight: 900 }}>
@@ -2714,7 +2714,7 @@ export default function ContabilidadPage() {
                   {/* Tabla */}
                   <div style={{ overflowY: "auto", flex: 1 }}>
                     <table style={{ ...s.table, borderRadius: 0 }}>
-                      <thead style={{ background: "#F8FAFC", position: "sticky", top: 0 }}>
+                      <thead style={{ background: "#F3F5F7", position: "sticky", top: 0 }}>
                         <tr>
                           <th style={s.th}>Fecha</th>
                           <th style={s.th}>Tipo</th>
@@ -2728,7 +2728,7 @@ export default function ContabilidadPage() {
                           const isIngreso = r.tipo === "INGRESO";
                           return (
                             <tr key={`det-${i}`} style={{ borderLeft: `3px solid ${isIngreso ? "rgba(34,197,94,.5)" : "rgba(239,68,68,.5)"}` }}>
-                              <td style={{ ...s.td, fontWeight: 700, fontSize: 13, color: "#475569" }}>{fmtFecha(r.fecha)}</td>
+                              <td style={{ ...s.td, fontWeight: 700, fontSize: 13, color: "#555555" }}>{fmtFecha(r.fecha)}</td>
                               <td style={s.td}>
                                 <span style={isIngreso ? s.badgeIngreso : s.badgeGasto}>{r.tipo}</span>
                               </td>
@@ -2743,7 +2743,7 @@ export default function ContabilidadPage() {
                           );
                         })}
                         {balanceMesDetalle.length === 0 && (
-                          <tr><td colSpan={5} style={{ ...s.td, color: "#94A3B8", textAlign: "center", padding: 24 }}>Sin movimientos este mes.</td></tr>
+                          <tr><td colSpan={5} style={{ ...s.td, color: "#555555", textAlign: "center", padding: 24 }}>Sin movimientos este mes.</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -2843,14 +2843,14 @@ export default function ContabilidadPage() {
                     width: "100%",
                     maxWidth: 900,
                     borderRadius: 18,
-                    border: "1px solid #E2E8F0",
+                    border: "1px solid #DDE3E8",
                     background: "#FFFFFF",
                     boxShadow: "0 8px 40px rgba(0,0,0,.10)",
                     overflow: "hidden",
-                    color: "#0F172A",
+                    color: "#111111",
                   }}
                 >
-                  <div style={{ ...s.row, justifyContent: "space-between", padding: 14, borderBottom: "1px solid #E2E8F0" }}>
+                  <div style={{ ...s.row, justifyContent: "space-between", padding: 14, borderBottom: "1px solid #DDE3E8" }}>
                     <div style={{ fontWeight: 1000 }}>{opEdit ? "✏️ Editar operación" : "➕ Nueva operación — Libro diario"}</div>
 
                     <button
@@ -2876,8 +2876,8 @@ export default function ContabilidadPage() {
                         marginBottom: 12,
                         padding: 12,
                         borderRadius: 14,
-                        border: "1px solid #E2E8F0",
-                        background: "#F8FAFC",
+                        border: "1px solid #DDE3E8",
+                        background: "#F3F5F7",
                         display: "flex",
                         gap: 14,
                         alignItems: "center",
@@ -2992,7 +2992,7 @@ export default function ContabilidadPage() {
                                     right: 0,
                                     zIndex: 2000,
                                     background: "#FFFFFF",
-                                    border: "1px solid #E2E8F0",
+                                    border: "1px solid #DDE3E8",
                                     borderRadius: 12,
                                     boxShadow: "0 8px 24px rgba(0,0,0,.10)",
                                     maxHeight: 220,
@@ -3012,10 +3012,10 @@ export default function ContabilidadPage() {
                                         style={{
                                           padding: "10px 12px",
                                           cursor: "pointer",
-                                          background: active ? "#F1F5F9" : "transparent",
-                                          borderBottom: "1px solid #E2E8F0",
+                                          background: active ? "#E9EEF2" : "transparent",
+                                          borderBottom: "1px solid #DDE3E8",
                                           userSelect: "none",
-                                          color: "#0F172A",
+                                          color: "#111111",
                                         }}
                                       >
                                         {renderProveedorLabel(p, proveedorQuery)}
@@ -3288,9 +3288,9 @@ export default function ContabilidadPage() {
               ))}
             </datalist>
 
-            <div style={{ border: "1px solid #E2E8F0", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #DDE3E8", borderRadius: 16, overflow: "hidden" }}>
               <table style={s.table}>
-                <thead style={{ background: "#F8FAFC" }}>
+                <thead style={{ background: "#F3F5F7" }}>
                   <tr>
                     {(["fecha","tipo","concepto","categoria","proveedor","monto","saldo"] as const).map((col) => (
                       <th
@@ -3309,14 +3309,14 @@ export default function ContabilidadPage() {
                 <tbody>
                   {lLoading && (
                     <tr>
-                      <td colSpan={8} style={{ ...s.td, textAlign: "center", color: "#94A3B8", padding: 24 }}>
+                      <td colSpan={8} style={{ ...s.td, textAlign: "center", color: "#555555", padding: 24 }}>
                         Cargando...
                       </td>
                     </tr>
                   )}
                   {!lLoading && libroRows.length === 0 && (
                     <tr>
-                      <td colSpan={8} style={{ ...s.td, color: "#64748B" }}>
+                      <td colSpan={8} style={{ ...s.td, color: "#555555" }}>
                         No hay registros todavía.
                       </td>
                     </tr>
@@ -3333,7 +3333,7 @@ export default function ContabilidadPage() {
                         <span style={s.badge}>{r.categoria}</span>
                       </td>
 
-                      <td style={{ ...s.td, color: r.proveedor ? "#0F172A" : "#94A3B8" }}>{r.proveedor || "—"}</td>
+                      <td style={{ ...s.td, color: r.proveedor ? "#111111" : "#555555" }}>{r.proveedor || "—"}</td>
 
                       <td style={{ ...s.td, fontWeight: 1000, whiteSpace: "nowrap" }}>{moneyEUR(r.monto)}</td>
 
@@ -3390,8 +3390,8 @@ export default function ContabilidadPage() {
                     maxHeight: "85vh",
                     overflowY: "auto",
                     boxShadow: "0 8px 40px rgba(0,0,0,.12)",
-                    border: "1px solid #E2E8F0",
-                    color: "#0F172A",
+                    border: "1px solid #DDE3E8",
+                    color: "#111111",
                   }}
                 >
                   <h2 style={{ marginBottom: 16 }}>Detalle — {detailRow.tipo}</h2>
@@ -3467,9 +3467,9 @@ export default function ContabilidadPage() {
                       style={{
                         padding: "8px 14px",
                         borderRadius: 6,
-                        border: "1px solid #CBD5E1",
-                        background: "#F1F5F9",
-                        color: "#0F172A",
+                        border: "1px solid #DDE3E8",
+                        background: "#E9EEF2",
+                        color: "#111111",
                         cursor: "pointer",
                         marginRight: 10,
                         fontWeight: 900,
@@ -3483,9 +3483,9 @@ export default function ContabilidadPage() {
                       style={{
                         padding: "8px 14px",
                         borderRadius: 6,
-                        border: "1px solid #E2E8F0",
-                        background: "#F8FAFC",
-                        color: "#64748B",
+                        border: "1px solid #DDE3E8",
+                        background: "#F3F5F7",
+                        color: "#555555",
                         cursor: "pointer",
                       }}
                     >

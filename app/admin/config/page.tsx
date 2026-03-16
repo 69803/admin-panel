@@ -9,8 +9,8 @@ export default function ConfigPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#F8FAFC",
-        color: "#0F172A",
+        background: "#F3F5F7",
+        color: "#111111",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         padding: "40px 32px",
       }}
@@ -18,14 +18,14 @@ export default function ConfigPage() {
       <div style={{ maxWidth: 700, margin: "0 auto" }}>
         <div style={{ marginBottom: 36 }}>
           <h1 style={{ fontSize: 26, fontWeight: 1000, margin: "0 0 6px" }}>⚙️ Configuración</h1>
-          <p style={{ color: "#94A3B8", fontSize: 14, margin: 0 }}>Gestiona tu panel y pagos</p>
+          <p style={{ color: "#555555", fontSize: 14, margin: 0 }}>Gestiona tu panel y pagos</p>
         </div>
 
         <div
           onClick={() => router.push("/dev/pagos")}
           style={{
             background: "#FFFFFF",
-            border: "1px solid #E2E8F0",
+            border: "1px solid #DDE3E8",
             borderRadius: 16,
             padding: "22px 24px",
             display: "flex",
@@ -34,7 +34,7 @@ export default function ConfigPage() {
             cursor: "pointer",
             transition: "background .15s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#F8FAFC")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#E5EBF0")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#FFFFFF")}
         >
           <div
@@ -55,9 +55,9 @@ export default function ConfigPage() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 4 }}>Panel de Pagos</div>
-            <div style={{ color: "#94A3B8", fontSize: 13 }}>Revisa y verifica los pagos recibidos de tus clientes.</div>
+            <div style={{ color: "#555555", fontSize: 13 }}>Revisa y verifica los pagos recibidos de tus clientes.</div>
           </div>
-          <div style={{ color: "#94A3B8", fontSize: 20 }}>→</div>
+          <div style={{ color: "#555555", fontSize: 20 }}>→</div>
         </div>
       </div>
     </main>
