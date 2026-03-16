@@ -251,8 +251,8 @@ export default function AdminDashboardPage() {
       <div style={{
         background: "#FFFFFF",
         borderBottom: "1px solid #EAECF0",
-        padding: "0 28px",
-        height: 62,
+        padding: "0 36px",
+        height: 68,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -262,10 +262,13 @@ export default function AdminDashboardPage() {
         zIndex: 10,
         boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
       }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: "#111111", letterSpacing: -0.3 }}>
-          Admin Dashboard
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#111111", letterSpacing: -0.4 }}>
+            El Rincón de Domingo
+          </div>
+          <div style={{ fontSize: 11, color: "#AAAAAA", marginTop: 1, fontWeight: 500 }}>Panel de administración</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button
             onClick={load}
             disabled={busy}
@@ -278,20 +281,33 @@ export default function AdminDashboardPage() {
               onClick={() => setProfileOpen((v) => !v)}
               title="Mi perfil"
               style={{
-                width: 36, height: 36, borderRadius: 999,
-                background: profilePhoto ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
-                display: "grid", placeItems: "center",
-                color: "#fff", fontWeight: 800, fontSize: 14,
-                border: profileOpen ? "2px solid #6C5CE7" : "2px solid transparent",
-                cursor: "pointer", outline: "none",
-                overflow: "hidden", padding: 0,
-                transition: "border 140ms ease",
+                display: "flex", alignItems: "center", gap: 10,
+                background: "none", border: "none", cursor: "pointer", padding: 0,
               }}
             >
-              {profilePhoto
-                ? <img src={profilePhoto} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : (profileName ? profileName[0].toUpperCase() : "A")
-              }
+              {/* Avatar */}
+              <div style={{
+                width: 40, height: 40, borderRadius: 999,
+                background: profilePhoto ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+                display: "grid", placeItems: "center",
+                color: "#fff", fontWeight: 800, fontSize: 15,
+                border: profileOpen ? "2.5px solid #6C5CE7" : "2.5px solid #EAECF0",
+                overflow: "hidden",
+                transition: "border 140ms ease",
+                flexShrink: 0,
+              }}>
+                {profilePhoto
+                  ? <img src={profilePhoto} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : (profileName ? profileName[0].toUpperCase() : "A")
+                }
+              </div>
+              {/* Nombre */}
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#111111", lineHeight: 1.2 }}>
+                  {profileName || "Admin"}
+                </div>
+                <div style={{ fontSize: 11, color: "#AAAAAA" }}>Mi perfil</div>
+              </div>
             </button>
 
             {profileOpen && (
@@ -314,13 +330,19 @@ export default function AdminDashboardPage() {
                   display: "flex", alignItems: "center", gap: 12,
                 }}>
                   <div style={{
-                    width: 42, height: 42, borderRadius: 999,
-                    background: "rgba(255,255,255,0.25)",
+                    width: 44, height: 44, borderRadius: 999,
+                    background: profilePhoto ? "transparent" : "rgba(255,255,255,0.25)",
                     display: "grid", placeItems: "center",
                     fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0,
-                  }}>A</div>
+                    overflow: "hidden", border: "2px solid rgba(255,255,255,0.4)",
+                  }}>
+                    {profilePhoto
+                      ? <img src={profilePhoto} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (profileName ? profileName[0].toUpperCase() : "A")
+                    }
+                  </div>
                   <div>
-                    <div style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>Admin</div>
+                    <div style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>{profileName || "Admin"}</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>El Rincón de Domingo</div>
                   </div>
                 </div>
@@ -383,7 +405,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ padding: "28px 36px", display: "flex", flexDirection: "column", gap: 22 }}>
 
         {/* ── ERROR ── */}
         {error && (
