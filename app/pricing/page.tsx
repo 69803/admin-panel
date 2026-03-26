@@ -55,7 +55,7 @@ const planes = [
   {
     nombre: "Premium",
     priceId: "pri_01kk7gj7v1k6x1egznqr98yhc1",
-    precio: { mensual: 99, anual: 99 },
+    precio: { mensual: 119, anual: 119 },
     descripcion: "Solución enterprise para cadenas y grupos de restauración.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
@@ -72,6 +72,7 @@ const planes = [
       "Manager dedicado",
       "Base de datos de gran capacidad",
       "Soporte prioritario 24/7",
+      "Mobile app (App Store + Google Play) - 20% Discount",
     ],
     noFeatures: [],
   },
