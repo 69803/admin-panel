@@ -41,6 +41,22 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     setAuthed(readAuthedFromLS());
   }, [mounted, pathname]);
 
+  // Registrar actividad cuando el usuario está autenticado
+  useEffect(() => {
+    if (!mounted || !authed) return;
+    try {
+      const raw = localStorage.getItem("admin_auth_v1");
+      const email = raw ? JSON.parse(raw)?.email : null;
+      if (email) {
+        fetch("/api/activity", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }).catch(() => {});
+      }
+    } catch {}
+  }, [mounted, authed]);
+
   // LOGIN DESACTIVADO — volver a activar cuando el usuario lo indique
 
   // Mientras monta: render estable (evita hydration mismatch)
