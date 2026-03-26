@@ -8,6 +8,7 @@ import PricingPage from "./pricing/page";
 
 const AUTH_KEY = "admin_auth_v1";
 const ENFORCE_DATE = new Date("2026-04-01T00:00:00");
+const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
 function readAuthedFromLS(): boolean {
   try {
@@ -70,6 +71,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       const raw = localStorage.getItem(AUTH_KEY);
       const email = raw ? JSON.parse(raw)?.email : null;
       if (!email) { setSubscriptionAllowed(false); return; }
+      // Owner bypass — always allow regardless of subscription
+      if (email === OWNER_EMAIL) { setSubscriptionAllowed(true); return; }
       fetch(`/api/subscription-check?email=${encodeURIComponent(email)}`)
         .then((r) => r.json())
         .then((data) => setSubscriptionAllowed(!!data?.allowed))

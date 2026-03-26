@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const ENFORCE_DATE = new Date("2026-04-01T00:00:00");
+const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
 function getSupabase() {
   const url = process.env.SUPABASE_URL;
@@ -21,6 +22,11 @@ export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email");
   if (!email) {
     return NextResponse.json({ allowed: false, reason: "no_email" });
+  }
+
+  // Owner bypass — always allow regardless of subscription
+  if (email.toLowerCase().trim() === OWNER_EMAIL) {
+    return NextResponse.json({ allowed: true, reason: "owner" });
   }
 
   try {
