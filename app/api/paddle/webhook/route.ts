@@ -106,16 +106,44 @@ export async function POST(req: NextRequest) {
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
 
-        const { error } = await supabase.from("subscriptions").insert({
-          customer_email:    email,
-          subscription_id:   sub?.id,
-          plan:              planFromPriceId(priceId),
-          status:            sub?.status ?? "active",
-          next_billing_date: sub?.next_billed_at ?? null,
-        });
+        const { error } = await supabase.from("subscriptions").upsert(
+          {
+            customer_email:    email,
+            subscription_id:   sub?.id,
+            plan:              planFromPriceId(priceId),
+            status:            sub?.status ?? "active",
+            next_billing_date: sub?.next_billed_at ?? null,
+            updated_at:        new Date().toISOString(),
+          },
+          { onConflict: "subscription_id" }
+        );
 
         if (error) console.error("[Paddle] subscription.created DB error:", error.message);
-        else console.log(`[Paddle] subscription.created saved — subId=${sub?.id} plan=${planFromPriceId(priceId)}`);
+        else console.log(`[Paddle] subscription.created upserted — subId=${sub?.id} plan=${planFromPriceId(priceId)}`);
+        break;
+      }
+
+      // ── Subscription activated ─────────────────────────────────────────
+      case "subscription.activated": {
+        const sub = event.data;
+        const priceId: string = sub?.items?.[0]?.price?.id ?? "";
+        const email: string =
+          sub?.customer?.email ?? sub?.custom_data?.email ?? "";
+
+        const { error } = await supabase.from("subscriptions").upsert(
+          {
+            customer_email:    email,
+            subscription_id:   sub?.id,
+            plan:              planFromPriceId(priceId),
+            status:            "active",
+            next_billing_date: sub?.next_billed_at ?? null,
+            updated_at:        new Date().toISOString(),
+          },
+          { onConflict: "subscription_id" }
+        );
+
+        if (error) console.error("[Paddle] subscription.activated DB error:", error.message);
+        else console.log(`[Paddle] subscription.activated upserted — subId=${sub?.id} status=active`);
         break;
       }
 
@@ -132,6 +160,7 @@ export async function POST(req: NextRequest) {
                                  ? planFromPriceId(priceId)
                                  : undefined,
             next_billing_date: sub?.next_billed_at ?? null,
+            updated_at:        new Date().toISOString(),
           })
           .eq("subscription_id", sub?.id);
 
@@ -146,7 +175,7 @@ export async function POST(req: NextRequest) {
 
         const { error } = await supabase
           .from("subscriptions")
-          .update({ status: "canceled" })
+          .update({ status: "canceled", updated_at: new Date().toISOString() })
           .eq("subscription_id", sub?.id);
 
         if (error) console.error("[Paddle] subscription.canceled DB error:", error.message);

@@ -7,6 +7,7 @@ import { ACTIVO } from "../lib/license";
 import PricingPage from "./pricing/page";
 
 const AUTH_KEY = "admin_auth_v1";
+const ENFORCE_DATE = new Date("2026-04-01T00:00:00");
 
 function readAuthedFromLS(): boolean {
   try {
@@ -25,6 +26,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   const [mounted, setMounted] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [subscriptionAllowed, setSubscriptionAllowed] = useState<boolean | null>(null);
 
   const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/") || pathname === "/hello" || pathname?.startsWith("/hello/");
   const isProtected = pathname === "/admin" || pathname?.startsWith("/admin/");
@@ -57,6 +59,27 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     } catch {}
   }, [mounted, authed]);
 
+  // ── CHECK DE SUSCRIPCIÓN (server-side via API) ────────────────────
+  useEffect(() => {
+    if (!mounted) return;
+    if (new Date() < ENFORCE_DATE) {
+      setSubscriptionAllowed(true);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(AUTH_KEY);
+      const email = raw ? JSON.parse(raw)?.email : null;
+      if (!email) { setSubscriptionAllowed(false); return; }
+      fetch(`/api/subscription-check?email=${encodeURIComponent(email)}`)
+        .then((r) => r.json())
+        .then((data) => setSubscriptionAllowed(!!data?.allowed))
+        .catch(() => setSubscriptionAllowed(false));
+    } catch {
+      setSubscriptionAllowed(false);
+    }
+  }, [mounted]);
+  // ─────────────────────────────────────────────────────────────────
+
   // LOGIN DESACTIVADO — volver a activar cuando el usuario lo indique
 
   // Mientras monta: render estable (evita hydration mismatch)
@@ -66,6 +89,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   // ── BLOQUEO POR LICENCIA ──────────────────────────────────────────
   if (!ACTIVO) return <PricingPage />;
+  if (subscriptionAllowed === null) return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+  if (!subscriptionAllowed) return <PricingPage />;
   // ─────────────────────────────────────────────────────────────────
 
   // Login: sin sidebar
