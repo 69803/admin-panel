@@ -55,7 +55,7 @@ const planes = [
   {
     nombre: "Premium",
     priceId: "pri_01kk7gj7v1k6x1egznqr98yhc1",
-    precio: { mensual: 119, anual: 119 },
+    precio: { mensual: 94, anual: 94 },
     descripcion: "Solución enterprise para cadenas y grupos de restauración.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
@@ -64,14 +64,11 @@ const planes = [
     btnBorder: "rgba(255,255,255,.18)",
     btnColor: "#fff",
     features: [
-      "Todo lo del plan Pro",
       "Multi restaurante (ilimitado)",
-
       "KDS ilimitados",
       "API personalizada",
       "Manager dedicado",
       "Base de datos de gran capacidad",
-      "Soporte prioritario 24/7",
       "Mobile app (App Store + Google Play) - 20% Discount",
     ],
     noFeatures: [],
