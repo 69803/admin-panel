@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 declare global {
   interface Window {
@@ -97,6 +100,11 @@ const faqs = [
 export default function PricingPage() {
   const [anual, setAnual] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [alertAnim, setAlertAnim] = useState<object | null>(null);
+
+  useEffect(() => {
+    fetch("/alert-animation.json").then((r) => r.json()).then(setAlertAnim).catch(() => {});
+  }, []);
 
   function openPaddleCheckout(planNombre: string, priceId: string) {
     console.log("PLAN CLICKED:", planNombre);
@@ -162,21 +170,26 @@ export default function PricingPage() {
           }}
         />
 
-        <div
-          style={{
-            display: "inline-block",
-            padding: "6px 16px",
-            borderRadius: 999,
-            background: "rgba(124,58,237,.18)",
-            border: "1px solid rgba(124,58,237,.4)",
-            fontSize: 13,
-            fontWeight: 700,
-            color: "#c4b5fd",
-            marginBottom: 20,
-            letterSpacing: ".04em",
-          }}
-        >
-          ⚠️ Ups! Creo que necesitas actualizar tu plan. Escoge el mejor plan para ti 🙂
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+          {alertAnim && (
+            <Lottie animationData={alertAnim} loop style={{ width: 200, height: 200, flexShrink: 0 }} />
+          )}
+          <div
+            style={{
+              display: "inline-block",
+              padding: "10px 24px",
+              borderRadius: 999,
+              background: "rgba(220,38,38,.30)",
+              border: "1px solid rgba(239,68,68,.8)",
+              fontSize: 17,
+              fontWeight: 800,
+              color: "#ff6b6b",
+              letterSpacing: ".02em",
+              boxShadow: "0 0 22px rgba(239,68,68,.45)",
+            }}
+          >
+            ⚠️ Ups! Creo que necesitas actualizar tu plan. Escoge el mejor plan para ti 🙂
+          </div>
         </div>
 
         <h1
@@ -192,7 +205,7 @@ export default function PricingPage() {
         >
           El panel que tu restaurante
           <br />
-          necesitaba
+          necesita
         </h1>
 
         <p
