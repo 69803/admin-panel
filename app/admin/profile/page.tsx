@@ -36,34 +36,6 @@ function saveProfile(p: Profile) {
   window.dispatchEvent(new Event("profile-updated"));
 }
 
-const card: React.CSSProperties = {
-  background: "#FFFFFF",
-  borderRadius: 16,
-  boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)",
-  border: "1px solid rgba(0,0,0,0.04)",
-  padding: "24px 28px",
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 14px",
-  borderRadius: 10,
-  border: "1px solid #DDE3E8",
-  background: "#FFFFFF",
-  fontSize: 14,
-  color: "#111111",
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#555555",
-  marginBottom: 6,
-  display: "block",
-};
-
 export default function ProfilePage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -71,15 +43,41 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>({ nombre: "", apellido: "", email: "", photo: null, password: "" });
   const [saved, setSaved] = useState(false);
 
-  // Password change fields
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  useEffect(() => {
-    setProfile(loadProfile());
-  }, []);
+  useEffect(() => { setProfile(loadProfile()); }, []);
+
+  // Style objects using CSS variables
+  const card: React.CSSProperties = {
+    background: "var(--t-card)",
+    borderRadius: 16,
+    boxShadow: "var(--t-shadow)",
+    border: "1px solid var(--t-sborder)",
+    padding: "24px 28px",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1px solid var(--t-border3)",
+    background: "var(--t-input)",
+    fontSize: 14,
+    color: "var(--t-text)",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--t-text2)",
+    marginBottom: 6,
+    display: "block",
+  };
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -123,9 +121,7 @@ export default function ProfilePage() {
     }
     saveProfile({ ...profile, password: newPw });
     setProfile((p) => ({ ...p, password: newPw }));
-    setCurrentPw("");
-    setNewPw("");
-    setConfirmPw("");
+    setCurrentPw(""); setNewPw(""); setConfirmPw("");
     setPwMsg({ ok: true, text: "Contraseña actualizada correctamente." });
   }
 
@@ -134,12 +130,12 @@ export default function ProfilePage() {
     : "A";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F4F6FA", color: "#111111" }}>
+    <div style={{ minHeight: "100vh", background: "var(--t-bg)", color: "var(--t-text)" }}>
 
       {/* Header */}
       <div style={{
-        background: "#FFFFFF",
-        borderBottom: "1px solid #EAECF0",
+        background: "var(--t-header)",
+        borderBottom: "1px solid var(--t-border)",
         padding: "0 28px",
         height: 62,
         display: "flex",
@@ -155,13 +151,13 @@ export default function ProfilePage() {
             onClick={() => router.back()}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "#555555", display: "flex", alignItems: "center", gap: 6,
+              color: "var(--t-text2)", display: "flex", alignItems: "center", gap: 6,
               fontWeight: 600, fontSize: 13,
             } as React.CSSProperties}
           >
             ← Volver
           </button>
-          <div style={{ width: 1, height: 20, background: "#EAECF0" }} />
+          <div style={{ width: 1, height: 20, background: "var(--t-border)" }} />
           <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>Mi Perfil</div>
         </div>
       </div>
@@ -172,41 +168,29 @@ export default function ProfilePage() {
         <div style={card}>
           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Foto de perfil</div>
           <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            {/* Avatar */}
             <div
               onClick={() => fileRef.current?.click()}
               title="Cambiar foto"
               style={{
-                width: 90,
-                height: 90,
-                borderRadius: 999,
+                width: 90, height: 90, borderRadius: 999,
                 background: profile.photo ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
-                display: "grid",
-                placeItems: "center",
-                cursor: "pointer",
-                flexShrink: 0,
-                overflow: "hidden",
-                border: "3px solid #EAECF0",
-                position: "relative",
+                display: "grid", placeItems: "center",
+                cursor: "pointer", flexShrink: 0, overflow: "hidden",
+                border: "3px solid var(--t-border)", position: "relative",
               }}
             >
-              {profile.photo ? (
-                <img src={profile.photo} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <span style={{ fontSize: 32, fontWeight: 800, color: "#fff" }}>{initials}</span>
-              )}
-              {/* Overlay hover */}
+              {profile.photo
+                ? <img src={profile.photo} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: 32, fontWeight: 800, color: "#fff" }}>{initials}</span>
+              }
               <div style={{
                 position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                opacity: 0, transition: "opacity 150ms",
-                borderRadius: 999, fontSize: 20,
+                opacity: 0, transition: "opacity 150ms", borderRadius: 999, fontSize: 20,
               }}
                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
-              >
-                📷
-              </div>
+              >📷</div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -214,9 +198,9 @@ export default function ProfilePage() {
               <button
                 onClick={() => fileRef.current?.click()}
                 style={{
-                  padding: "9px 18px", borderRadius: 10, border: "1px solid #DDE3E8",
-                  background: "#FFFFFF", fontWeight: 600, fontSize: 13, cursor: "pointer",
-                  color: "#111111",
+                  padding: "9px 18px", borderRadius: 10, border: "1px solid var(--t-border3)",
+                  background: "var(--t-card)", fontWeight: 600, fontSize: 13, cursor: "pointer",
+                  color: "var(--t-text)",
                 }}
               >
                 📁 Subir foto desde PC
@@ -233,7 +217,7 @@ export default function ProfilePage() {
                   🗑️ Quitar foto
                 </button>
               )}
-              <div style={{ fontSize: 12, color: "#888888" }}>JPG, PNG o GIF · Máx. 5 MB</div>
+              <div style={{ fontSize: 12, color: "var(--t-text2)" }}>JPG, PNG o GIF · Máx. 5 MB</div>
             </div>
           </div>
         </div>
@@ -242,98 +226,64 @@ export default function ProfilePage() {
         <div style={card}>
           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Datos personales</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-
             <div>
               <label style={labelStyle}>Nombre</label>
-              <input
-                style={inputStyle}
-                value={profile.nombre}
-                placeholder="Tu nombre"
-                onChange={(e) => setProfile((p) => ({ ...p, nombre: e.target.value }))}
-              />
+              <input style={inputStyle} value={profile.nombre} placeholder="Tu nombre"
+                onChange={(e) => setProfile((p) => ({ ...p, nombre: e.target.value }))} />
             </div>
-
             <div>
               <label style={labelStyle}>Apellido</label>
-              <input
-                style={inputStyle}
-                value={profile.apellido}
-                placeholder="Tu apellido"
-                onChange={(e) => setProfile((p) => ({ ...p, apellido: e.target.value }))}
-              />
+              <input style={inputStyle} value={profile.apellido} placeholder="Tu apellido"
+                onChange={(e) => setProfile((p) => ({ ...p, apellido: e.target.value }))} />
             </div>
-
             <div style={{ gridColumn: "span 2" }}>
               <label style={labelStyle}>Correo electrónico</label>
               <input
-                style={{ ...inputStyle, background: "#F8F9FB", color: "#777777", cursor: "not-allowed" }}
-                value={profile.email}
-                readOnly
-                placeholder="correo@ejemplo.com"
+                style={{ ...inputStyle, background: "var(--t-card2)", color: "var(--t-text2)", cursor: "not-allowed" }}
+                value={profile.email} readOnly placeholder="correo@ejemplo.com"
               />
-              <div style={{ fontSize: 11, color: "#AAAAAA", marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: "var(--t-text3)", marginTop: 4 }}>
                 El correo está asociado a tu cuenta y no puede cambiarse desde aquí.
               </div>
             </div>
           </div>
-
           <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 12 }}>
             <button
               onClick={handleSavePersonal}
               style={{
                 padding: "10px 22px", borderRadius: 10, border: "none",
-                background: "#6C5CE7", color: "#fff", fontWeight: 700,
-                fontSize: 14, cursor: "pointer",
+                background: "#6C5CE7", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
               }}
             >
               Guardar cambios
             </button>
-            {saved && (
-              <span style={{ fontSize: 13, color: "#065F46", fontWeight: 600 }}>✓ Guardado</span>
-            )}
+            {saved && <span style={{ fontSize: 13, color: "#065F46", fontWeight: 600 }}>✓ Guardado</span>}
           </div>
         </div>
 
         {/* ── CAMBIAR CONTRASEÑA ── */}
         <div style={card}>
           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Cambiar contraseña</div>
-          <div style={{ fontSize: 13, color: "#777777", marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: "var(--t-text2)", marginBottom: 20 }}>
             Si es la primera vez, deja "Contraseña actual" vacío.
           </div>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label style={labelStyle}>Contraseña actual</label>
-              <input
-                style={inputStyle}
-                type="password"
-                value={currentPw}
-                placeholder="••••••••"
-                onChange={(e) => setCurrentPw(e.target.value)}
-              />
+              <input style={inputStyle} type="password" value={currentPw} placeholder="••••••••"
+                onChange={(e) => setCurrentPw(e.target.value)} />
             </div>
             <div>
               <label style={labelStyle}>Nueva contraseña</label>
-              <input
-                style={inputStyle}
-                type="password"
-                value={newPw}
-                placeholder="Mínimo 6 caracteres"
-                onChange={(e) => setNewPw(e.target.value)}
-              />
+              <input style={inputStyle} type="password" value={newPw} placeholder="Mínimo 6 caracteres"
+                onChange={(e) => setNewPw(e.target.value)} />
             </div>
             <div>
               <label style={labelStyle}>Confirmar nueva contraseña</label>
-              <input
-                style={inputStyle}
-                type="password"
-                value={confirmPw}
-                placeholder="Repite la nueva contraseña"
-                onChange={(e) => setConfirmPw(e.target.value)}
-              />
+              <input style={inputStyle} type="password" value={confirmPw} placeholder="Repite la nueva contraseña"
+                onChange={(e) => setConfirmPw(e.target.value)} />
             </div>
           </div>
-
           {pwMsg && (
             <div style={{
               marginTop: 14, padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600,
@@ -344,13 +294,11 @@ export default function ProfilePage() {
               {pwMsg.ok ? "✓" : "⚠️"} {pwMsg.text}
             </div>
           )}
-
           <button
             onClick={handleChangePassword}
             style={{
               marginTop: 20, padding: "10px 22px", borderRadius: 10, border: "none",
-              background: "#1A1D2E", color: "#fff", fontWeight: 700,
-              fontSize: 14, cursor: "pointer",
+              background: "#1A1D2E", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
             }}
           >
             🔑 Cambiar contraseña
@@ -366,20 +314,18 @@ export default function ProfilePage() {
             cursor: "pointer", transition: "box-shadow 150ms ease",
           }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.10)")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "var(--t-shadow)")}
         >
           <div style={{
             width: 48, height: 48, borderRadius: 12,
             background: "#F0EEFF", border: "1px solid #C4B5FD",
             display: "grid", placeItems: "center", fontSize: 22, flexShrink: 0,
-          }}>
-            💳
-          </div>
+          }}>💳</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 15 }}>Plan de pago</div>
-            <div style={{ fontSize: 13, color: "#777777", marginTop: 2 }}>Ver y gestionar tu plan de suscripción.</div>
+            <div style={{ fontSize: 13, color: "var(--t-text2)", marginTop: 2 }}>Ver y gestionar tu plan de suscripción.</div>
           </div>
-          <div style={{ color: "#AAAAAA", fontSize: 18 }}>›</div>
+          <div style={{ color: "var(--t-text3)", fontSize: 18 }}>›</div>
         </div>
 
       </div>

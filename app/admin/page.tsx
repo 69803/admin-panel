@@ -87,15 +87,6 @@ function SparkLine({ values, color = "#6C5CE7", height = 80 }: { values: number[
   );
 }
 
-// Card with shadow
-const card: React.CSSProperties = {
-  background: "#FFFFFF",
-  borderRadius: 16,
-  boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)",
-  padding: "20px 22px",
-  border: "1px solid rgba(0,0,0,0.04)",
-};
-
 const badge = (bg: string, fg: string): React.CSSProperties => ({
   display: "inline-flex",
   alignItems: "center",
@@ -119,6 +110,15 @@ export default function AdminDashboardPage() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("");
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Card style using CSS variables
+  const card: React.CSSProperties = {
+    background: "var(--t-card)",
+    borderRadius: 16,
+    boxShadow: "var(--t-shadow)",
+    padding: "20px 22px",
+    border: "1px solid var(--t-sborder)",
+  };
 
   // Carga foto y nombre desde localStorage
   useEffect(() => {
@@ -176,11 +176,10 @@ export default function AdminDashboardPage() {
     const topCaros = menu.slice().sort((a, b) => (Number(b.precio) || 0) - (Number(a.precio) || 0)).slice(0, 3);
     const promedioPrecio = menu.length
       ? menu.reduce((acc, it) => acc + (Number(it.precio) || 0), 0) / menu.length : 0;
-    const totalIngresos = pedidos.reduce(() => 0, 0); // placeholder
+    const totalIngresos = pedidos.reduce(() => 0, 0);
     return { totalPlatos, totalCategorias: categorias.size, countByEstado, topCaros, promedioPrecio, totalIngresos };
   }, [menu, pedidos]);
 
-  // Fake sparkline data seeded from real counts for visual interest
   const sparkData = useMemo(() => {
     const base = stats.totalPlatos || 10;
     return [base * 0.6, base * 0.5, base * 0.7, base * 0.65, base * 0.9, base * 0.85, base];
@@ -192,9 +191,9 @@ export default function AdminDashboardPage() {
     gap: 8,
     padding: "9px 16px",
     borderRadius: 10,
-    border: "1px solid #DDE3E8",
-    background: "#FFFFFF",
-    color: "#111111",
+    border: "1px solid var(--t-border3)",
+    background: "var(--t-card)",
+    color: "var(--t-text)",
     fontWeight: 700,
     fontSize: 13,
     cursor: "pointer",
@@ -227,7 +226,7 @@ export default function AdminDashboardPage() {
           (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05)";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--t-shadow)";
           (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
         }}
       >
@@ -235,8 +234,8 @@ export default function AdminDashboardPage() {
           <span style={{ fontSize: 26 }}>{icon}</span>
           {badgeEl}
         </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#111111", marginTop: 4 }}>{title}</div>
-        <div style={{ fontSize: 13, color: "#777777", lineHeight: 1.5, flex: 1 }}>{desc}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--t-text)", marginTop: 4 }}>{title}</div>
+        <div style={{ fontSize: 13, color: "var(--t-text2)", lineHeight: 1.5, flex: 1 }}>{desc}</div>
         {extra ?? (
           <div style={{ fontSize: 13, fontWeight: 600, color: "#6C5CE7", marginTop: 4 }}>Abrir →</div>
         )}
@@ -244,13 +243,27 @@ export default function AdminDashboardPage() {
     </Link>
   );
 
+  const rowLinkStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "var(--t-card2)",
+    border: "1px solid var(--t-border)",
+    textDecoration: "none",
+    color: "var(--t-text)",
+    fontWeight: 600,
+    fontSize: 13,
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: "#F4F6FA", color: "#111111" }}>
+    <div style={{ minHeight: "100vh", background: "var(--t-bg)", color: "var(--t-text)" }}>
 
       {/* ── TOP HEADER ── */}
       <div style={{
-        background: "#FFFFFF",
-        borderBottom: "1px solid #EAECF0",
+        background: "var(--t-header)",
+        borderBottom: "1px solid var(--t-border)",
         padding: "0 36px",
         height: 80,
         display: "flex",
@@ -263,10 +276,10 @@ export default function AdminDashboardPage() {
         boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
       }}>
         <div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#111111", letterSpacing: -0.4 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "var(--t-text)", letterSpacing: -0.4 }}>
             El Rincón de Domingo
           </div>
-          <div style={{ fontSize: 12, color: "#AAAAAA", marginTop: 2, fontWeight: 500 }}>Panel de administración</div>
+          <div style={{ fontSize: 12, color: "var(--t-text3)", marginTop: 2, fontWeight: 500 }}>Panel de administración</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <button
@@ -282,22 +295,21 @@ export default function AdminDashboardPage() {
               title="Mi perfil"
               style={{
                 display: "flex", alignItems: "center", gap: 12,
-                background: profileOpen ? "#F4F6FA" : "none",
+                background: profileOpen ? "var(--t-hover)" : "none",
                 border: "1px solid",
-                borderColor: profileOpen ? "#DDE3E8" : "transparent",
+                borderColor: profileOpen ? "var(--t-border3)" : "transparent",
                 borderRadius: 14,
                 cursor: "pointer",
                 padding: "6px 12px 6px 6px",
                 transition: "all 140ms ease",
               }}
             >
-              {/* Avatar grande */}
               <div style={{
                 width: 52, height: 52, borderRadius: 999,
                 background: profilePhoto ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
                 display: "grid", placeItems: "center",
                 color: "#fff", fontWeight: 800, fontSize: 20,
-                border: profileOpen ? "3px solid #6C5CE7" : "3px solid #EAECF0",
+                border: profileOpen ? "3px solid #6C5CE7" : "3px solid var(--t-border)",
                 overflow: "hidden",
                 transition: "border 140ms ease",
                 flexShrink: 0,
@@ -308,14 +320,13 @@ export default function AdminDashboardPage() {
                   : (profileName ? profileName[0].toUpperCase() : "A")
                 }
               </div>
-              {/* Nombre + rol */}
               <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#111111", lineHeight: 1.3 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t-text)", lineHeight: 1.3 }}>
                   {profileName || "Admin"}
                 </div>
-                <div style={{ fontSize: 11, color: "#888888" }}>El Rincón de Domingo</div>
+                <div style={{ fontSize: 11, color: "var(--t-text2)" }}>El Rincón de Domingo</div>
               </div>
-              <div style={{ fontSize: 10, color: "#BBBBBB", marginLeft: 4 }}>▼</div>
+              <div style={{ fontSize: 10, color: "var(--t-text3)", marginLeft: 4 }}>▼</div>
             </button>
 
             {profileOpen && (
@@ -324,14 +335,13 @@ export default function AdminDashboardPage() {
                 right: 0,
                 top: 72,
                 width: 250,
-                background: "#FFFFFF",
+                background: "var(--t-card)",
                 borderRadius: 14,
                 boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)",
-                border: "1px solid #EAECF0",
+                border: "1px solid var(--t-border)",
                 overflow: "hidden",
                 zIndex: 999,
               }}>
-                {/* Header */}
                 <div style={{
                   padding: "16px",
                   background: "linear-gradient(135deg, #6C5CE7 0%, #a29bfe 100%)",
@@ -355,7 +365,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Opciones */}
                 {[
                   { icon: "🖼️", label: "Cambiar foto de perfil", href: "/admin/profile" },
                   { icon: "👤", label: "Datos personales", href: "/admin/profile" },
@@ -366,11 +375,11 @@ export default function AdminDashboardPage() {
                   const rowStyle: React.CSSProperties = {
                     display: "flex", alignItems: "center", gap: 12,
                     padding: "11px 16px", cursor: "pointer",
-                    fontSize: 13, color: "#222222", fontWeight: 500,
+                    fontSize: 13, color: "var(--t-text)", fontWeight: 500,
                     transition: "background 100ms ease",
                     textDecoration: "none",
                   };
-                  const hoverOn = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.background = "#F4F6FA");
+                  const hoverOn = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.background = "var(--t-hover)");
                   const hoverOff = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.background = "transparent");
 
                   return item.href ? (
@@ -388,8 +397,7 @@ export default function AdminDashboardPage() {
                   );
                 })}
 
-                {/* Cerrar sesión */}
-                <div style={{ height: 1, background: "#EAECF0", margin: "4px 0" }} />
+                <div style={{ height: 1, background: "var(--t-border)", margin: "4px 0" }} />
                 <div
                   style={{
                     display: "flex", alignItems: "center", gap: 12,
@@ -425,43 +433,39 @@ export default function AdminDashboardPage() {
         {/* ── STATS ROW ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
 
-          {/* Pedidos hoy */}
           <div style={card}>
-            <div style={{ fontSize: 12, color: "#888888", fontWeight: 600, marginBottom: 6 }}>Pedidos hoy</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", fontWeight: 600, marginBottom: 6 }}>Pedidos hoy</div>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
               <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
                 {loading ? "…" : pedidos.length}
               </div>
               <div style={{ display: "flex", gap: 4, fontSize: 18 }}>🛒</div>
             </div>
-            <div style={{ fontSize: 12, color: "#888888", marginTop: 6 }}>Platos totales: {loading ? "…" : stats.totalPlatos}</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", marginTop: 6 }}>Platos totales: {loading ? "…" : stats.totalPlatos}</div>
           </div>
 
-          {/* Platos activos */}
           <div style={card}>
-            <div style={{ fontSize: 12, color: "#888888", fontWeight: 600, marginBottom: 6 }}>Platos activos</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", fontWeight: 600, marginBottom: 6 }}>Platos activos</div>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
               <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
                 {loading ? "…" : stats.totalPlatos}
               </div>
               <span style={badge("#E9E4FF", "#6C5CE7")}>📋 Menú</span>
             </div>
-            <div style={{ fontSize: 12, color: "#888888", marginTop: 6 }}>Precio promedio: {money(stats.promedioPrecio)}</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", marginTop: 6 }}>Precio promedio: {money(stats.promedioPrecio)}</div>
           </div>
 
-          {/* Categorías */}
           <div style={card}>
-            <div style={{ fontSize: 12, color: "#888888", fontWeight: 600, marginBottom: 6 }}>Categorías</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", fontWeight: 600, marginBottom: 6 }}>Categorías</div>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
               <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
                 {loading ? "…" : stats.totalCategorias}
               </div>
               <span style={badge("#D1FAE5", "#065F46")}>✓ Activas</span>
             </div>
-            <div style={{ fontSize: 12, color: "#888888", marginTop: 6 }}>Detectadas desde la DB</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", marginTop: 6 }}>Detectadas desde la DB</div>
           </div>
 
-          {/* Refrescar / acciones */}
           <div style={{ ...card, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10 }}>
             <button
               onClick={load}
@@ -489,12 +493,11 @@ export default function AdminDashboardPage() {
         {/* ── CHART + PEDIDOS ROW ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 16, alignItems: "start" }}>
 
-          {/* Ventas / sparkline */}
           <div style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Platos en menú</div>
-                <div style={{ fontSize: 12, color: "#888888", marginTop: 2 }}>Distribución por categoría</div>
+                <div style={{ fontSize: 12, color: "var(--t-text2)", marginTop: 2 }}>Distribución por categoría</div>
               </div>
               <span style={badge("#E9E4FF", "#6C5CE7")}>📊 Hoy</span>
             </div>
@@ -505,13 +508,12 @@ export default function AdminDashboardPage() {
               {Object.entries(stats.countByEstado).map(([estado, n]) => (
                 <div key={estado} style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 18, fontWeight: 800 }}>{n}</div>
-                  <div style={{ fontSize: 11, color: "#888888", textTransform: "capitalize" }}>{estado}</div>
+                  <div style={{ fontSize: 11, color: "var(--t-text2)", textTransform: "capitalize" }}>{estado}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Pedidos hoy — estados */}
           <div style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 15, fontWeight: 700 }}>Pedidos hoy</div>
@@ -527,17 +529,17 @@ export default function AdminDashboardPage() {
               <span style={badge("#FEE2E2", "#991B1B")}>❌ CANCELADO · {stats.countByEstado.cancelado}</span>
             </div>
 
-            <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ borderTop: "1px solid var(--t-border2)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: "#888888" }}>Total pedidos activos</span>
+                <span style={{ color: "var(--t-text2)" }}>Total pedidos activos</span>
                 <span style={{ fontWeight: 700 }}>{stats.countByEstado.pendiente + stats.countByEstado.preparando}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: "#888888" }}>Entregados</span>
+                <span style={{ color: "var(--t-text2)" }}>Entregados</span>
                 <span style={{ fontWeight: 700, color: "#065F46" }}>{stats.countByEstado.entregado}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: "#888888" }}>Precio promedio menú</span>
+                <span style={{ color: "var(--t-text2)" }}>Precio promedio menú</span>
                 <span style={{ fontWeight: 700 }}>{money(stats.promedioPrecio)}</span>
               </div>
             </div>
@@ -576,15 +578,14 @@ export default function AdminDashboardPage() {
           />
         </div>
 
-        {/* ── BOTTOM ROW: Insight + Reportes + Contabilidad ── */}
+        {/* ── BOTTOM ROW ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
 
-          {/* Insight rápido */}
           <div style={card}>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Insight rápido</div>
-            <div style={{ fontSize: 12, color: "#888888", marginBottom: 14 }}>Top 3 platos más caros</div>
+            <div style={{ fontSize: 12, color: "var(--t-text2)", marginBottom: 14 }}>Top 3 platos más caros</div>
             {loading ? (
-              <div style={{ color: "#888888", fontSize: 13 }}>Cargando…</div>
+              <div style={{ color: "var(--t-text2)", fontSize: 13 }}>Cargando…</div>
             ) : stats.topCaros.length ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {stats.topCaros.map((x) => (
@@ -593,110 +594,63 @@ export default function AdminDashboardPage() {
                     style={{
                       padding: "10px 14px",
                       borderRadius: 10,
-                      background: "#F8F9FB",
-                      border: "1px solid #EAECF0",
+                      background: "var(--t-card2)",
+                      border: "1px solid var(--t-border)",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                     }}
                   >
                     <div style={{ fontWeight: 600, fontSize: 13 }}>
-                      {x.nombre} <span style={{ color: "#AAAAAA", fontWeight: 500 }}>#{x.id}</span>
+                      {x.nombre} <span style={{ color: "var(--t-text3)", fontWeight: 500 }}>#{x.id}</span>
                     </div>
                     <div style={{ fontWeight: 800, fontSize: 14 }}>{money(Number(x.precio) || 0)}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ color: "#888888", fontSize: 13 }}>No hay platos aún</div>
+              <div style={{ color: "var(--t-text2)", fontSize: 13 }}>No hay platos aún</div>
             )}
           </div>
 
-          {/* Reportes */}
           <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
               <span style={{ fontSize: 24 }}>📊</span>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Reportes</div>
-                <div style={{ fontSize: 13, color: "#777777", marginTop: 4, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, color: "var(--t-text2)", marginTop: 4, lineHeight: 1.5 }}>
                   Resumen por periodo + Top platos + acciones administrativas.
                 </div>
               </div>
             </div>
             <div style={{ flex: 1 }} />
-            <Link
-              href="/admin/reportes"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 14px",
-                borderRadius: 10,
-                background: "#F8F9FB",
-                border: "1px solid #EAECF0",
-                textDecoration: "none",
-                color: "#111111",
-                fontWeight: 600,
-                fontSize: 13,
-              }}
-            >
+            <Link href="/admin/reportes" style={rowLinkStyle}>
               Ver reporte completo <span style={{ color: "#6C5CE7" }}>›</span>
             </Link>
-            <Link
-              href="/admin/kds/mensual"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 14px",
-                borderRadius: 10,
-                background: "#F8F9FB",
-                border: "1px solid #EAECF0",
-                textDecoration: "none",
-                color: "#111111",
-                fontWeight: 600,
-                fontSize: 13,
-              }}
-            >
+            <Link href="/admin/kds/mensual" style={rowLinkStyle}>
               KDS Mensual <span style={{ color: "#6C5CE7" }}>›</span>
             </Link>
           </div>
 
-          {/* Contabilidad */}
           <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
               <span style={{ fontSize: 24 }}>📒</span>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Contabilidad</div>
-                <div style={{ fontSize: 13, color: "#777777", marginTop: 4, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, color: "var(--t-text2)", marginTop: 4, lineHeight: 1.5 }}>
                   Gastos, balance y control financiero del restaurante.
                 </div>
               </div>
             </div>
             <div style={{ flex: 1 }} />
             <span style={badge("#D1FAE5", "#065F46")}>FINANZAS</span>
-            <Link
-              href="/admin/contabilidad"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 14px",
-                borderRadius: 10,
-                background: "#F8F9FB",
-                border: "1px solid #EAECF0",
-                textDecoration: "none",
-                color: "#111111",
-                fontWeight: 600,
-                fontSize: 13,
-              }}
-            >
+            <Link href="/admin/contabilidad" style={rowLinkStyle}>
               Abrir contabilidad <span style={{ color: "#6C5CE7" }}>›</span>
             </Link>
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: "#AAAAAA", paddingBottom: 8 }}>
+        <div style={{ fontSize: 11, color: "var(--t-text3)", paddingBottom: 8 }}>
           ⓘ Nota: Este dashboard trae datos en vivo desde la API de tu menú/platos.
         </div>
       </div>

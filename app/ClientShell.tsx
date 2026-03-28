@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import { ACTIVO } from "../lib/license";
 import PricingPage from "./pricing/page";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
 const AUTH_KEY = "admin_auth_v1";
 const ENFORCE_DATE = new Date("2026-04-01T00:00:00");
@@ -21,6 +22,20 @@ function readAuthedFromLS(): boolean {
   }
 }
 
+function Shell({ children }: { children: React.ReactNode }) {
+  const { bg } = useTheme();
+  return (
+    <div id="admin-shell" style={{ display: "flex", minHeight: "100vh", background: bg }}>
+      <Sidebar />
+      <main style={{ flex: 1 }}>{children}</main>
+    </div>
+  );
+}
+
+function PricingWrapper() {
+  return <PricingPage />;
+}
+
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -29,8 +44,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const [authed, setAuthed] = useState(false);
   const [subscriptionAllowed, setSubscriptionAllowed] = useState<boolean | null>(null);
 
-  const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/") || pathname === "/hello" || pathname?.startsWith("/hello/");
-  const isProtected = pathname === "/admin" || pathname?.startsWith("/admin/");
+  const isLoginRoute   = pathname === "/login" || pathname?.startsWith("/login/") || pathname === "/hello" || pathname?.startsWith("/hello/");
+  const isPricingRoute = pathname === "/pricing";
+  const isProtected    = pathname === "/admin" || pathname?.startsWith("/admin/");
 
   // ✅ Evita hydration mismatch: nada que dependa de localStorage antes de montar
   useEffect(() => {
@@ -91,19 +107,18 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   }
 
   // ── BLOQUEO POR LICENCIA ──────────────────────────────────────────
-  if (!ACTIVO) return <PricingPage />;
+  if (!ACTIVO) return <PricingWrapper />;
   if (subscriptionAllowed === null) return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
-  if (!subscriptionAllowed) return <PricingPage />;
+  if (!subscriptionAllowed) return <PricingWrapper />;
   // ─────────────────────────────────────────────────────────────────
 
-  // Login: sin sidebar
-  if (isLoginRoute) return <>{children}</>;
+  // Login o Pricing: sin sidebar, sin theme
+  if (isLoginRoute || isPricingRoute) return <>{children}</>;
 
-  // Resto: con sidebar
+  // Panel admin: con sidebar y theme
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar />
-      <main style={{ flex: 1 }}>{children}</main>
-    </div>
+    <ThemeProvider>
+      <Shell>{children}</Shell>
+    </ThemeProvider>
   );
 }

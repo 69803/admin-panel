@@ -17,6 +17,7 @@ const items: Item[] = [
   { href: "/admin/kds/mensual", label: "KDS Mensual", icon: "📅" },
   { href: "/admin/reportes", label: "Reportes", icon: "📊" },
   { href: "/admin/analytics", label: "Analytics", icon: "📈" },
+  { href: "/admin/iq", label: "IQ Análisis", icon: "🧠" },
   { href: "/admin/config", label: "Configuración", icon: "⚙️" },
 ];
 

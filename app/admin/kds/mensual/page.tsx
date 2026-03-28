@@ -23,15 +23,10 @@ type Pedido = {
 
 type MenuItem = { id: number; nombre?: string; precio: number };
 
-// ✅ Normaliza URL (SIEMPRE https) y arregla cuando viene sin protocolo
 function normalizeApiUrl(raw?: string) {
   if (!raw) return null;
-
   let url = raw.trim();
-
-  // solo quitar slash final
   url = url.replace(/\/+$/, "");
-
   return url;
 }
 
@@ -93,39 +88,28 @@ async function fetchPedidosHistorial(): Promise<Pedido[]> {
 
 function estadoColor(estado: Estado) {
   switch (estado) {
-    case "pendiente":
-      return { bg: "#FFF4E5", fg: "#B45309", border: "#FED7AA" };
-    case "preparando":
-      return { bg: "#E8F1FF", fg: "#1D4ED8", border: "#BFDBFE" };
-    case "listo":
-      return { bg: "#E9FBEF", fg: "#15803D", border: "#BBF7D0" };
-    case "entregado":
-      return { bg: "#F3E8FF", fg: "#6D28D9", border: "#E9D5FF" };
-    case "cancelado":
-      return { bg: "#FEECEC", fg: "#B91C1C", border: "#FECACA" };
+    case "pendiente":  return { bg: "#FFF4E5", fg: "#B45309", border: "#FED7AA" };
+    case "preparando": return { bg: "#E8F1FF", fg: "#1D4ED8", border: "#BFDBFE" };
+    case "listo":      return { bg: "#E9FBEF", fg: "#15803D", border: "#BBF7D0" };
+    case "entregado":  return { bg: "#F3E8FF", fg: "#6D28D9", border: "#E9D5FF" };
+    case "cancelado":  return { bg: "#FEECEC", fg: "#B91C1C", border: "#FECACA" };
   }
 }
 
 export default function KdsMensualPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [menuMap, setMenuMap] = useState<Map<number, MenuItem>>(new Map());
 
   const load = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
+      setLoading(true); setError(null);
       const [menu, hist] = await Promise.all([fetchMenu(), fetchPedidosHistorial()]);
-
       const m = new Map<number, MenuItem>();
       for (const it of menu) m.set(Number(it.id), it);
       setMenuMap(m);
-
       const now = new Date();
-
       const filtered = hist
         .filter((p) => {
           const d = parseDate(p.fecha_hora ?? p.created_at ?? null);
@@ -134,7 +118,6 @@ export default function KdsMensualPage() {
           return diffDays >= 0 && diffDays <= 30;
         })
         .sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0));
-
       setPedidos(filtered);
     } catch (e: any) {
       setError(e?.message ?? "Error cargando historial");
@@ -159,39 +142,29 @@ export default function KdsMensualPage() {
         const precio = Number(menuMap.get(platoId)?.precio ?? 0);
         return acc + precio * cant;
       }, 0);
-
       return {
-        id: p.id,
-        mesa_id: p.mesa_id,
-        estado: normalizeEstado(p.estado),
+        id: p.id, mesa_id: p.mesa_id, estado: normalizeEstado(p.estado),
         fecha: fmtFecha(p.fecha_hora ?? p.created_at ?? null),
-        comentario: pickComentario(p),
-        itemsCount,
-        total,
+        comentario: pickComentario(p), itemsCount, total,
       };
     });
   }, [pedidos, menuMap]);
 
-  const pageStyle: React.CSSProperties = {
-    padding: 16,
-    background: "#0b1220",
-    minHeight: "100vh",
-    color: "white",
-  };
-
+  // CSS-variable-based styles
   const card: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "var(--t-card)",
+    border: "1px solid var(--t-border)",
     borderRadius: 16,
     padding: 12,
+    boxShadow: "var(--t-shadow)",
   };
 
   const btn: React.CSSProperties = {
     padding: "10px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.10)",
-    color: "white",
+    border: "1px solid var(--t-border3)",
+    background: "var(--t-card)",
+    color: "var(--t-text)",
     fontWeight: 800,
     textDecoration: "none",
     cursor: "pointer",
@@ -201,29 +174,23 @@ export default function KdsMensualPage() {
   };
 
   return (
-    <div style={pageStyle}>
+    <div style={{ padding: 16, background: "var(--t-bg)", minHeight: "100vh", color: "var(--t-text)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 950 }}>Historial mensual</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>Últimos 30 días • API: {API_BASE}</div>
+          <div style={{ color: "var(--t-text2)", fontSize: 13 }}>Últimos 30 días • API: {API_BASE}</div>
         </div>
-
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Link href="/admin/kds" style={btn}>
-            ← Volver a KDS
-          </Link>
-
-          <button onClick={load} style={btn}>
-            🔄 Refrescar
-          </button>
+          <Link href="/admin/kds" style={btn}>← Volver a KDS</Link>
+          <button onClick={load} style={btn}>🔄 Refrescar</button>
         </div>
       </div>
 
-      {error ? (
-        <div style={{ ...card, borderColor: "rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.10)", marginBottom: 12 }}>
+      {error && (
+        <div style={{ ...card, borderColor: "rgba(239,68,68,0.35)", background: "#FEF2F2", color: "#991B1B", marginBottom: 12 }}>
           ⚠️ {error}
         </div>
-      ) : null}
+      )}
 
       {loading ? (
         <div style={card}>Cargando historial…</div>
@@ -238,37 +205,28 @@ export default function KdsMensualPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 950 }}>
-                      Pedido #{r.id} <span style={{ opacity: 0.7, fontWeight: 800 }}>— Mesa {r.mesa_id}</span>
+                      Pedido #{r.id} <span style={{ color: "var(--t-text2)", fontWeight: 800 }}>— Mesa {r.mesa_id}</span>
                     </div>
-                    <div style={{ opacity: 0.8, fontSize: 13 }}>
+                    <div style={{ color: "var(--t-text2)", fontSize: 13 }}>
                       🕒 {r.fecha} • 🍽️ {r.itemsCount} ítems • 💰 € {r.total.toFixed(2)}
                     </div>
                   </div>
-
-                  <div
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: 999,
-                      background: c.bg,
-                      color: c.fg,
-                      border: `1px solid ${c.border}`,
-                      fontSize: 12,
-                      fontWeight: 950,
-                      textTransform: "uppercase",
-                      letterSpacing: 0.6,
-                      whiteSpace: "nowrap",
-                      height: "fit-content",
-                    }}
-                  >
-                    {r.estado}
-                  </div>
+                  <div style={{
+                    padding: "4px 10px", borderRadius: 999,
+                    background: c.bg, color: c.fg, border: `1px solid ${c.border}`,
+                    fontSize: 12, fontWeight: 950, textTransform: "uppercase",
+                    letterSpacing: 0.6, whiteSpace: "nowrap", height: "fit-content",
+                  }}>{r.estado}</div>
                 </div>
-
-                {r.comentario ? (
-                  <div style={{ marginTop: 10, padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", fontSize: 13 }}>
+                {r.comentario && (
+                  <div style={{
+                    marginTop: 10, padding: 10, borderRadius: 12,
+                    background: "var(--t-card2)", border: "1px solid var(--t-border2)",
+                    fontSize: 13,
+                  }}>
                     📝 <span style={{ fontStyle: "italic" }}>{r.comentario}</span>
                   </div>
-                ) : null}
+                )}
               </div>
             );
           })}

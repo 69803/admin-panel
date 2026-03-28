@@ -114,7 +114,6 @@ export default function PricingPage() {
 
   useEffect(() => {
     if (window.Paddle) {
-      // Ya inicializado (StrictMode double-invoke), no hacer nada
       return;
     }
     const script = document.createElement("script");
@@ -177,7 +176,7 @@ export default function PricingPage() {
             letterSpacing: ".04em",
           }}
         >
-          💜 Sin permanencia · 14 días gratis
+          ⚠️ Ups! Creo que necesitas actualizar tu plan. Escoge el mejor plan para ti 🙂
         </div>
 
         <h1

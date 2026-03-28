@@ -1,8 +1,24 @@
 @import "tailwindcss";
 
+/* ── Default theme tokens (light/original) ── */
 :root {
   --background: #F4F6FA;
   --foreground: #111111;
+
+  --t-bg:      #F4F6FA;
+  --t-card:    #FFFFFF;
+  --t-card2:   #F4F6FA;
+  --t-text:    #111111;
+  --t-text2:   #666666;
+  --t-text3:   #999999;
+  --t-border:  #E2E6EF;
+  --t-border2: #EEF0F4;
+  --t-border3: #CDD2DE;
+  --t-header:  #FFFFFF;
+  --t-input:   #F8F9FC;
+  --t-hover:   #F0F2F7;
+  --t-sborder: rgba(0,0,0,0.05);
+  --t-shadow:  0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.05);
 }
 
 @theme inline {
@@ -13,7 +29,55 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--t-bg);
+  color: var(--t-text);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* ── All page <main> elements inherit the shell background ── */
+#admin-shell main {
+  background: inherit !important;
+}
+
+/* ── Force ALL inputs / selects / textareas to use theme colors ── */
+#admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]),
+#admin-shell select,
+#admin-shell textarea {
+  background-color: var(--t-input) !important;
+  color: var(--t-text) !important;
+  border-color: var(--t-border3) !important;
+}
+
+/* ── Table rows inherit theme ── */
+#admin-shell table {
+  background-color: transparent;
+}
+#admin-shell thead tr,
+#admin-shell tbody tr {
+  background-color: transparent;
+}
+#admin-shell th,
+#admin-shell td {
+  color: var(--t-text);
+}
+
+/* ── Placeholder text theming ── */
+#admin-shell input::placeholder,
+#admin-shell textarea::placeholder {
+  color: var(--t-text3) !important;
+  opacity: 1;
+}
+
+/* ── Scrollbar theming (subtle) ── */
+#admin-shell ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+#admin-shell ::-webkit-scrollbar-track {
+  background: var(--t-card2);
+}
+#admin-shell ::-webkit-scrollbar-thumb {
+  background: var(--t-border);
+  border-radius: 99px;
 }
