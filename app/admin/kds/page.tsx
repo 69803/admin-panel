@@ -1,330 +1,140 @@
 "use client";
 
-/** ✅ KDS NORMAL — Cocina (columnas por estado) */
-
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
-type PedidoItem = { plato_id: number; cantidad: number };
-
-type Pedido = {
-  id: number;
-  mesa_id: number;
-  estado?: string;
-  items?: PedidoItem[];
-  comentario?: string | null;
-  nota?: string | null;
-  observaciones?: string | null;
-  observacion?: string | null;
-  comment?: string | null;
-  fecha_hora?: string | null;
-  created_at?: string | null;
-};
-
-function normalizeApiUrl(raw?: string) {
-  if (!raw) return null;
-  let url = raw.trim();
-  url = url.replace(/\/+$/, "");
-  return url;
-}
-
-const API_BASE =
-  normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL) ||
-  "https://restaurante-backend-q43k.onrender.com";
-
-console.log("KDS API_BASE =", API_BASE);
-
-function api(path: string) {
-  return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-}
-
-const ESTADOS = ["pendiente", "preparando", "listo", "entregado", "cancelado"] as const;
-type Estado = (typeof ESTADOS)[number];
-
-function normalizeEstado(raw: any): Estado {
-  const s = String(raw ?? "pendiente").trim().toLowerCase();
-  return (ESTADOS as readonly string[]).includes(s) ? (s as Estado) : "pendiente";
-}
-
-function pickComentario(p: Pedido): string | null {
-  const v = p.comentario ?? p.nota ?? p.observaciones ?? p.observacion ?? p.comment ?? null;
-  const s = (v ?? "").toString().trim();
-  return s.length ? s : null;
-}
-
-function fmtFecha(raw?: string | null) {
-  if (!raw) return "";
-  const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return raw;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${dd}/${mm}/${yy} ${hh}:${mi}`;
-}
-
-async function fetchPedidos(): Promise<Pedido[]> {
-  const res = await fetch(api("/pedidos"), { cache: "no-store" });
-  if (!res.ok) throw new Error(`Error pedidos ${res.status}`);
-  const data = (await res.json()) as Pedido[];
-  return Array.isArray(data) ? data : [];
-}
-
-async function patchEstado(pedidoId: number, estado: Estado): Promise<boolean> {
-  const res = await fetch(api(`/pedidos/${pedidoId}`), {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ estado }),
-  });
-  return res.ok;
-}
-
-function estadoColor(estado: Estado) {
-  switch (estado) {
-    case "pendiente":  return { bg: "#FFF4E5", fg: "#B45309", border: "#FED7AA" };
-    case "preparando": return { bg: "#E8F1FF", fg: "#1D4ED8", border: "#BFDBFE" };
-    case "listo":      return { bg: "#E9FBEF", fg: "#15803D", border: "#BBF7D0" };
-    case "entregado":  return { bg: "#F3E8FF", fg: "#6D28D9", border: "#E9D5FF" };
-    case "cancelado":  return { bg: "#FEECEC", fg: "#B91C1C", border: "#FECACA" };
-  }
-}
+const SECCIONES = [
+  {
+    label:  "Activos",
+    icon:   "🏦",
+    desc:   "Bienes y derechos de la empresa",
+    sub:    "Registra propiedades, dinero en caja, cuentas por cobrar, inventario…",
+    href:   "/admin/kds/activos",
+    accent: "#2563eb",
+    bg:     "rgba(37,99,235,0.09)",
+    border: "rgba(37,99,235,0.28)",
+    glow:   "0 8px 32px rgba(37,99,235,0.18)",
+  },
+  {
+    label:  "Pasivos",
+    icon:   "📋",
+    desc:   "Deudas y obligaciones pendientes",
+    sub:    "Registra préstamos, cuentas por pagar, deudas con proveedores…",
+    href:   "/admin/kds/pasivos",
+    accent: "#dc2626",
+    bg:     "rgba(220,38,38,0.09)",
+    border: "rgba(220,38,38,0.28)",
+    glow:   "0 8px 32px rgba(220,38,38,0.18)",
+  },
+  {
+    label:  "Capital",
+    icon:   "💼",
+    desc:   "Patrimonio neto del negocio",
+    sub:    "Registra inversiones, aportes de socios, utilidades retenidas…",
+    href:   "/admin/kds/capital",
+    accent: "#7c3aed",
+    bg:     "rgba(124,58,237,0.09)",
+    border: "rgba(124,58,237,0.28)",
+    glow:   "0 8px 32px rgba(124,58,237,0.18)",
+  },
+];
 
 export default function KdsPage() {
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [intervalSec, setIntervalSec] = useState(10);
-  const [soundEnabled, setSoundEnabled] = useState(false);
-  const lastMaxIdRef = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const load = useCallback(async (initial = false) => {
-    try {
-      if (initial) setLoading(true);
-      setError(null);
-      const data = await fetchPedidos();
-      data.sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0));
-      setPedidos(data);
-      const maxId = data.length ? Math.max(...data.map((p) => p.id)) : null;
-      if (initial) {
-        lastMaxIdRef.current = maxId;
-      } else if (soundEnabled && maxId != null && lastMaxIdRef.current != null && maxId > lastMaxIdRef.current) {
-        try { if (audioRef.current) audioRef.current.currentTime = 0; await audioRef.current?.play(); } catch {}
-        lastMaxIdRef.current = maxId;
-      } else {
-        lastMaxIdRef.current = maxId;
-      }
-    } catch (e: any) {
-      setError(e?.message ?? "Error cargando pedidos");
-    } finally {
-      if (initial) setLoading(false);
-    }
-  }, [soundEnabled]);
-
-  useEffect(() => {
-    audioRef.current = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-    load(true);
-  }, [load]);
-
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const ms = Math.max(3, intervalSec) * 1000;
-    const t = setInterval(() => load(false), ms);
-    return () => clearInterval(t);
-  }, [autoRefresh, intervalSec, load]);
-
-  const grouped = useMemo(() => {
-    const buckets: Record<Estado, Pedido[]> = { pendiente: [], preparando: [], listo: [], entregado: [], cancelado: [] };
-    for (const p of pedidos) buckets[normalizeEstado(p.estado)].push(p);
-    return buckets;
-  }, [pedidos]);
-
-  async function onMove(p: Pedido, next: Estado) {
-    setBusyId(p.id);
-    const ok = await patchEstado(p.id, next);
-    setBusyId(null);
-    if (!ok) { setError("No se pudo cambiar el estado (PATCH falló)."); return; }
-    await load(false);
-  }
-
-  // CSS-variable-based styles
-  const card: React.CSSProperties = {
-    background: "var(--t-card)",
-    border: "1px solid var(--t-sborder)",
-    borderRadius: 16,
-    padding: 12,
-    boxShadow: "var(--t-shadow)",
-  };
-
-  const btn: React.CSSProperties = {
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid var(--t-border3)",
-    background: "var(--t-card)",
-    color: "var(--t-text)",
-    fontWeight: 800,
-    cursor: "pointer",
-    textDecoration: "none",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: 70,
-    padding: "8px 10px",
-    borderRadius: 10,
-    border: "1px solid var(--t-border3)",
-    background: "var(--t-input)",
-    color: "var(--t-text)",
-  };
-
-  const colHeader = (estado: Estado, count: number) => {
-    const c = estadoColor(estado);
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{
-            padding: "4px 10px", borderRadius: 999,
-            background: c.bg, color: c.fg, border: `1px solid ${c.border}`,
-            fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6,
-          }}>
-            {estado}
-          </span>
-          <span style={{ color: "var(--t-text2)", fontSize: 12 }}>{count}</span>
-        </div>
-      </div>
-    );
-  };
-
-  const pedidoCard = (p: Pedido) => {
-    const estado = normalizeEstado(p.estado);
-    const c = estadoColor(estado);
-    const comentario = pickComentario(p);
-    const itemsCount = Array.isArray(p.items)
-      ? p.items.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0) : 0;
-    const fecha = fmtFecha(p.fecha_hora ?? p.created_at ?? null);
-
-    const btnBase: React.CSSProperties = {
-      padding: "8px 10px", borderRadius: 10,
-      border: "1px solid var(--t-border3)",
-      background: "var(--t-card)",
-      color: "var(--t-text)",
-      fontWeight: 800, cursor: "pointer", fontSize: 12,
-    };
-
-    const disabled = busyId === p.id;
-
-    function nextButtons() {
-      if (estado === "pendiente") return (
-        <button disabled={disabled} onClick={() => onMove(p, "preparando")}
-          style={{ ...btnBase, opacity: disabled ? 0.5 : 1 }}>→ PREPARANDO</button>
-      );
-      if (estado === "preparando") return (
-        <button disabled={disabled} onClick={() => onMove(p, "listo")}
-          style={{ ...btnBase, opacity: disabled ? 0.5 : 1 }}>→ LISTO</button>
-      );
-      if (estado === "listo") return (
-        <button disabled={disabled} onClick={() => onMove(p, "entregado")}
-          style={{ ...btnBase, opacity: disabled ? 0.5 : 1 }}>→ ENTREGADO</button>
-      );
-      return null;
-    }
-
-    return (
-      <div key={p.id} style={{ borderRadius: 14, padding: 12, background: "var(--t-card2)", border: "1px solid var(--t-border)" }}>
-        <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 950 }}>
-              Pedido #{p.id} <span style={{ color: "var(--t-text2)", fontWeight: 800 }}>— Mesa {p.mesa_id}</span>
-            </div>
-            <div style={{ color: "var(--t-text2)", fontSize: 12, marginTop: 2 }}>
-              {fecha ? `🕒 ${fecha}` : ""}{itemsCount ? `  •  🍽️ ${itemsCount} ítems` : ""}
-            </div>
-          </div>
-          <div style={{
-            padding: "4px 10px", borderRadius: 999,
-            background: c.bg, color: c.fg, border: `1px solid ${c.border}`,
-            fontSize: 12, fontWeight: 950, textTransform: "uppercase",
-            letterSpacing: 0.6, whiteSpace: "nowrap",
-          }}>{estado}</div>
-        </div>
-
-        {comentario && (
-          <div style={{
-            marginTop: 10, padding: 10, borderRadius: 12,
-            background: "var(--t-card2)", border: "1px solid var(--t-border)",
-            fontSize: 13, lineHeight: 1.25,
-          }}>
-            📝 <span style={{ fontStyle: "italic" }}>{comentario}</span>
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-          {nextButtons()}
-          {estado !== "cancelado" && (
-            <button disabled={disabled} onClick={() => onMove(p, "cancelado")}
-              style={{ ...btnBase, background: "#FEF2F2", border: "1px solid rgba(239,68,68,0.35)", color: "#991B1B", opacity: disabled ? 0.5 : 1 }}>
-              Cancelar
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div style={{ padding: 16, background: "var(--t-bg)", minHeight: "100vh", color: "var(--t-text)" }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 950 }}>KDS — Cocina</div>
-          <div style={{ color: "var(--t-text2)", fontSize: 13 }}>API: {API_BASE}</div>
-        </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <button onClick={() => load(true)} style={btn}>🔄 Refrescar</button>
-          <Link href="/admin/kds/mensual" style={btn}>📅 Historial mensual</Link>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "var(--t-text2)" }}>
-            <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} /> Auto
-          </label>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "var(--t-text2)" }}>
-            Intervalo (s)
-            <input type="number" min={3} value={intervalSec}
-              onChange={(e) => setIntervalSec(Math.max(3, Number(e.target.value) || 10))}
-              style={inputStyle} />
-          </label>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "var(--t-text2)" }}>
-            <input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} /> 🔔 Sonido
-          </label>
-        </div>
+    <div style={{ padding: "36px 28px", background: "var(--t-bg)", minHeight: "100vh", color: "var(--t-text)" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 36 }}>
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: "var(--t-text)" }}>
+          Contabilidad General
+        </h1>
+        <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--t-text2)" }}>
+          Selecciona una sección para registrar y consultar tus movimientos contables.
+        </p>
       </div>
 
-      {error && (
-        <div style={{ ...card, borderColor: "rgba(239,68,68,0.35)", background: "#FEF2F2", color: "#991B1B", marginBottom: 12 }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {/* 3 Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 22 }}>
+        {SECCIONES.map(({ label, icon, desc, sub, href, accent, bg, border, glow }) => (
+          <Link key={label} href={href} style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                background: "var(--t-card)",
+                border: `1.5px solid ${border}`,
+                borderRadius: 24,
+                padding: "36px 28px",
+                cursor: "pointer",
+                boxShadow: glow,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                transition: "transform .18s, box-shadow .18s",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLDivElement).style.transform = "translateY(-5px)";
+                (e.currentTarget as HTMLDivElement).style.boxShadow = glow.replace("0.18", "0.32");
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                (e.currentTarget as HTMLDivElement).style.boxShadow = glow;
+              }}
+            >
+              {/* Icon + title */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: 18,
+                  background: bg, border: `1.5px solid ${border}`,
+                  display: "grid", placeItems: "center",
+                  fontSize: 30, flexShrink: 0,
+                }}>
+                  {icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: accent, lineHeight: 1.1 }}>{label}</div>
+                  <div style={{ fontSize: 13, color: "var(--t-text2)", marginTop: 4 }}>{desc}</div>
+                </div>
+              </div>
 
-      {loading ? (
-        <div style={card}>Cargando pedidos…</div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(240px, 1fr))", gap: 12, alignItems: "start", overflowX: "auto", paddingBottom: 10 }}>
-          {(ESTADOS as readonly Estado[]).map((estado) => (
-            <div key={estado} style={card}>
-              {colHeader(estado, grouped[estado].length)}
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
-                {grouped[estado].length
-                  ? grouped[estado].map((p) => pedidoCard(p))
-                  : <div style={{ color: "var(--t-text2)", fontSize: 13 }}>Sin pedidos</div>
-                }
+              {/* Sub description */}
+              <p style={{ margin: 0, fontSize: 13.5, color: "var(--t-text2)", lineHeight: 1.65 }}>
+                {sub}
+              </p>
+
+              {/* CTA */}
+              <div style={{
+                marginTop: 4,
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontSize: 13, fontWeight: 800, color: accent,
+                letterSpacing: "0.03em",
+              }}>
+                Ver y registrar →
               </div>
             </div>
-          ))}
+          </Link>
+        ))}
+      </div>
+
+      {/* Ecuación contable */}
+      <div style={{
+        marginTop: 40,
+        background: "var(--t-card)",
+        border: "1px solid var(--t-border)",
+        borderRadius: 18,
+        padding: "22px 28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+        flexWrap: "wrap",
+        boxShadow: "var(--t-shadow)",
+      }}>
+        <span style={{ fontSize: 13, color: "var(--t-text3)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Ecuación contable</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 16, fontWeight: 900, color: "#2563eb" }}>Activos</span>
+          <span style={{ color: "var(--t-text3)", fontWeight: 700 }}>=</span>
+          <span style={{ fontSize: 16, fontWeight: 900, color: "#dc2626" }}>Pasivos</span>
+          <span style={{ color: "var(--t-text3)", fontWeight: 700 }}>+</span>
+          <span style={{ fontSize: 16, fontWeight: 900, color: "#7c3aed" }}>Capital</span>
         </div>
-      )}
+      </div>
     </div>
   );
 }
