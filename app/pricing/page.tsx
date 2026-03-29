@@ -18,8 +18,11 @@ declare global {
 const planes = [
   {
     nombre: "Básico",
-    priceId: "pri_01kk7g7whpssf3kxm8wvcth4th",
-    precio: { mensual: 39, anual: 31 },
+    priceIds: {
+      mensual: "pri_01kk7g7whpssf3kxm8wvcth4th",
+      anual: "pri_01kmxk9v7rzfrzfx8xe13y110y",
+    },
+    precio: { mensual: 39 },
     descripcion: "Perfecto para empezar y crecer sin complicaciones.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
@@ -37,8 +40,11 @@ const planes = [
   },
   {
     nombre: "Pro",
-    priceId: "pri_01kk7ggah21arxbmy0j9bct4hx",
-    precio: { mensual: 69, anual: 55 },
+    priceIds: {
+      mensual: "pri_01kk7ggah21arxbmy0j9bct4hx",
+      anual: "pri_01kmxjy5jtjeqmapkgfw3n7q04",
+    },
+    precio: { mensual: 69 },
     descripcion: "La elección de los restaurantes que quieren escalar.",
     color: "linear-gradient(135deg, rgba(124,58,237,.18) 0%, rgba(59,130,246,.18) 100%)",
     border: "rgba(124,58,237,.6)",
@@ -57,8 +63,11 @@ const planes = [
   },
   {
     nombre: "Premium",
-    priceId: "pri_01kk7gj7v1k6x1egznqr98yhc1",
-    precio: { mensual: 94, anual: 94 },
+    priceIds: {
+      mensual: "pri_01kk7gj7v1k6x1egznqr98yhc1",
+      anual: "pri_01kmxkbfk37gpxrxyv3k0ppatt",
+    },
+    precio: { mensual: 94 },
     descripcion: "Solución enterprise para cadenas y grupos de restauración.",
     color: "rgba(255,255,255,.07)",
     border: "rgba(255,255,255,.12)",
@@ -107,16 +116,10 @@ export default function PricingPage() {
   }, []);
 
   function openPaddleCheckout(planNombre: string, priceId: string) {
-    console.log("PLAN CLICKED:", planNombre);
-    console.log("BILLING MODE:", anual ? "annual" : "monthly");
-    console.log("PRICE ID SENT:", priceId);
-    console.log("CHECKOUT ITEMS:", [{ priceId, quantity: 1 }]);
-
     if (typeof window !== "undefined" && window.Paddle) {
-      const items = [{ priceId, quantity: 1 }];
-      window.Paddle.Checkout.open({ items });
+      window.Paddle.Checkout.open({ items: [{ priceId, quantity: 1 }] });
     } else {
-      console.error("Paddle not initialized when checkout was attempted");
+      console.error("Paddle not initialized. Plan:", planNombre, "PriceId:", priceId);
     }
   }
 
@@ -297,7 +300,8 @@ export default function PricingPage() {
         }}
       >
         {planes.map((plan) => {
-          const precio = anual ? plan.precio.anual : plan.precio.mensual;
+            const yearlyPrice = +(plan.precio.mensual * 12 * 0.8).toFixed(2);
+          const yearlySaving = +(plan.precio.mensual * 12 * 0.2).toFixed(2);
           const isPro = !!plan.badge;
 
           return (
@@ -362,10 +366,10 @@ export default function PricingPage() {
                 }}
               >
                 <span style={{ fontSize: 52, fontWeight: 1000, lineHeight: 1 }}>
-                  {precio}€
+                  {anual ? yearlyPrice : plan.precio.mensual}€
                 </span>
                 <span style={{ opacity: 0.5, fontSize: 14, marginBottom: 8 }}>
-                  /mes
+                  {anual ? "/año" : "/mes"}
                 </span>
               </div>
 
@@ -378,7 +382,7 @@ export default function PricingPage() {
                     marginBottom: 4,
                   }}
                 >
-                  Facturado anualmente · ahorras {(plan.precio.mensual - plan.precio.anual) * 12}€/año
+                  Facturado anualmente · ahorras {yearlySaving}€/año
                 </div>
               )}
 
@@ -388,7 +392,7 @@ export default function PricingPage() {
 
               {/* Botón */}
               <button
-                onClick={() => openPaddleCheckout(plan.nombre, plan.priceId)}
+                onClick={() => openPaddleCheckout(plan.nombre, anual ? plan.priceIds.anual : plan.priceIds.mensual)}
                 style={{
                   width: "100%",
                   padding: "13px 0",
