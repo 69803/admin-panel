@@ -13,7 +13,7 @@ type Item = {
 const items: Item[] = [
   { href: "/admin", label: "Dashboard", icon: "🏠" },
   { href: "/", label: "Menú", icon: "🍽️" },
-  { href: "/admin/kds", label: "KDS Cocina", icon: "👨‍🍳" },
+  { href: "/admin/kds", label: "Cuentas", icon: "🏦" },
   { href: "/admin/kds/mensual", label: "KDS Mensual", icon: "📅" },
   { href: "/admin/reportes", label: "Reportes", icon: "📊" },
   { href: "/admin/analytics", label: "Analytics", icon: "📈" },

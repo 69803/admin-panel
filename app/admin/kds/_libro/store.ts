@@ -39,6 +39,12 @@ export function deleteAsiento(id: string) {
   saveAsientos(loadAsientos().filter((a) => a.id !== id));
 }
 
+export function updateAsiento(id: string, changes: Partial<Omit<Asiento, "id" | "creadoEn">>) {
+  const list = loadAsientos().map((a) => a.id === id ? { ...a, ...changes } : a);
+  saveAsientos(list);
+  return list;
+}
+
 // ── Accounting equation calculations ─────────────────────────────────────────
 // Normal balance: Assets → Debit. Liabilities & Capital → Credit.
 // Asset balance   = Σ debe(activo) − Σ haber(activo)

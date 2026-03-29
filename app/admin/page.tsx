@@ -485,7 +485,7 @@ export default function AdminDashboardPage() {
               🔄 Refrescar datos
             </button>
             <Link href="/admin/kds" style={{ ...btnStyle, width: "100%", justifyContent: "center", textAlign: "center" }}>
-              👨‍🍳 Ir a Cocina
+              🏦 Ir a Cuentas
             </Link>
           </div>
         </div>
@@ -518,7 +518,7 @@ export default function AdminDashboardPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 15, fontWeight: 700 }}>Pedidos hoy</div>
               <Link href="/admin/kds" style={{ fontSize: 11, color: "#6C5CE7", textDecoration: "none", fontWeight: 600 }}>
-                Ver KDS →
+                Ver Cuentas →
               </Link>
             </div>
 
@@ -557,10 +557,10 @@ export default function AdminDashboardPage() {
           />
           <TileCard
             href="/admin/kds"
-            title="KDS — Cocina"
-            desc="Pantalla tipo cocina: pendientes → preparando → listo → entregado."
-            icon="👨‍🍳"
-            badgeEl={<span style={badge("#DBEAFE", "#1D4ED8")}>LIVE</span>}
+            title="Cuentas"
+            desc="Contabilidad de partida doble — Activos, Pasivos, Capital, Balance y Cuentas T."
+            icon="🏦"
+            badgeEl={<span style={badge("#DBEAFE", "#1D4ED8")}>FINANZAS</span>}
           />
           <TileCard
             href="/admin/analytics"
@@ -570,17 +570,18 @@ export default function AdminDashboardPage() {
             badgeEl={<span style={badge("#E9E4FF", "#6C5CE7")}>PRO</span>}
           />
           <TileCard
-            href="/admin/reportes"
-            title="Reportes"
-            desc="Resumen por periodo + Top platos + acciones administrativas."
-            icon="📊"
-            badgeEl={<span style={badge("#FEF3C7", "#B45309")}>RESUMEN</span>}
+            href="/admin/iq"
+            title="IQ Financiero"
+            desc="Análisis inteligente de tu desempeño mensual con score, KPIs y comparación de meses."
+            icon="🧠"
+            badgeEl={<span style={badge("#FDF4FF", "#7c3aed")}>IA</span>}
           />
         </div>
 
         {/* ── BOTTOM ROW ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
 
+          {/* Top platos */}
           <div style={card}>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Insight rápido</div>
             <div style={{ fontSize: 12, color: "var(--t-text2)", marginBottom: 14 }}>Top 3 platos más caros</div>
@@ -589,18 +590,7 @@ export default function AdminDashboardPage() {
             ) : stats.topCaros.length ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {stats.topCaros.map((x) => (
-                  <div
-                    key={x.id}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      background: "var(--t-card2)",
-                      border: "1px solid var(--t-border)",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
+                  <div key={x.id} style={{ padding: "10px 14px", borderRadius: 10, background: "var(--t-card2)", border: "1px solid var(--t-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>
                       {x.nombre} <span style={{ color: "var(--t-text3)", fontWeight: 500 }}>#{x.id}</span>
                     </div>
@@ -613,39 +603,52 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
+          {/* Reportes & Analytics */}
           <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
               <span style={{ fontSize: 24 }}>📊</span>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Reportes</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Reportes & Analytics</div>
                 <div style={{ fontSize: 13, color: "var(--t-text2)", marginTop: 4, lineHeight: 1.5 }}>
-                  Resumen por periodo + Top platos + acciones administrativas.
+                  Resumen por periodo, gráficos y análisis de rendimiento.
                 </div>
               </div>
             </div>
             <div style={{ flex: 1 }} />
             <Link href="/admin/reportes" style={rowLinkStyle}>
-              Ver reporte completo <span style={{ color: "#6C5CE7" }}>›</span>
+              📋 Reportes <span style={{ color: "#6C5CE7" }}>›</span>
             </Link>
-            <Link href="/admin/kds/mensual" style={rowLinkStyle}>
-              KDS Mensual <span style={{ color: "#6C5CE7" }}>›</span>
+            <Link href="/admin/analytics" style={rowLinkStyle}>
+              📈 Analytics Pro <span style={{ color: "#6C5CE7" }}>›</span>
+            </Link>
+            <Link href="/admin/iq" style={rowLinkStyle}>
+              🧠 IQ Financiero <span style={{ color: "#7c3aed" }}>›</span>
             </Link>
           </div>
 
+          {/* Cuentas / Contabilidad */}
           <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 24 }}>📒</span>
+              <span style={{ fontSize: 24 }}>🏦</span>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Contabilidad</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Cuentas</div>
                 <div style={{ fontSize: 13, color: "var(--t-text2)", marginTop: 4, lineHeight: 1.5 }}>
-                  Gastos, balance y control financiero del restaurante.
+                  Contabilidad de partida doble — activos, pasivos, capital y balance.
                 </div>
               </div>
             </div>
             <div style={{ flex: 1 }} />
-            <span style={badge("#D1FAE5", "#065F46")}>FINANZAS</span>
             <Link href="/admin/contabilidad" style={rowLinkStyle}>
-              Abrir contabilidad <span style={{ color: "#6C5CE7" }}>›</span>
+              📒 Contabilidad <span style={{ color: "#6C5CE7" }}>›</span>
+            </Link>
+            <Link href="/admin/kds" style={rowLinkStyle}>
+              🏦 Cuentas (Partida doble) <span style={{ color: "#2563eb" }}>›</span>
+            </Link>
+            <Link href="/admin/kds/balance" style={rowLinkStyle}>
+              ⚖️ Balance General <span style={{ color: "#ca8a04" }}>›</span>
+            </Link>
+            <Link href="/admin/kds/cuentas-t" style={rowLinkStyle}>
+              🗂 Cuentas T <span style={{ color: "#0f766e" }}>›</span>
             </Link>
           </div>
         </div>
