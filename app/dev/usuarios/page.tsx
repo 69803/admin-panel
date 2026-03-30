@@ -32,6 +32,35 @@ export default function DevUsuariosPage() {
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  // ── Crear cliente ────────────────────────────────────────────────
+  const [newEmail, setNewEmail] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createMsg, setCreateMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function createClient() {
+    if (!newEmail.trim()) return;
+    setCreating(true);
+    setCreateMsg(null);
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newEmail.trim(), key }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateMsg({ ok: false, text: data?.error ?? `Error ${res.status}` });
+      } else {
+        setCreateMsg({ ok: true, text: `✓ Cliente ${data.email} creado correctamente.` });
+        setNewEmail("");
+      }
+    } catch (e: any) {
+      setCreateMsg({ ok: false, text: e?.message ?? "Error desconocido" });
+    } finally {
+      setCreating(false);
+    }
+  }
+
   async function login() {
     if (key !== DEV_KEY) { setError("Clave incorrecta."); return; }
     setAuthed(true);
@@ -133,6 +162,29 @@ export default function DevUsuariosPage() {
           >
             {loading ? "Cargando..." : "🔄 Refrescar"}
           </button>
+        </div>
+
+        {/* ── CREAR CLIENTE ── */}
+        <div style={{ background: "rgba(124,58,237,.08)", border: "1px solid rgba(124,58,237,.3)", borderRadius: 14, padding: "20px 24px", marginBottom: 28 }}>
+          <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 14 }}>➕ Crear nuevo cliente</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && createClient()}
+              placeholder="correo@cliente.com"
+              style={{ ...s.input, flex: 1, minWidth: 220 }}
+            />
+            <button onClick={createClient} disabled={creating || !newEmail.trim()} style={{ ...s.btn, opacity: creating || !newEmail.trim() ? 0.5 : 1 }}>
+              {creating ? "Creando..." : "Crear cliente"}
+            </button>
+          </div>
+          {createMsg && (
+            <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: createMsg.ok ? "#86efac" : "#fca5a5" }}>
+              {createMsg.text}
+            </div>
+          )}
         </div>
 
         {error && (

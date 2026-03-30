@@ -1,15 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const ALLOWED_EMAILS = [
-  "gusmeliab@gmail.com",
-  "kristianbarrios8@gmail.com",
-].map((e) => e.trim().toLowerCase());
-
-const ADMIN_PASSWORD = "1234"; // 👈 cámbiala
-
+const ADMIN_PASSWORD = "1234";
 const AUTH_KEY = "admin_auth_v1";
 
 export default function LoginPage() {
@@ -18,32 +12,32 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-
-
-  const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
-
-  function handleLogin() {
+  async function handleLogin() {
     setError(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return setError("Escribe tu correo.");
-    if (!ALLOWED_EMAILS.includes(normalizedEmail)) {
-      return setError("Este correo no tiene acceso.");
-    }
-    if (password !== ADMIN_PASSWORD) {
-      return setError("Contraseña incorrecta.");
-    }
+    if (password !== ADMIN_PASSWORD) return setError("Contraseña incorrecta.");
 
+    setLoading(true);
     try {
-      localStorage.setItem(
-        AUTH_KEY,
-        JSON.stringify({ email: normalizedEmail, ts: Date.now() })
-      );
-    } catch {
-      return setError("Tu navegador bloquea el almacenamiento local. Desactiva el modo privado e intenta de nuevo.");
-    }
+      const res = await fetch(`/api/clients?email=${encodeURIComponent(normalizedEmail)}`);
+      const data = await res.json();
 
-    router.replace("/admin");
+      if (!data?.allowed) {
+        setError("Este correo no tiene acceso.");
+        setLoading(false);
+        return;
+      }
+
+      localStorage.setItem(AUTH_KEY, JSON.stringify({ email: normalizedEmail, ts: Date.now() }));
+      router.replace("/admin");
+    } catch {
+      setError("Error al verificar el acceso. Intenta de nuevo.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -92,9 +86,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-black text-white py-2 font-medium"
+            disabled={loading}
+            className="w-full rounded-xl bg-black text-white py-2 font-medium disabled:opacity-50"
           >
-            Entrar
+            {loading ? "Verificando..." : "Entrar"}
           </button>
         </form>
       </div>
