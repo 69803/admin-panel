@@ -229,16 +229,22 @@ export async function POST(req: NextRequest) {
         const subId: string = tx?.subscription_id ?? "";
         const email: string = tx?.customer?.email ?? "";
 
-        if (subId && email) {
-          const { error } = await supabase
-            .from("subscriptions")
-            .update({ customer_email: email })
-            .eq("subscription_id", subId)
-            .eq("customer_email", ""); // only overwrite if still empty
+        console.log(`[Paddle] transaction.completed — subId=${subId} email=${email}`);
 
-          if (error) console.error("[Paddle] transaction.completed email backfill error:", error.message);
-          else console.log(`[Paddle] transaction.completed — email saved for subId=${subId}`);
+        if (!subId || !email) {
+          console.warn("[Paddle] transaction.completed — missing subId or email, skipping update");
+          break;
         }
+
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .update({ customer_email: email })
+          .eq("subscription_id", subId)
+          .select();
+
+        console.log("BACKFILL RESULT:", { data, error });
+        if (error) console.error("[Paddle] transaction.completed email backfill error:", error.message);
+        else console.log(`[Paddle] transaction.completed — email saved for subId=${subId}`);
         break;
       }
 
