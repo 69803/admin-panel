@@ -696,6 +696,29 @@ export default function PricingPage() {
         </div>
       </div>
 
+      {/* ── TEST CHECKOUT BUTTON (dev only) ── */}
+      {process.env.NODE_ENV !== "production" && (
+        <button
+          onClick={() => {
+            console.log("TEST CHECKOUT TRIGGERED");
+            openPaddleCheckout("Test", "pri_TEST_REPLACE_WITH_1EUR_PRICE_ID");
+          }}
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: 20,
+            width: 80,
+            height: 80,
+            opacity: 0,
+            zIndex: 9999,
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+          }}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── FOOTER LEGAL ── */}
       <div style={{ maxWidth: 700, margin: "48px auto 0", padding: "0 24px 40px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 32 }}>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "8px 24px", marginBottom: 14 }}>
