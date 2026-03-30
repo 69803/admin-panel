@@ -85,10 +85,10 @@ export async function POST(req: NextRequest) {
 
   const rawBody = await req.text();
 
-  // Paddle simulations send this header — skip signature check for testing only
-  const isSimulation = req.headers.get("Paddle-Simulation") === "1";
+  // Set PADDLE_SKIP_SIG_VERIFY=true in env to bypass signature check during testing/simulations
+  const skipSigVerify = process.env.PADDLE_SKIP_SIG_VERIFY === "true";
 
-  if (!isSimulation) {
+  if (!skipSigVerify) {
     const signatureHeader = req.headers.get("Paddle-Signature");
     if (!signatureHeader) {
       console.warn("[Paddle Webhook] Missing Paddle-Signature header");
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
   } else {
-    console.log("[Paddle Webhook] Simulation mode — skipping signature verification");
+    console.log("[Paddle Webhook] Signature verification skipped (PADDLE_SKIP_SIG_VERIFY=true)");
   }
 
   let event: any;
