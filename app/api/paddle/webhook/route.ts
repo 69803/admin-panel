@@ -238,7 +238,11 @@ export async function POST(req: NextRequest) {
         console.log(`[Paddle Webhook] Unhandled event type: ${eventType}`);
     }
   } catch (err: any) {
-    console.error("[Paddle Webhook] Unexpected error:", err?.message ?? err);
+    console.error("[Paddle Webhook] Unexpected error");
+    console.error("  name   :", err?.name);
+    console.error("  message:", err?.message);
+    console.error("  cause  :", err?.cause);
+    console.error("  stack  :", err?.stack);
     // Still return 200 so Paddle does not keep retrying
   }
 
