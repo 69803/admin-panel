@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import { ACTIVO } from "../lib/license";
-import PricingPage from "./pricing/page";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
 const AUTH_KEY = "admin_auth_v1";
 const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
-function readAuthedFromLS(): boolean {
+// Read synchronously — safe only after mount (no SSR)
+function readEmailFromLS(): string | null {
   try {
     const raw = localStorage.getItem(AUTH_KEY);
-    if (!raw) return false;
+    if (!raw) return null;
     const parsed = JSON.parse(raw);
-    return !!parsed?.email;
+    return parsed?.email ?? null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -31,101 +31,100 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PricingWrapper() {
-  return <PricingPage />;
-}
-
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  // subscriptionAllowed: null = loading, true = allowed, false = blocked
   const [subscriptionAllowed, setSubscriptionAllowed] = useState<boolean | null>(null);
+  // Tracks which email the current subscriptionAllowed value was checked for.
+  // If it doesn't match the current email, the result is stale and we wait.
+  const [subscriptionCheckedFor, setSubscriptionCheckedFor] = useState<string | null>(null);
 
   const isLoginRoute   = pathname === "/login" || pathname?.startsWith("/login/") || pathname === "/hello" || pathname?.startsWith("/hello/");
   const isPricingRoute = pathname === "/pricing";
-  const isProtected    = pathname === "/admin" || pathname?.startsWith("/admin/");
 
-  // ✅ Evita hydration mismatch: nada que dependa de localStorage antes de montar
+  // Hydration — one-time
   useEffect(() => {
     setMounted(true);
-    setAuthed(readAuthedFromLS());
   }, []);
 
-  // ✅ Si cambia la ruta, re-leemos auth (por si el login guardó el token)
+  // Activity tracking
   useEffect(() => {
     if (!mounted) return;
-    setAuthed(readAuthedFromLS());
+    const email = readEmailFromLS();
+    if (!email) return;
+    fetch("/api/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).catch(() => {});
+  }, [mounted]);
+
+  // Subscription check — re-runs on every pathname change so it re-validates after login
+  useEffect(() => {
+    if (!mounted) return;
+    const email = readEmailFromLS();
+
+    if (!email) {
+      setSubscriptionCheckedFor(null);
+      setSubscriptionAllowed(false);
+      return;
+    }
+
+    if (email === OWNER_EMAIL) {
+      setSubscriptionCheckedFor(email);
+      setSubscriptionAllowed(true);
+      return;
+    }
+
+    // Mark as "checking for this email" and reset result while fetching
+    setSubscriptionCheckedFor(email);
+    setSubscriptionAllowed(null);
+    fetch(`/api/subscription-check?email=${encodeURIComponent(email)}`)
+      .then((r) => r.json())
+      .then((data) => setSubscriptionAllowed(!!data?.allowed))
+      .catch(() => setSubscriptionAllowed(false));
   }, [mounted, pathname]);
 
-  // Registrar actividad cuando el usuario está autenticado
-  useEffect(() => {
-    if (!mounted || !authed) return;
-    try {
-      const raw = localStorage.getItem("admin_auth_v1");
-      const email = raw ? JSON.parse(raw)?.email : null;
-      if (email) {
-        fetch("/api/activity", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }).catch(() => {});
-      }
-    } catch {}
-  }, [mounted, authed]);
-
-  // ── CHECK DE SUSCRIPCIÓN — solo si está autenticado ─────────────
-  useEffect(() => {
-    if (!mounted || !authed) return;
-    try {
-      const raw = localStorage.getItem(AUTH_KEY);
-      const email = raw ? JSON.parse(raw)?.email : null;
-      if (!email) { setSubscriptionAllowed(false); return; }
-      // Owner bypass — always allow regardless of subscription
-      if (email === OWNER_EMAIL) { setSubscriptionAllowed(true); return; }
-      fetch(`/api/subscription-check?email=${encodeURIComponent(email)}`)
-        .then((r) => r.json())
-        .then((data) => setSubscriptionAllowed(!!data?.allowed))
-        .catch(() => setSubscriptionAllowed(false));
-    } catch {
-      setSubscriptionAllowed(false);
-    }
-  }, [mounted, authed]);
-  // ─────────────────────────────────────────────────────────────────
-
-  // 1. Hydration guard
+  // ── 1. Hydration guard ────────────────────────────────────────────
   if (!mounted) {
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // 2. Rutas públicas — nunca verifican suscripción ni auth
+  // Read auth synchronously — always current, never stale
+  const currentEmail = readEmailFromLS();
+  const authed = !!currentEmail;
+
+  // ── 2. Public routes — no auth or subscription checks ────────────
   if (isLoginRoute || isPricingRoute) return <>{children}</>;
 
-  // 3. No autenticado → redirigir a /login
+  // ── 3. Not logged in → /login ─────────────────────────────────────
   if (!authed) {
     router.replace("/login");
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // 4. Kill switch de licencia
+  // ── 4. License kill switch ────────────────────────────────────────
   if (!ACTIVO) {
     router.replace("/pricing");
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // 5. Esperando resultado del check de suscripción
-  if (subscriptionAllowed === null) {
+  // ── 5. Subscription result is stale or still loading ─────────────
+  // subscriptionCheckedFor must match currentEmail before we trust the result
+  if (subscriptionCheckedFor !== currentEmail || subscriptionAllowed === null) {
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // 6. Sin suscripción válida → redirigir a /pricing
+  // ── 6. No valid subscription → /pricing ──────────────────────────
   if (!subscriptionAllowed) {
     router.replace("/pricing");
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // 7. Autenticado + suscripción válida → panel con sidebar y theme
+  // ── 7. Authenticated + valid subscription → panel ─────────────────
   return (
     <ThemeProvider>
       <Shell>{children}</Shell>
