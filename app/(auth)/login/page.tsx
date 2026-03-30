@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const ADMIN_PASSWORD = "1234";
-const AUTH_KEY = "admin_auth_v1";
+const AUTH_KEY = "admin_auth_v2";
 
 export default function LoginPage() {
   const router = useRouter();

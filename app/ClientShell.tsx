@@ -6,7 +6,7 @@ import Sidebar from "./components/Sidebar";
 import { ACTIVO } from "../lib/license";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
-const AUTH_KEY = "admin_auth_v1";
+const AUTH_KEY = "admin_auth_v2";
 const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
 // Read synchronously — safe only after mount (no SSR)
