@@ -169,14 +169,23 @@ export async function POST(req: NextRequest) {
       // ── Subscription activated ─────────────────────────────────────────
       case "subscription.activated": {
         const sub = event.data ?? event;
-        // price.id (nested) or price_id (flat) — Paddle uses both depending on context
         const priceId: string =
           sub?.items?.[0]?.price?.id ?? sub?.items?.[0]?.price_id ?? "";
-        // Email is NOT on the subscription object — only customer_id is present.
-        // transaction.completed will backfill it. Log customer_id for traceability.
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
-        console.log(`[Paddle] subscription.activated — customer_id=${sub?.customer_id} priceId=${priceId} items=`, JSON.stringify(sub?.items?.[0]));
+        const rawNextBilled: string = sub?.next_billed_at ?? "";
+        const computedAccessUntil = toAccessUntil(rawNextBilled || null);
+
+        // Diagnostic — shows exactly what was extracted from Paddle payload
+        console.log("[Paddle] subscription.activated EXTRACTED:", {
+          subscription_id:   sub?.id,
+          customer_id:       sub?.customer_id,
+          email_found:       email || "(none — transaction.completed will backfill)",
+          priceId,
+          plan:              planFromPriceId(priceId),
+          next_billed_at:    rawNextBilled,
+          access_until:      computedAccessUntil,
+        });
 
         const { data, error } = await supabase.from("subscriptions").upsert(
           {
@@ -184,17 +193,18 @@ export async function POST(req: NextRequest) {
             subscription_id:   sub?.id,
             plan:              planFromPriceId(priceId),
             status:            "active",
-            next_billing_date: sub?.next_billed_at ?? null,
-            access_until:      toAccessUntil(sub?.next_billed_at),
+            next_billing_date: rawNextBilled || null,
+            access_until:      computedAccessUntil,
           },
           { onConflict: "subscription_id" }
         ).select();
 
-        console.log("UPSERT RESULT:", { data, error });
+        console.log("[Paddle] subscription.activated UPSERT RESULT:", { data, error });
         if (error) {
-          console.error("SUPABASE ERROR:", error);
-          console.error("[Paddle] subscription.activated DB error:", error.message);
-        } else console.log(`[Paddle] subscription.activated upserted — subId=${sub?.id} status=active`);
+          console.error("[Paddle] subscription.activated SUPABASE ERROR:", error);
+        } else {
+          console.log(`[Paddle] subscription.activated OK — subId=${sub?.id} access_until=${computedAccessUntil} rows=${data?.length}`);
+        }
         break;
       }
 
@@ -240,28 +250,73 @@ export async function POST(req: NextRequest) {
       }
 
       // ── Transaction completed ──────────────────────────────────────────
-      // Used to backfill the customer email once the first payment goes through
+      // Backfills customer_email. Also upserts a partial row in case
+      // this event fires before subscription.activated (race condition).
       case "transaction.completed": {
         const tx = event.data ?? event;
         const subId: string = tx?.subscription_id ?? "";
-        const email: string = tx?.customer?.email ?? "";
 
-        console.log(`[Paddle] transaction.completed — subId=${subId} email=${email}`);
+        // Paddle Billing puts email at different paths depending on context.
+        // Try all known paths and log which one wins.
+        const emailPaths = {
+          "tx.customer.email":               tx?.customer?.email ?? "",
+          "tx.details.contacts[0].email":    tx?.details?.contacts?.[0]?.email ?? "",
+          "tx.custom_data.email":            tx?.custom_data?.email ?? "",
+          "tx.billing_details.email":        tx?.billing_details?.email ?? "",
+        };
+        const email: string =
+          emailPaths["tx.customer.email"] ||
+          emailPaths["tx.details.contacts[0].email"] ||
+          emailPaths["tx.custom_data.email"] ||
+          emailPaths["tx.billing_details.email"] ||
+          "";
 
-        if (!subId || !email) {
-          console.warn("[Paddle] transaction.completed — missing subId or email, skipping update");
+        console.log("[Paddle] transaction.completed EXTRACTED:", {
+          subscription_id: subId,
+          email_found:     email || "(none)",
+          email_paths_tried: emailPaths,
+          customer_id:     tx?.customer_id,
+        });
+
+        if (!subId) {
+          console.warn("[Paddle] transaction.completed — no subscription_id, skipping");
+          break;
+        }
+        if (!email) {
+          console.warn("[Paddle] transaction.completed — no email found in any path, skipping");
           break;
         }
 
-        const { data, error } = await supabase
+        // Try update first (normal case: subscription row already exists)
+        const { data: updateData, error: updateError } = await supabase
           .from("subscriptions")
           .update({ customer_email: email })
           .eq("subscription_id", subId)
           .select();
 
-        console.log("BACKFILL RESULT:", { data, error });
-        if (error) console.error("[Paddle] transaction.completed email backfill error:", error.message);
-        else console.log(`[Paddle] transaction.completed — email saved for subId=${subId}`);
+        console.log("[Paddle] transaction.completed UPDATE RESULT:", {
+          rows_updated: updateData?.length ?? 0,
+          error: updateError,
+        });
+
+        if (updateError) {
+          console.error("[Paddle] transaction.completed update error:", updateError.message);
+        } else if ((updateData?.length ?? 0) === 0) {
+          // Race condition: subscription row doesn't exist yet — upsert a partial row
+          // subscription.activated will fill plan/status/access_until later
+          console.warn("[Paddle] transaction.completed — 0 rows updated, subscription row not yet created. Upserting partial row with email.");
+          const { data: upsertData, error: upsertError } = await supabase
+            .from("subscriptions")
+            .upsert(
+              { subscription_id: subId, customer_email: email },
+              { onConflict: "subscription_id" }
+            )
+            .select();
+          console.log("[Paddle] transaction.completed PARTIAL UPSERT:", { data: upsertData, error: upsertError });
+          if (upsertError) console.error("[Paddle] transaction.completed partial upsert error:", upsertError.message);
+        } else {
+          console.log(`[Paddle] transaction.completed OK — email=${email} saved for subId=${subId}`);
+        }
         break;
       }
 
