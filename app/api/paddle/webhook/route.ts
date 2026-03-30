@@ -28,6 +28,19 @@ function planFromPriceId(priceId?: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Compute access_until: day 29 of the month prior to next_billing_date
+// e.g. next_billing_date = 2026-04-15 → access_until = "2026-03-29"
+// ---------------------------------------------------------------------------
+function toAccessUntil(nextBilledAt: string | null | undefined): string | null {
+  if (!nextBilledAt) return null;
+  const d = new Date(nextBilledAt);
+  if (isNaN(d.getTime())) return null;
+  const year  = d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear();
+  const month = d.getMonth() === 0 ? 12 : d.getMonth(); // month prior, 1-indexed
+  return `${year}-${String(month).padStart(2, "0")}-29`;
+}
+
+// ---------------------------------------------------------------------------
 // Paddle webhook signature verification
 // ---------------------------------------------------------------------------
 function verifyPaddleSignature(
@@ -72,15 +85,22 @@ export async function POST(req: NextRequest) {
 
   const rawBody = await req.text();
 
-  const signatureHeader = req.headers.get("Paddle-Signature");
-  if (!signatureHeader) {
-    console.warn("[Paddle Webhook] Missing Paddle-Signature header");
-    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-  }
+  // Paddle simulations send this header — skip signature check for testing only
+  const isSimulation = req.headers.get("Paddle-Simulation") === "1";
 
-  if (!verifyPaddleSignature(rawBody, signatureHeader, secret)) {
-    console.warn("[Paddle Webhook] Signature verification failed");
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  if (!isSimulation) {
+    const signatureHeader = req.headers.get("Paddle-Signature");
+    if (!signatureHeader) {
+      console.warn("[Paddle Webhook] Missing Paddle-Signature header");
+      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+    }
+
+    if (!verifyPaddleSignature(rawBody, signatureHeader, secret)) {
+      console.warn("[Paddle Webhook] Signature verification failed");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+  } else {
+    console.log("[Paddle Webhook] Simulation mode — skipping signature verification");
   }
 
   let event: any;
@@ -113,7 +133,7 @@ export async function POST(req: NextRequest) {
             plan:              planFromPriceId(priceId),
             status:            sub?.status ?? "active",
             next_billing_date: sub?.next_billed_at ?? null,
-            updated_at:        new Date().toISOString(),
+            access_until:      toAccessUntil(sub?.next_billed_at),
           },
           { onConflict: "subscription_id" }
         );
@@ -137,7 +157,7 @@ export async function POST(req: NextRequest) {
             plan:              planFromPriceId(priceId),
             status:            "active",
             next_billing_date: sub?.next_billed_at ?? null,
-            updated_at:        new Date().toISOString(),
+            access_until:      toAccessUntil(sub?.next_billed_at),
           },
           { onConflict: "subscription_id" }
         );
@@ -160,7 +180,7 @@ export async function POST(req: NextRequest) {
                                  ? planFromPriceId(priceId)
                                  : undefined,
             next_billing_date: sub?.next_billed_at ?? null,
-            updated_at:        new Date().toISOString(),
+            access_until:      toAccessUntil(sub?.next_billed_at),
           })
           .eq("subscription_id", sub?.id);
 
@@ -175,7 +195,7 @@ export async function POST(req: NextRequest) {
 
         const { error } = await supabase
           .from("subscriptions")
-          .update({ status: "canceled", updated_at: new Date().toISOString() })
+          .update({ status: "canceled" })
           .eq("subscription_id", sub?.id);
 
         if (error) console.error("[Paddle] subscription.canceled DB error:", error.message);

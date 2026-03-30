@@ -3,7 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const ENFORCE_DATE = new Date("2026-04-01T00:00:00");
 const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
 function getSupabase() {
@@ -13,12 +12,12 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-export async function GET(req: NextRequest) {
-  // Before enforcement date: always allow (no DB query needed)
-  if (new Date() < ENFORCE_DATE) {
-    return NextResponse.json({ allowed: true, reason: "pre_enforce" });
-  }
+// Returns today as "YYYY-MM-DD" in UTC, no time component
+function todayUTC(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
+export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email");
   if (!email) {
     return NextResponse.json({ allowed: false, reason: "no_email" });
@@ -33,7 +32,7 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("subscriptions")
-      .select("status")
+      .select("status, access_until")
       .eq("customer_email", email.toLowerCase().trim())
       .eq("status", "active")
       .maybeSingle();
@@ -43,8 +42,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ allowed: false, reason: "db_error" });
     }
 
-    const allowed = data !== null;
-    console.log(`[subscription-check] email=${email} allowed=${allowed}`);
+    // No active subscription record → blocked
+    if (!data || !data.access_until) {
+      console.log(`[subscription-check] email=${email} allowed=false reason=no_record`);
+      return NextResponse.json({ allowed: false, reason: "no_record" });
+    }
+
+    // Compare dates as strings "YYYY-MM-DD" to avoid timezone issues
+    const today = todayUTC();
+    const allowed = today <= data.access_until;
+
+    console.log(`[subscription-check] email=${email} today=${today} access_until=${data.access_until} allowed=${allowed}`);
     return NextResponse.json({ allowed });
   } catch (err: any) {
     console.error("[subscription-check] Unexpected error:", err?.message ?? err);
