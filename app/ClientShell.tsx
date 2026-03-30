@@ -75,9 +75,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     } catch {}
   }, [mounted, authed]);
 
-  // ── CHECK DE SUSCRIPCIÓN (server-side via API) ────────────────────
+  // ── CHECK DE SUSCRIPCIÓN — solo si está autenticado ─────────────
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !authed) return;
     try {
       const raw = localStorage.getItem(AUTH_KEY);
       const email = raw ? JSON.parse(raw)?.email : null;
@@ -91,26 +91,41 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     } catch {
       setSubscriptionAllowed(false);
     }
-  }, [mounted]);
+  }, [mounted, authed]);
   // ─────────────────────────────────────────────────────────────────
 
-  // LOGIN DESACTIVADO — volver a activar cuando el usuario lo indique
-
-  // Mientras monta: render estable (evita hydration mismatch)
+  // 1. Hydration guard
   if (!mounted) {
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // ── BLOQUEO POR LICENCIA ──────────────────────────────────────────
-  if (!ACTIVO) return <PricingWrapper />;
-  if (subscriptionAllowed === null) return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
-  if (!subscriptionAllowed) return <PricingWrapper />;
-  // ─────────────────────────────────────────────────────────────────
-
-  // Login o Pricing: sin sidebar, sin theme
+  // 2. Rutas públicas — nunca verifican suscripción ni auth
   if (isLoginRoute || isPricingRoute) return <>{children}</>;
 
-  // Panel admin: con sidebar y theme
+  // 3. No autenticado → redirigir a /login
+  if (!authed) {
+    router.replace("/login");
+    return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+  }
+
+  // 4. Kill switch de licencia
+  if (!ACTIVO) {
+    router.replace("/pricing");
+    return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+  }
+
+  // 5. Esperando resultado del check de suscripción
+  if (subscriptionAllowed === null) {
+    return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+  }
+
+  // 6. Sin suscripción válida → redirigir a /pricing
+  if (!subscriptionAllowed) {
+    router.replace("/pricing");
+    return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+  }
+
+  // 7. Autenticado + suscripción válida → panel con sidebar y theme
   return (
     <ThemeProvider>
       <Shell>{children}</Shell>
