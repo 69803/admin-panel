@@ -28,16 +28,33 @@ function planFromPriceId(priceId?: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Compute access_until: day 29 of the month prior to next_billing_date
-// e.g. next_billing_date = 2026-04-15 → access_until = "2026-03-29"
+// Compute access_until: day 29 of the month prior to next_billing_date.
+// If that date is already in the past (e.g. client paid on day 30 renewing
+// for next month), fall back to day 29 of next_billing_date's own month.
+// Examples:
+//   next_billing = 2026-04-15, today = 2026-03-05 → "2026-03-29"
+//   next_billing = 2026-04-30, today = 2026-03-30 → "2026-04-29" (prior month already past)
 // ---------------------------------------------------------------------------
 function toAccessUntil(nextBilledAt: string | null | undefined): string | null {
   if (!nextBilledAt) return null;
   const d = new Date(nextBilledAt);
   if (isNaN(d.getTime())) return null;
-  const year  = d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear();
-  const month = d.getMonth() === 0 ? 12 : d.getMonth(); // month prior, 1-indexed
-  return `${year}-${String(month).padStart(2, "0")}-29`;
+
+  // Day 29 of the month before next billing
+  const prevYear  = d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear();
+  const prevMonth = d.getMonth() === 0 ? 12 : d.getMonth(); // prior month, 1-indexed
+  const candidate = `${prevYear}-${String(prevMonth).padStart(2, "0")}-29`;
+
+  // If candidate is already past today, the client just renewed for next cycle
+  // → use day 29 of next_billing_date's own month instead
+  const today = new Date().toISOString().slice(0, 10);
+  if (candidate < today) {
+    const sameYear  = d.getFullYear();
+    const sameMonth = d.getMonth() + 1; // 1-indexed
+    return `${sameYear}-${String(sameMonth).padStart(2, "0")}-29`;
+  }
+
+  return candidate;
 }
 
 // ---------------------------------------------------------------------------
@@ -131,7 +148,7 @@ export async function POST(req: NextRequest) {
 
         const { data, error } = await supabase.from("subscriptions").upsert(
           {
-            customer_email:    email,
+            ...(email ? { customer_email: email } : {}),
             subscription_id:   sub?.id,
             plan:              planFromPriceId(priceId),
             status:            sub?.status ?? "active",
@@ -163,7 +180,7 @@ export async function POST(req: NextRequest) {
 
         const { data, error } = await supabase.from("subscriptions").upsert(
           {
-            customer_email:    email,
+            ...(email ? { customer_email: email } : {}),
             subscription_id:   sub?.id,
             plan:              planFromPriceId(priceId),
             status:            "active",
