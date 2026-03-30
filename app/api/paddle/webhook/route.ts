@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
         const priceId: string =
           sub?.items?.[0]?.price?.id ?? sub?.items?.[0]?.price_id ?? "";
         const email: string =
-          sub?.customer?.email ?? sub?.custom_data?.email ?? "";
+          sub?.custom_data?.email ?? sub?.customer?.email ?? "";
         console.log(`[Paddle] subscription.created — customer_id=${sub?.customer_id} priceId=${priceId} items=`, JSON.stringify(sub?.items?.[0]));
 
         const { data, error } = await supabase.from("subscriptions").upsert(
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
         const priceId: string =
           sub?.items?.[0]?.price?.id ?? sub?.items?.[0]?.price_id ?? "";
         const email: string =
-          sub?.customer?.email ?? sub?.custom_data?.email ?? "";
+          sub?.custom_data?.email ?? sub?.customer?.email ?? "";
         const rawNextBilled: string = sub?.next_billed_at ?? "";
         const computedAccessUntil = toAccessUntil(rawNextBilled || null);
 
@@ -249,6 +249,11 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      // ── Transaction paid ──────────────────────────────────────────────
+      // Fires on every successful payment. Same logic as transaction.completed.
+      // Paddle sends this before transaction.completed, so it handles email
+      // backfill earlier in the lifecycle.
+      case "transaction.paid":
       // ── Transaction completed ──────────────────────────────────────────
       // Backfills customer_email. Also upserts a partial row in case
       // this event fires before subscription.activated (race condition).
@@ -257,17 +262,18 @@ export async function POST(req: NextRequest) {
         const subId: string = tx?.subscription_id ?? "";
 
         // Paddle Billing puts email at different paths depending on context.
+        // custom_data.email is always present when the checkout passes it (our fix).
         // Try all known paths and log which one wins.
         const emailPaths = {
+          "tx.custom_data.email":            tx?.custom_data?.email ?? "",
           "tx.customer.email":               tx?.customer?.email ?? "",
           "tx.details.contacts[0].email":    tx?.details?.contacts?.[0]?.email ?? "",
-          "tx.custom_data.email":            tx?.custom_data?.email ?? "",
           "tx.billing_details.email":        tx?.billing_details?.email ?? "",
         };
         const email: string =
+          emailPaths["tx.custom_data.email"] ||
           emailPaths["tx.customer.email"] ||
           emailPaths["tx.details.contacts[0].email"] ||
-          emailPaths["tx.custom_data.email"] ||
           emailPaths["tx.billing_details.email"] ||
           "";
 

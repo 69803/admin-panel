@@ -10,7 +10,12 @@ declare global {
     Paddle: {
       Environment: { set: (env: string) => void };
       Initialize: (opts: { token: string }) => void;
-      Checkout: { open: (opts: { items: { priceId: string; quantity: number }[] }) => void };
+      Checkout: {
+        open: (opts: {
+          items: { priceId: string; quantity: number }[];
+          customData?: Record<string, string>;
+        }) => void;
+      };
     };
   }
 }
@@ -117,7 +122,20 @@ export default function PricingPage() {
 
   function openPaddleCheckout(planNombre: string, priceId: string) {
     if (typeof window !== "undefined" && window.Paddle) {
-      window.Paddle.Checkout.open({ items: [{ priceId, quantity: 1 }] });
+      // Read logged-in email from localStorage so Paddle includes it in all webhook events
+      // as event.data.custom_data.email — this is how we link the subscription to the user
+      let userEmail = "";
+      try {
+        const raw = localStorage.getItem("admin_auth_v1");
+        userEmail = (raw ? JSON.parse(raw)?.email : "") ?? "";
+      } catch { /* ignore */ }
+
+      console.log(`[Pricing] Opening checkout — plan=${planNombre} priceId=${priceId} email=${userEmail || "(not found)"}`);
+
+      window.Paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        ...(userEmail ? { customData: { email: userEmail } } : {}),
+      });
     } else {
       console.error("Paddle not initialized. Plan:", planNombre, "PriceId:", priceId);
     }
