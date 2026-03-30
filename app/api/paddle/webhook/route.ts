@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
 
-        const { error } = await supabase.from("subscriptions").upsert(
+        const { data, error } = await supabase.from("subscriptions").upsert(
           {
             customer_email:    email,
             subscription_id:   sub?.id,
@@ -137,10 +137,13 @@ export async function POST(req: NextRequest) {
             access_until:      toAccessUntil(sub?.next_billed_at),
           },
           { onConflict: "subscription_id" }
-        );
+        ).select();
 
-        if (error) console.error("[Paddle] subscription.created DB error:", error.message);
-        else console.log(`[Paddle] subscription.created upserted — subId=${sub?.id} plan=${planFromPriceId(priceId)}`);
+        console.log("UPSERT RESULT:", { data, error });
+        if (error) {
+          console.error("SUPABASE ERROR:", error);
+          console.error("[Paddle] subscription.created DB error:", error.message);
+        } else console.log(`[Paddle] subscription.created upserted — subId=${sub?.id} plan=${planFromPriceId(priceId)}`);
         break;
       }
 
@@ -151,7 +154,7 @@ export async function POST(req: NextRequest) {
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
 
-        const { error } = await supabase.from("subscriptions").upsert(
+        const { data, error } = await supabase.from("subscriptions").upsert(
           {
             customer_email:    email,
             subscription_id:   sub?.id,
@@ -161,10 +164,13 @@ export async function POST(req: NextRequest) {
             access_until:      toAccessUntil(sub?.next_billed_at),
           },
           { onConflict: "subscription_id" }
-        );
+        ).select();
 
-        if (error) console.error("[Paddle] subscription.activated DB error:", error.message);
-        else console.log(`[Paddle] subscription.activated upserted — subId=${sub?.id} status=active`);
+        console.log("UPSERT RESULT:", { data, error });
+        if (error) {
+          console.error("SUPABASE ERROR:", error);
+          console.error("[Paddle] subscription.activated DB error:", error.message);
+        } else console.log(`[Paddle] subscription.activated upserted — subId=${sub?.id} status=active`);
         break;
       }
 
@@ -173,7 +179,7 @@ export async function POST(req: NextRequest) {
         const sub = event.data ?? event;
         const priceId: string = sub?.items?.[0]?.price?.id ?? "";
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("subscriptions")
           .update({
             status:            sub?.status,
@@ -183,10 +189,14 @@ export async function POST(req: NextRequest) {
             next_billing_date: sub?.next_billed_at ?? null,
             access_until:      toAccessUntil(sub?.next_billed_at),
           })
-          .eq("subscription_id", sub?.id);
+          .eq("subscription_id", sub?.id)
+          .select();
 
-        if (error) console.error("[Paddle] subscription.updated DB error:", error.message);
-        else console.log(`[Paddle] subscription.updated — subId=${sub?.id} status=${sub?.status}`);
+        console.log("UPSERT RESULT:", { data, error });
+        if (error) {
+          console.error("SUPABASE ERROR:", error);
+          console.error("[Paddle] subscription.updated DB error:", error.message);
+        } else console.log(`[Paddle] subscription.updated — subId=${sub?.id} status=${sub?.status}`);
         break;
       }
 
