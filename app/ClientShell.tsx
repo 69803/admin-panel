@@ -36,13 +36,12 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
-  // subscriptionAllowed: null = loading, true = allowed, false = blocked
   const [subscriptionAllowed, setSubscriptionAllowed] = useState<boolean | null>(null);
-  // Tracks which email the current subscriptionAllowed value was checked for.
-  // If it doesn't match the current email, the result is stale and we wait.
   const [subscriptionCheckedFor, setSubscriptionCheckedFor] = useState<string | null>(null);
 
-  const isLoginRoute   = pathname === "/login" || pathname?.startsWith("/login/") || pathname === "/hello" || pathname?.startsWith("/hello/");
+  // /login and /hello are the only public routes — everything else requires auth
+  const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/")
+                    || pathname === "/hello"  || pathname?.startsWith("/hello/");
   const isPricingRoute = pathname === "/pricing";
 
   // Hydration — one-time
@@ -79,7 +78,6 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       return;
     }
 
-    // Mark as "checking for this email" and reset result while fetching
     setSubscriptionCheckedFor(email);
     setSubscriptionAllowed(null);
     fetch(`/api/subscription-check?email=${encodeURIComponent(email)}`)
@@ -97,34 +95,43 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const currentEmail = readEmailFromLS();
   const authed = !!currentEmail;
 
-  // ── 2. Public routes — no auth or subscription checks ────────────
-  if (isLoginRoute || isPricingRoute) return <>{children}</>;
+  // ── 2. /login is the only public route ───────────────────────────
+  if (isLoginRoute) return <>{children}</>;
 
-  // ── 3. Not logged in → /login ─────────────────────────────────────
+  // ── 3. Not logged in → /login (catches /pricing too) ─────────────
   if (!authed) {
     router.replace("/login");
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // ── 4. License kill switch ────────────────────────────────────────
+  // ── 4. License kill switch → pricing (auth required) ─────────────
   if (!ACTIVO) {
-    router.replace("/pricing");
-    return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+    if (!isPricingRoute) router.replace("/pricing");
+    return isPricingRoute
+      ? <>{children}</>
+      : <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // ── 5. Subscription result is stale or still loading ─────────────
-  // subscriptionCheckedFor must match currentEmail before we trust the result
+  // ── 5. Subscription result stale or still loading ─────────────────
   if (subscriptionCheckedFor !== currentEmail || subscriptionAllowed === null) {
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // ── 6. No valid subscription → /pricing ──────────────────────────
+  // ── 6. No subscription → /pricing (auth required) ─────────────────
   if (!subscriptionAllowed) {
-    router.replace("/pricing");
+    if (!isPricingRoute) router.replace("/pricing");
+    return isPricingRoute
+      ? <>{children}</>
+      : <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
+  }
+
+  // ── 7. Has subscription but landed on /pricing → panel ────────────
+  if (isPricingRoute) {
+    router.replace("/admin");
     return <div suppressHydrationWarning style={{ minHeight: "100vh" }} />;
   }
 
-  // ── 7. Authenticated + valid subscription → panel ─────────────────
+  // ── 8. Authenticated + valid subscription → panel ─────────────────
   return (
     <ThemeProvider>
       <Shell>{children}</Shell>
