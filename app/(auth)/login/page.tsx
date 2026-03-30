@@ -3,8 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const ADMIN_PASSWORD = "Sistema1_";
 const AUTH_KEY = "admin_auth_v2";
+
+// Contraseñas por correo — el resto de cuentas usan la contraseña por defecto
+const DEFAULT_PASSWORD = "1234";
+const PASSWORD_OVERRIDES: Record<string, string> = {
+  "kristianbarrios8@gmail.com": "Sistema1_",
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,7 +24,8 @@ export default function LoginPage() {
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return setError("Escribe tu correo.");
-    if (password !== ADMIN_PASSWORD) return setError("Contraseña incorrecta.");
+    const expectedPassword = PASSWORD_OVERRIDES[normalizedEmail] ?? DEFAULT_PASSWORD;
+    if (password !== expectedPassword) return setError("Contraseña incorrecta.");
 
     setLoading(true);
     try {
