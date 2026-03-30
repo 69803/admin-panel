@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
   const eventType: string = event?.event_type ?? "unknown";
   const eventId: string = event?.notification_id ?? "no-id";
   console.log(`[Paddle Webhook] event=${eventType} id=${eventId}`);
+  console.log("[Paddle Webhook] full payload:", JSON.stringify(event));
 
   try {
     const supabase = getSupabase();
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
 
       // ── Subscription created ───────────────────────────────────────────
       case "subscription.created": {
-        const sub = event.data;
+        const sub = event.data ?? event;
         const priceId: string = sub?.items?.[0]?.price?.id ?? "";
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
 
       // ── Subscription activated ─────────────────────────────────────────
       case "subscription.activated": {
-        const sub = event.data;
+        const sub = event.data ?? event;
         const priceId: string = sub?.items?.[0]?.price?.id ?? "";
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
@@ -169,7 +170,7 @@ export async function POST(req: NextRequest) {
 
       // ── Subscription updated ───────────────────────────────────────────
       case "subscription.updated": {
-        const sub = event.data;
+        const sub = event.data ?? event;
         const priceId: string = sub?.items?.[0]?.price?.id ?? "";
 
         const { error } = await supabase
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
 
       // ── Subscription canceled ──────────────────────────────────────────
       case "subscription.canceled": {
-        const sub = event.data;
+        const sub = event.data ?? event;
 
         const { error } = await supabase
           .from("subscriptions")
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest) {
       // ── Transaction completed ──────────────────────────────────────────
       // Used to backfill the customer email once the first payment goes through
       case "transaction.completed": {
-        const tx = event.data;
+        const tx = event.data ?? event;
         const subId: string = tx?.subscription_id ?? "";
         const email: string = tx?.customer?.email ?? "";
 
