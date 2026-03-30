@@ -123,9 +123,11 @@ export async function POST(req: NextRequest) {
       // ── Subscription created ───────────────────────────────────────────
       case "subscription.created": {
         const sub = event.data ?? event;
-        const priceId: string = sub?.items?.[0]?.price?.id ?? "";
+        const priceId: string =
+          sub?.items?.[0]?.price?.id ?? sub?.items?.[0]?.price_id ?? "";
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
+        console.log(`[Paddle] subscription.created — customer_id=${sub?.customer_id} priceId=${priceId} items=`, JSON.stringify(sub?.items?.[0]));
 
         const { data, error } = await supabase.from("subscriptions").upsert(
           {
@@ -150,9 +152,14 @@ export async function POST(req: NextRequest) {
       // ── Subscription activated ─────────────────────────────────────────
       case "subscription.activated": {
         const sub = event.data ?? event;
-        const priceId: string = sub?.items?.[0]?.price?.id ?? "";
+        // price.id (nested) or price_id (flat) — Paddle uses both depending on context
+        const priceId: string =
+          sub?.items?.[0]?.price?.id ?? sub?.items?.[0]?.price_id ?? "";
+        // Email is NOT on the subscription object — only customer_id is present.
+        // transaction.completed will backfill it. Log customer_id for traceability.
         const email: string =
           sub?.customer?.email ?? sub?.custom_data?.email ?? "";
+        console.log(`[Paddle] subscription.activated — customer_id=${sub?.customer_id} priceId=${priceId} items=`, JSON.stringify(sub?.items?.[0]));
 
         const { data, error } = await supabase.from("subscriptions").upsert(
           {
@@ -177,7 +184,8 @@ export async function POST(req: NextRequest) {
       // ── Subscription updated ───────────────────────────────────────────
       case "subscription.updated": {
         const sub = event.data ?? event;
-        const priceId: string = sub?.items?.[0]?.price?.id ?? "";
+        const priceId: string =
+          sub?.items?.[0]?.price?.id ?? sub?.items?.[0]?.price_id ?? "";
 
         const { data, error } = await supabase
           .from("subscriptions")
