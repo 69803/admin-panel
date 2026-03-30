@@ -6,6 +6,14 @@ export const runtime = "nodejs";
 const DEV_KEY = "devpanel2026";
 const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
+// Fallback whitelist — used when the clients table doesn't exist yet in Supabase
+// Once the table is created and emails are inserted there, this list still works as a safety net
+const FALLBACK_ALLOWED = [
+  "kristianbarrios8@gmail.com",
+  "gusmeliab@gmail.com",
+  "compipana2@gmail.com",
+];
+
 function getSupabase() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,10 +31,12 @@ export async function GET(req: NextRequest) {
   // ── Check single email (used by login page) ──────────────────────
   if (email) {
     const normalized = email.toLowerCase().trim();
-    // Owner always allowed
-    if (normalized === OWNER_EMAIL) {
-      return NextResponse.json({ allowed: true });
+
+    // Fallback list always wins — works even if Supabase table doesn't exist yet
+    if (FALLBACK_ALLOWED.includes(normalized)) {
+      return NextResponse.json({ allowed: true, reason: "fallback" });
     }
+
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
