@@ -700,8 +700,8 @@ export default function PricingPage() {
       {process.env.NODE_ENV !== "production" && (
         <button
           onClick={() => {
-            console.log("TEST CHECKOUT TRIGGERED");
-            openPaddleCheckout("Test", "pri_TEST_REPLACE_WITH_1EUR_PRICE_ID");
+            console.log("TEST CHECKOUT TRIGGERED — 1€");
+            openPaddleCheckout("Test 1€", "pri_01kmzey1x9qs1bpct6dcn4cxe3");
           }}
           style={{
             position: "fixed",
