@@ -94,17 +94,17 @@ export default function DevUsuariosPage() {
   const s = {
     wrap: {
       minHeight: "100vh",
-      background: "#0b1220",
-      color: "#fff",
+      background: "var(--t-bg)",
+      color: "var(--t-text)",
       fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
       padding: "48px 24px",
     } as React.CSSProperties,
     input: {
       padding: "12px 14px",
       borderRadius: 12,
-      border: "1px solid rgba(255,255,255,.18)",
-      background: "rgba(0,0,0,.3)",
-      color: "#fff",
+      border: "1px solid var(--t-border)",
+      background: "var(--t-input)",
+      color: "var(--t-text)",
       fontSize: 15,
       outline: "none",
       width: 280,
@@ -151,14 +151,14 @@ export default function DevUsuariosPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 1000, margin: 0 }}>👥 Actividad de Usuarios</h1>
-            <div style={{ opacity: 0.5, fontSize: 13, marginTop: 4 }}>
+            <div style={{ color: "var(--t-text2)", fontSize: 13, marginTop: 4 }}>
               {usuarios.length} cuenta{usuarios.length !== 1 ? "s" : ""} registrada{usuarios.length !== 1 ? "s" : ""}
             </div>
           </div>
           <button
             onClick={() => fetchUsuarios(key)}
             disabled={loading}
-            style={{ ...s.btn, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.15)", fontSize: 14 }}
+            style={{ ...s.btn, background: "var(--t-card2)", border: "1px solid var(--t-border)", color: "var(--t-text)", fontSize: 14 }}
           >
             {loading ? "Cargando..." : "🔄 Refrescar"}
           </button>
@@ -209,8 +209,8 @@ export default function DevUsuariosPage() {
                 <div
                   key={u.email}
                   style={{
-                    background: "rgba(255,255,255,.04)",
-                    border: "1px solid rgba(255,255,255,.10)",
+                    background: "var(--t-card)",
+                    border: "1px solid var(--t-border)",
                     borderRadius: 14,
                     overflow: "hidden",
                   }}
@@ -239,7 +239,7 @@ export default function DevUsuariosPage() {
 
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontWeight: 800, fontSize: 15 }}>{u.email}</div>
-                      <div style={{ opacity: 0.5, fontSize: 12, marginTop: 2 }}>
+                      <div style={{ color: "var(--t-text2)", fontSize: 12, marginTop: 2 }}>
                         Última visita: {new Date(u.lastSeen).toLocaleString("es-ES")}
                       </div>
                     </div>
@@ -247,23 +247,23 @@ export default function DevUsuariosPage() {
                     <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
                       <div style={{ textAlign: "center" }}>
                         <div style={{ fontSize: 20, fontWeight: 900 }}>{u.visits.length}</div>
-                        <div style={{ opacity: 0.45, fontSize: 11 }}>total visitas</div>
+                        <div style={{ color: "var(--t-text3)", fontSize: 11 }}>total visitas</div>
                       </div>
                       <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: hoy > 0 ? "#86efac" : "#fff" }}>{hoy}</div>
-                        <div style={{ opacity: 0.45, fontSize: 11 }}>hoy</div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: hoy > 0 ? "#16a34a" : "var(--t-text)" }}>{hoy}</div>
+                        <div style={{ color: "var(--t-text3)", fontSize: 11 }}>hoy</div>
                       </div>
-                      <div style={{ opacity: 0.4, fontSize: 18 }}>{isOpen ? "▲" : "▼"}</div>
+                      <div style={{ color: "var(--t-text3)", fontSize: 18 }}>{isOpen ? "▲" : "▼"}</div>
                     </div>
                   </div>
 
                   {/* Detalle expandible */}
                   {isOpen && (
                     <div style={{
-                      borderTop: "1px solid rgba(255,255,255,.07)",
+                      borderTop: "1px solid var(--t-border)",
                       padding: "16px 20px 20px",
                     }}>
-                      <div style={{ opacity: 0.5, fontSize: 12, marginBottom: 12, fontWeight: 700, letterSpacing: "0.08em" }}>
+                      <div style={{ color: "var(--t-text2)", fontSize: 12, marginBottom: 12, fontWeight: 700, letterSpacing: "0.08em" }}>
                         VISITAS POR DÍA (TODO EL HISTORIAL)
                       </div>
                       {diasRecientes.length === 0 ? (
