@@ -751,6 +751,23 @@ export default function PricingPage() {
         <div style={{ fontSize: 12, opacity: 0.35 }}>
           © {new Date().getFullYear()} Panel Restaurante · Desarrollado por Kristian Barrios · Todos los derechos reservados
         </div>
+        <button
+          onClick={() => {
+            localStorage.removeItem("admin_auth_v2");
+            window.location.href = "/login";
+          }}
+          style={{
+            marginTop: 24,
+            background: "none",
+            border: "none",
+            color: "rgba(255,255,255,.18)",
+            fontSize: 11,
+            cursor: "pointer",
+            padding: "4px 8px",
+          }}
+        >
+          Cerrar sesión
+        </button>
       </div>
     </main>
   );
