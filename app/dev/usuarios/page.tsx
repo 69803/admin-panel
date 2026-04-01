@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const DEV_KEY = "devpanel2026";
 
@@ -131,32 +131,62 @@ function DayDetailModal({
   devKey: string;
   onClose: () => void;
 }) {
-  const [data, setData] = useState<DayDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+  const [data, setData]               = useState<DayDetail | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [err, setErr]                 = useState("");
+  const [selectedModule, setSelectedModule] = useState<string | null>(null);
 
-  // Fetch al montar
-  useState(() => {
+  useEffect(() => {
     fetch(`/api/events?email=${encodeURIComponent(email)}&date=${date}&key=${devKey}`)
       .then((r) => r.json())
-      .then((d) => {
-        if (d.error) { setErr(d.error); } else { setData(d); }
-      })
+      .then((d) => { if (d.error) setErr(d.error); else setData(d); })
       .catch((e) => setErr(e.message))
       .finally(() => setLoading(false));
-  });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const s = data?.summary;
+  const s      = data?.summary;
   const events = data?.events ?? [];
+
+  // ── Módulos únicos (para el filtro, en orden de aparición) ───────────────
+  const uniqueModules = [...new Set(
+    events
+      .filter((e) => e.event_type === "page_enter")
+      .map((e) => e.module ?? e.route)
+  )];
+
+  // ── Eventos filtrados ─────────────────────────────────────────────────────
+  const filteredEvents = selectedModule
+    ? events.filter((e) => (e.module ?? e.route) === selectedModule)
+    : events;
+
+  // ── Resumen del módulo seleccionado ───────────────────────────────────────
+  const modEnters   = filteredEvents.filter((e) => e.event_type === "page_enter");
+  const modExits    = filteredEvents.filter((e) => e.event_type === "page_exit");
+  const modTotalMs  = modExits.reduce((a, e) => a + (e.duration_ms ?? 0), 0);
+  const modFirstTs  = filteredEvents[0]?.ts ?? null;
+  const modLastTs   = filteredEvents[filteredEvents.length - 1]?.ts ?? null;
+
+  const chip = (active: boolean) => ({
+    padding: "4px 12px",
+    borderRadius: 999,
+    border: active ? "1px solid #7c3aed" : "1px solid rgba(124,58,237,.3)",
+    background: active ? "#7c3aed" : "rgba(124,58,237,.10)",
+    color: active ? "#fff" : "#7c3aed",
+    fontWeight: 700 as const,
+    fontSize: 12,
+    cursor: "pointer" as const,
+    transition: "all .15s",
+    whiteSpace: "nowrap" as const,
+  });
 
   return (
     <div
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(0,0,0,.6)",
+        background: "rgba(0,0,0,.55)",
         display: "flex", alignItems: "flex-start", justifyContent: "flex-end",
-        padding: 24,
+        padding: 20,
         backdropFilter: "blur(4px)",
       }}
     >
@@ -166,185 +196,233 @@ function DayDetailModal({
           background: "var(--t-card)",
           border: "1px solid var(--t-border)",
           borderRadius: 20,
-          width: "min(680px, 100%)",
-          maxHeight: "calc(100vh - 48px)",
+          width: "min(700px, 100%)",
+          maxHeight: "calc(100vh - 40px)",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 80px rgba(0,0,0,.35)",
+          boxShadow: "0 24px 80px rgba(0,0,0,.3)",
           overflow: "hidden",
         }}
       >
-        {/* Header */}
+        {/* ── Header ─────────────────────────────────────────────────────── */}
         <div style={{
-          padding: "20px 24px",
+          padding: "18px 24px",
           borderBottom: "1px solid var(--t-border)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexShrink: 0,
+          gap: 12,
         }}>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 17, color: "var(--t-text)" }}>
-              📅 {display} · {email}
+            <div style={{ fontWeight: 900, fontSize: 16, color: "var(--t-text)", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ opacity: .6 }}>📅</span>
+              <span>{display}</span>
+              <span style={{ opacity: .3, fontWeight: 400 }}>·</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t-text2)" }}>{email}</span>
             </div>
-            <div style={{ fontSize: 12, color: "var(--t-text2)", marginTop: 3 }}>
+            <div style={{ fontSize: 12, color: "var(--t-text3)", marginTop: 3 }}>
               Historial detallado del día
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "var(--t-card2)", border: "1px solid var(--t-border)",
-              borderRadius: 8, padding: "6px 12px", cursor: "pointer",
-              color: "var(--t-text)", fontWeight: 700, fontSize: 13,
-            }}
-          >
+          <button onClick={onClose} style={{
+            background: "var(--t-card2)", border: "1px solid var(--t-border)",
+            borderRadius: 8, padding: "6px 14px", cursor: "pointer",
+            color: "var(--t-text)", fontWeight: 700, fontSize: 13, flexShrink: 0,
+          }}>
             ✕ Cerrar
           </button>
         </div>
 
-        {/* Content */}
-        <div style={{ overflow: "auto", padding: "20px 24px", flex: 1 }}>
+        {/* ── Contenido scrollable ────────────────────────────────────────── */}
+        <div style={{ overflow: "auto", flex: 1 }}>
+
           {loading && (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--t-text2)" }}>
+            <div style={{ textAlign: "center", padding: "48px 0", color: "var(--t-text2)" }}>
               Cargando historial...
             </div>
           )}
 
           {err && (
-            <div style={{
-              background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.3)",
-              borderRadius: 10, padding: "12px 16px", color: "#ef4444", fontSize: 14,
-            }}>
+            <div style={{ margin: 20, padding: "12px 16px", borderRadius: 10, background: "rgba(239,68,68,.10)", border: "1px solid rgba(239,68,68,.3)", color: "#ef4444", fontSize: 14 }}>
               Error: {err}
             </div>
           )}
 
           {!loading && !err && events.length === 0 && (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--t-text3)" }}>
+            <div style={{ textAlign: "center", padding: "48px 24px", color: "var(--t-text3)" }}>
               Sin actividad detallada registrada para este día.
-              <br />
-              <span style={{ fontSize: 12, marginTop: 8, display: "block" }}>
-                El tracking detallado empieza a registrarse desde ahora.
-              </span>
+              <div style={{ fontSize: 12, marginTop: 8 }}>El tracking detallado se registra desde que se creó la tabla.</div>
             </div>
           )}
 
-          {/* Resumen del día */}
-          {s && events.length > 0 && (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-              gap: 10, marginBottom: 24,
-            }}>
-              {[
-                { label: "Primera actividad", value: s.first_activity ? fmtTime(s.first_activity) : "—" },
-                { label: "Última actividad",  value: s.last_activity  ? fmtTime(s.last_activity)  : "—" },
-                { label: "Tiempo activo",     value: fmtTotalTime(s.total_active_ms) },
-                { label: "Páginas visitadas", value: String(s.pages_visited.length) },
-                { label: "Total eventos",     value: String(s.total_events) },
-              ].map((stat) => (
-                <div key={stat.label} style={{
-                  background: "var(--t-card2)",
-                  border: "1px solid var(--t-border)",
-                  borderRadius: 12, padding: "12px 14px", textAlign: "center",
-                }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "var(--t-text)" }}>
-                    {stat.value}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--t-text2)", marginTop: 3 }}>
-                    {stat.label}
-                  </div>
+          {!loading && !err && events.length > 0 && s && (
+            <>
+              {/* ── Resumen global del día ────────────────────────────────── */}
+              <div style={{ padding: "20px 24px 0" }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--t-text3)", letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 10 }}>
+                  Resumen del día
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Flujo de navegación */}
-          {s && s.navigation_flow.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t-text2)", letterSpacing: ".07em", textTransform: "uppercase", marginBottom: 10 }}>
-                Flujo de navegación
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-                {s.navigation_flow.map((page, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{
-                      background: "rgba(124,58,237,.12)",
-                      border: "1px solid rgba(124,58,237,.3)",
-                      borderRadius: 8, padding: "3px 10px",
-                      fontSize: 12, fontWeight: 700, color: "#7c3aed",
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8 }}>
+                  {[
+                    { label: "Primera actividad", value: s.first_activity ? fmtTime(s.first_activity) : "—" },
+                    { label: "Última actividad",  value: s.last_activity  ? fmtTime(s.last_activity)  : "—" },
+                    { label: "Tiempo activo",     value: fmtTotalTime(s.total_active_ms) },
+                    { label: "Módulos visitados", value: String(s.pages_visited.length) },
+                    { label: "Total eventos",     value: String(s.total_events) },
+                  ].map((stat) => (
+                    <div key={stat.label} style={{
+                      background: "var(--t-card2)", border: "1px solid var(--t-border)",
+                      borderRadius: 10, padding: "10px 12px", textAlign: "center",
                     }}>
-                      {page}
-                    </span>
-                    {i < s.navigation_flow.length - 1 && (
-                      <span style={{ color: "var(--t-text3)", fontSize: 12 }}>→</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Timeline de eventos */}
-          {events.length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t-text2)", letterSpacing: ".07em", textTransform: "uppercase", marginBottom: 14 }}>
-                Timeline completo
-              </div>
-              <div style={{ position: "relative" }}>
-                {/* Línea vertical */}
-                <div style={{
-                  position: "absolute", left: 14, top: 0, bottom: 0,
-                  width: 2, background: "var(--t-border)",
-                }} />
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  {events.map((ev, i) => (
-                    <div key={ev.id ?? i} style={{
-                      display: "flex", gap: 14, alignItems: "flex-start",
-                      paddingBottom: 12,
-                      opacity: ev.event_type === "page_exit" ? 0.65 : 1,
-                    }}>
-                      {/* Dot */}
-                      <div style={{
-                        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                        background: eventColor(ev),
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 12, fontWeight: 900, color: "#fff",
-                        position: "relative", zIndex: 1,
-                        boxShadow: `0 0 0 3px var(--t-card)`,
-                      }}>
-                        {eventIcon(ev)}
-                      </div>
-
-                      {/* Content */}
-                      <div style={{ flex: 1, paddingTop: 4 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--t-text3)", fontVariantNumeric: "tabular-nums" }}>
-                            {fmtTime(ev.ts)}
-                          </span>
-                          <span style={{ fontSize: 14, fontWeight: ev.event_type === "page_enter" ? 700 : 400, color: "var(--t-text)" }}>
-                            {eventLabel(ev)}
-                          </span>
-                        </div>
-
-                        {/* Metadata extra */}
-                        {ev.metadata && Object.keys(ev.metadata).length > 0 && (
-                          <div style={{
-                            marginTop: 4, fontSize: 11, color: "var(--t-text2)",
-                            background: "var(--t-card2)", borderRadius: 6,
-                            padding: "3px 8px", display: "inline-block",
-                          }}>
-                            {JSON.stringify(ev.metadata)}
-                          </div>
-                        )}
-                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: "var(--t-text)", lineHeight: 1.2 }}>{stat.value}</div>
+                      <div style={{ fontSize: 10, color: "var(--t-text2)", marginTop: 4 }}>{stat.label}</div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+
+              {/* ── Flujo de navegación + filtro ─────────────────────────── */}
+              <div style={{ padding: "20px 24px 0" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "var(--t-text3)", letterSpacing: ".09em", textTransform: "uppercase" }}>
+                    Flujo de navegación — clic para filtrar
+                  </div>
+                  {selectedModule && (
+                    <button onClick={() => setSelectedModule(null)} style={{
+                      background: "rgba(239,68,68,.10)", border: "1px solid rgba(239,68,68,.3)",
+                      borderRadius: 999, padding: "3px 10px", cursor: "pointer",
+                      color: "#ef4444", fontWeight: 700, fontSize: 11, whiteSpace: "nowrap",
+                    }}>
+                      × Ver todo
+                    </button>
+                  )}
+                </div>
+
+                {/* Secuencia completa con flechas */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginBottom: 12 }}>
+                  {s.navigation_flow.map((page, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <button
+                        onClick={() => setSelectedModule(selectedModule === page ? null : page)}
+                        style={chip(selectedModule === page)}
+                      >
+                        {page}
+                      </button>
+                      {i < s.navigation_flow.length - 1 && (
+                        <span style={{ color: "var(--t-text3)", fontSize: 11, userSelect: "none" }}>→</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Acceso rápido — módulos únicos */}
+                {uniqueModules.length > 1 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingTop: 8, borderTop: "1px dashed var(--t-border)" }}>
+                    <span style={{ fontSize: 10, color: "var(--t-text3)", alignSelf: "center", marginRight: 4 }}>Filtrar por:</span>
+                    {uniqueModules.map((mod) => (
+                      <button
+                        key={mod}
+                        onClick={() => setSelectedModule(selectedModule === mod ? null : mod)}
+                        style={chip(selectedModule === mod)}
+                      >
+                        {mod}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Resumen del módulo seleccionado ──────────────────────── */}
+              {selectedModule && (
+                <div style={{ margin: "16px 24px 0", padding: "14px 18px", background: "rgba(124,58,237,.07)", border: "1px solid rgba(124,58,237,.25)", borderRadius: 12 }}>
+                  <div style={{ fontWeight: 900, fontSize: 15, color: "#7c3aed", marginBottom: 10 }}>
+                    {selectedModule}
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--t-text2)", marginLeft: 10 }}>
+                      {modEnters.length} {modEnters.length === 1 ? "sesión" : "sesiones"} · {filteredEvents.length} eventos
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+                    {[
+                      { label: "Primera entrada", value: modFirstTs ? fmtTime(modFirstTs) : "—" },
+                      { label: "Última salida",   value: modLastTs  ? fmtTime(modLastTs)  : "—" },
+                      { label: "Tiempo total",    value: modTotalMs > 0 ? fmtTotalTime(modTotalMs) : "< 1s" },
+                      { label: "Sesiones",        value: String(modEnters.length) },
+                    ].map((stat) => (
+                      <div key={stat.label} style={{ background: "rgba(124,58,237,.10)", border: "1px solid rgba(124,58,237,.2)", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: "#7c3aed" }}>{stat.value}</div>
+                        <div style={{ fontSize: 10, color: "var(--t-text2)", marginTop: 3 }}>{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Timeline ─────────────────────────────────────────────── */}
+              <div style={{ padding: "20px 24px 28px" }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--t-text3)", letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 16 }}>
+                  {selectedModule ? `Timeline — ${selectedModule}` : "Timeline completo"}
+                  <span style={{ marginLeft: 8, fontWeight: 600, textTransform: "none", letterSpacing: 0, color: "var(--t-text3)" }}>
+                    ({filteredEvents.length} evento{filteredEvents.length !== 1 ? "s" : ""})
+                  </span>
+                </div>
+
+                {filteredEvents.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "24px 0", color: "var(--t-text3)", fontSize: 13 }}>
+                    Sin eventos para este módulo.
+                  </div>
+                ) : (
+                  <div style={{ position: "relative" }}>
+                    {/* Línea vertical */}
+                    <div style={{ position: "absolute", left: 14, top: 0, bottom: 0, width: 2, background: "var(--t-border)" }} />
+
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      {filteredEvents.map((ev, i) => (
+                        <div key={ev.id ?? i} style={{
+                          display: "flex", gap: 14, alignItems: "flex-start",
+                          paddingBottom: 14,
+                          opacity: ev.event_type === "page_exit" ? 0.7 : 1,
+                        }}>
+                          {/* Dot */}
+                          <div style={{
+                            width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                            background: eventColor(ev),
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 13, fontWeight: 900, color: "#fff",
+                            position: "relative", zIndex: 1,
+                            boxShadow: "0 0 0 3px var(--t-card)",
+                          }}>
+                            {eventIcon(ev)}
+                          </div>
+
+                          {/* Texto */}
+                          <div style={{ flex: 1, paddingTop: 5 }}>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--t-text3)", fontVariantNumeric: "tabular-nums", minWidth: 72 }}>
+                                {fmtTime(ev.ts)}
+                              </span>
+                              <span style={{ fontSize: 14, fontWeight: ev.event_type === "page_enter" ? 700 : 400, color: "var(--t-text)" }}>
+                                {eventLabel(ev)}
+                              </span>
+                            </div>
+                            {ev.metadata && Object.keys(ev.metadata).length > 0 && (
+                              <div style={{
+                                marginTop: 4, fontSize: 11, color: "var(--t-text2)",
+                                background: "var(--t-card2)", borderRadius: 6,
+                                padding: "3px 8px", display: "inline-block",
+                                border: "1px solid var(--t-border)",
+                              }}>
+                                {JSON.stringify(ev.metadata)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
