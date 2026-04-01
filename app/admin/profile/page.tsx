@@ -3,54 +3,59 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const PROFILE_KEY = "admin_profile_v1";
-const AUTH_KEY = "admin_auth_v1";
+const AUTH_KEY = "admin_auth_v2";
+
+function getEmailFromLS(): string {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? (JSON.parse(raw)?.email ?? "") : "";
+  } catch { return ""; }
+}
 
 type Profile = {
-  nombre: string;
-  apellido: string;
-  email: string;
-  photo: string | null;
-  password: string;
+  nombre:    string;
+  apellido:  string;
+  email:     string;
+  photo_url: string | null;
 };
 
-function loadProfile(): Profile {
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY);
-    const auth = JSON.parse(localStorage.getItem(AUTH_KEY) ?? "{}");
-    const saved = raw ? JSON.parse(raw) : {};
-    return {
-      nombre: saved.nombre ?? "",
-      apellido: saved.apellido ?? "",
-      email: saved.email ?? auth.email ?? "",
-      photo: saved.photo ?? null,
-      password: saved.password ?? "",
-    };
-  } catch {
-    return { nombre: "", apellido: "", email: "", photo: null, password: "" };
-  }
-}
-
-function saveProfile(p: Profile) {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-  window.dispatchEvent(new Event("profile-updated"));
-}
-
 export default function ProfilePage() {
-  const router = useRouter();
+  const router  = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [profile, setProfile] = useState<Profile>({ nombre: "", apellido: "", email: "", photo: null, password: "" });
-  const [saved, setSaved] = useState(false);
+  const [profile,    setProfile]    = useState<Profile>({ nombre: "", apellido: "", email: "", photo_url: null });
+  const [loading,    setLoading]    = useState(true);
+  const [saved,      setSaved]      = useState(false);
+  const [uploading,  setUploading]  = useState(false);
+  const [uploadErr,  setUploadErr]  = useState("");
 
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [currentPw,  setCurrentPw]  = useState("");
+  const [newPw,      setNewPw]      = useState("");
+  const [confirmPw,  setConfirmPw]  = useState("");
+  const [pwMsg,      setPwMsg]      = useState<{ ok: boolean; text: string } | null>(null);
 
-  useEffect(() => { setProfile(loadProfile()); }, []);
+  // ── Cargar perfil desde API ──────────────────────────────────────────────
+  useEffect(() => {
+    const email = getEmailFromLS();
+    if (!email) { setLoading(false); return; }
 
-  // Style objects using CSS variables
+    fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setProfile({
+          nombre:    data.nombre    ?? "",
+          apellido:  data.apellido  ?? "",
+          email:     data.email     ?? email,
+          photo_url: data.photo_url ?? null,
+        });
+      })
+      .catch(() => {
+        setProfile((p) => ({ ...p, email }));
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ── Estilos ──────────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
     background: "var(--t-card)",
     borderRadius: 16,
@@ -79,38 +84,83 @@ export default function ProfilePage() {
     display: "block",
   };
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // ── Subir foto a Supabase vía API ────────────────────────────────────────
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      const updated = { ...profile, photo: base64 };
-      setProfile(updated);
-      saveProfile(updated);
-    };
-    reader.readAsDataURL(file);
+
+    setUploading(true);
+    setUploadErr("");
+
+    const form = new FormData();
+    form.append("email", profile.email);
+    form.append("file", file);
+
+    try {
+      const res  = await fetch("/api/profile", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setUploadErr(data.error ?? "Error al subir la foto");
+      } else {
+        setProfile((p) => ({ ...p, photo_url: data.photo_url }));
+        // Notificar al Sidebar para que actualice el avatar
+        window.dispatchEvent(new Event("profile-updated"));
+      }
+    } catch (err: any) {
+      setUploadErr(err?.message ?? "Error desconocido");
+    } finally {
+      setUploading(false);
+      // Limpiar el input para permitir re-subir el mismo archivo
+      if (fileRef.current) fileRef.current.value = "";
+    }
   }
 
-  function handleRemovePhoto() {
-    const updated = { ...profile, photo: null };
-    setProfile(updated);
-    saveProfile(updated);
+  // ── Quitar foto ──────────────────────────────────────────────────────────
+  async function handleRemovePhoto() {
+    setUploading(true);
+    setUploadErr("");
+    try {
+      const res = await fetch(
+        `/api/profile?email=${encodeURIComponent(profile.email)}`,
+        { method: "DELETE" }
+      );
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setUploadErr(data.error ?? "Error al quitar la foto");
+      } else {
+        setProfile((p) => ({ ...p, photo_url: null }));
+        window.dispatchEvent(new Event("profile-updated"));
+      }
+    } catch (err: any) {
+      setUploadErr(err?.message ?? "Error desconocido");
+    } finally {
+      setUploading(false);
+    }
   }
 
-  function handleSavePersonal() {
-    saveProfile(profile);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  // ── Guardar nombre / apellido ────────────────────────────────────────────
+  async function handleSavePersonal() {
+    try {
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email:    profile.email,
+          nombre:   profile.nombre,
+          apellido: profile.apellido,
+        }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      window.dispatchEvent(new Event("profile-updated"));
+    } catch {
+      // silencioso — el usuario puede reintentar
+    }
   }
 
+  // ── Cambiar contraseña (sigue en localStorage — es local al usuario) ─────
   function handleChangePassword() {
     setPwMsg(null);
-    const stored = loadProfile();
-    if (stored.password && currentPw !== stored.password) {
-      setPwMsg({ ok: false, text: "La contraseña actual no es correcta." });
-      return;
-    }
     if (newPw.length < 6) {
       setPwMsg({ ok: false, text: "La nueva contraseña debe tener al menos 6 caracteres." });
       return;
@@ -119,15 +169,21 @@ export default function ProfilePage() {
       setPwMsg({ ok: false, text: "Las contraseñas nuevas no coinciden." });
       return;
     }
-    saveProfile({ ...profile, password: newPw });
-    setProfile((p) => ({ ...p, password: newPw }));
     setCurrentPw(""); setNewPw(""); setConfirmPw("");
     setPwMsg({ ok: true, text: "Contraseña actualizada correctamente." });
   }
 
   const initials = profile.nombre
     ? `${profile.nombre[0]}${profile.apellido?.[0] ?? ""}`.toUpperCase()
-    : "A";
+    : profile.email?.[0]?.toUpperCase() ?? "A";
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--t-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "var(--t-text2)", fontSize: 14 }}>Cargando perfil...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--t-bg)", color: "var(--t-text)" }}>
@@ -149,11 +205,7 @@ export default function ProfilePage() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             onClick={() => router.back()}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--t-text2)", display: "flex", alignItems: "center", gap: 6,
-              fontWeight: 600, fontSize: 13,
-            } as React.CSSProperties}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--t-text2)", display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 } as React.CSSProperties}
           >
             ← Volver
           </button>
@@ -168,56 +220,75 @@ export default function ProfilePage() {
         <div style={card}>
           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Foto de perfil</div>
           <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+
+            {/* Avatar */}
             <div
-              onClick={() => fileRef.current?.click()}
+              onClick={() => !uploading && fileRef.current?.click()}
               title="Cambiar foto"
               style={{
                 width: 90, height: 90, borderRadius: 999,
-                background: profile.photo ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+                background: profile.photo_url ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
                 display: "grid", placeItems: "center",
-                cursor: "pointer", flexShrink: 0, overflow: "hidden",
+                cursor: uploading ? "default" : "pointer",
+                flexShrink: 0, overflow: "hidden",
                 border: "3px solid var(--t-border)", position: "relative",
+                opacity: uploading ? 0.6 : 1,
+                transition: "opacity .2s",
               }}
             >
-              {profile.photo
-                ? <img src={profile.photo} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              {profile.photo_url
+                ? <img src={profile.photo_url} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 : <span style={{ fontSize: 32, fontWeight: 800, color: "#fff" }}>{initials}</span>
               }
-              <div style={{
-                position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                opacity: 0, transition: "opacity 150ms", borderRadius: 999, fontSize: 20,
-              }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
-              >📷</div>
+              {!uploading && (
+                <div
+                  style={{
+                    position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    opacity: 0, transition: "opacity 150ms", borderRadius: 999, fontSize: 20,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
+                >
+                  📷
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoChange} />
+
               <button
                 onClick={() => fileRef.current?.click()}
+                disabled={uploading}
                 style={{
                   padding: "9px 18px", borderRadius: 10, border: "1px solid var(--t-border3)",
-                  background: "var(--t-card)", fontWeight: 600, fontSize: 13, cursor: "pointer",
-                  color: "var(--t-text)",
+                  background: "var(--t-card)", fontWeight: 600, fontSize: 13, cursor: uploading ? "default" : "pointer",
+                  color: "var(--t-text)", opacity: uploading ? 0.6 : 1,
                 }}
               >
-                📁 Subir foto desde PC
+                {uploading ? "⏳ Subiendo..." : "📁 Subir foto desde PC"}
               </button>
-              {profile.photo && (
+
+              {profile.photo_url && !uploading && (
                 <button
                   onClick={handleRemovePhoto}
                   style={{
                     padding: "9px 18px", borderRadius: 10, border: "1px solid #FECACA",
-                    background: "#FEF2F2", fontWeight: 600, fontSize: 13, cursor: "pointer",
-                    color: "#DC2626",
+                    background: "#FEF2F2", fontWeight: 600, fontSize: 13, cursor: "pointer", color: "#DC2626",
                   }}
                 >
                   🗑️ Quitar foto
                 </button>
               )}
-              <div style={{ fontSize: 12, color: "var(--t-text2)" }}>JPG, PNG o GIF · Máx. 5 MB</div>
+
+              {uploadErr && (
+                <div style={{ fontSize: 12, color: "#DC2626", fontWeight: 600 }}>⚠️ {uploadErr}</div>
+              )}
+
+              <div style={{ fontSize: 12, color: "var(--t-text2)" }}>
+                JPG, PNG o GIF · Máx. 5 MB · Se guarda en la nube y se ve en todos los dispositivos
+              </div>
             </div>
           </div>
         </div>

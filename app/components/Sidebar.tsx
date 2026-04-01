@@ -26,14 +26,41 @@ const devItems = [
   { href: "/dev/usuarios", icon: "👥", label: "Actividad de Usuarios" },
 ];
 
+const AUTH_KEY = "admin_auth_v2";
+
+function getEmailFromLS(): string {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? (JSON.parse(raw)?.email ?? "") : "";
+  } catch { return ""; }
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [devOpen, setDevOpen] = useState(false);
   const devRef = useRef<HTMLDivElement>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState("");
+
+  // Cargar foto de perfil al montar y cuando se emite profile-updated
+  useEffect(() => {
+    function loadPhoto() {
+      const email = getEmailFromLS();
+      if (!email) return;
+      setUserEmail(email);
+      fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+        .then((r) => r.json())
+        .then((d) => setPhotoUrl(d.photo_url ?? null))
+        .catch(() => {});
+    }
+    loadPhoto();
+    window.addEventListener("profile-updated", loadPhoto);
+    return () => window.removeEventListener("profile-updated", loadPhoto);
+  }, []);
 
   function handleLogout() {
-    localStorage.removeItem("admin_auth_v1");
+    localStorage.removeItem("admin_auth_v2");
     router.replace("/login");
   }
 
@@ -64,6 +91,30 @@ export default function Sidebar() {
         zIndex: 100,
       }}
     >
+      {/* Avatar de perfil */}
+      <div
+        onClick={() => router.push("/admin/profile")}
+        title={userEmail || "Mi perfil"}
+        style={{
+          width: 40, height: 40, borderRadius: "50%",
+          background: photoUrl ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+          display: "grid", placeItems: "center",
+          cursor: "pointer", flexShrink: 0, overflow: "hidden",
+          border: "2px solid rgba(255,255,255,0.15)",
+          marginBottom: 14,
+          transition: "border-color .15s",
+        }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)")}
+      >
+        {photoUrl
+          ? <img src={photoUrl} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
+              {userEmail?.[0]?.toUpperCase() ?? "A"}
+            </span>
+        }
+      </div>
+
       {/* Nav items */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%", padding: "0 8px" }}>
         {items.map((it) => {
