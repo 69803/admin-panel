@@ -82,10 +82,11 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       if (!email) return;
       if (email === OWNER_EMAIL) return;
 
-      // Don't kick while already on a public route (avoids redirect loops)
+      // Don't kick while already on a public/pre-payment route (avoids redirect loops)
       const p = window.location.pathname;
       const onPublic = p === "/login" || p.startsWith("/login/")
-                    || p === "/hello"  || p.startsWith("/hello/");
+                    || p === "/hello"  || p.startsWith("/hello/")
+                    || p === "/pricing";
       if (onPublic) return;
 
       try {
