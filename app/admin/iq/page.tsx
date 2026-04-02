@@ -90,10 +90,10 @@ function useTypewriter(text: string, speed = 10, started = true, skip = false) {
 }
 
 // ── Build main analysis ───────────────────────────────────────────────────────
-function buildAnalysis(movs: Movimiento[]) {
+function buildAnalysis(movs: Movimiento[], selYear?: number, selMonth?: number) {
   const now       = new Date();
-  const thisMonth = now.getMonth();
-  const thisYear  = now.getFullYear();
+  const thisMonth = selMonth ?? now.getMonth();
+  const thisYear  = selYear  ?? now.getFullYear();
   const monthName = MONTH_NAMES[thisMonth];
 
   const lastD      = new Date(thisYear, thisMonth - 1, 1);
@@ -101,9 +101,10 @@ function buildAnalysis(movs: Movimiento[]) {
   const lastYear   = lastD.getFullYear();
   const lastMonthName = MONTH_NAMES[lastMonth];
 
-  const dayOfMonth  = now.getDate();
+  const isCurrentMonth = thisYear === now.getFullYear() && thisMonth === now.getMonth();
+  const dayOfMonth  = isCurrentMonth ? now.getDate() : new Date(thisYear, thisMonth + 1, 0).getDate();
   const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-  const monthDone   = dayOfMonth >= daysInMonth;
+  const monthDone   = !isCurrentMonth || dayOfMonth >= daysInMonth;
   const progress    = dayOfMonth / daysInMonth;
 
   const cur  = getMonthStats(movs, thisYear, thisMonth);
@@ -517,6 +518,22 @@ export default function IQPage() {
   const [loading, setLoading] = useState(true);
   const [catAnim, setCatAnim] = useState<object | null>(null);
 
+  const now = new Date();
+  const [selYear,  setSelYear]  = useState(now.getFullYear());
+  const [selMonth, setSelMonth] = useState(now.getMonth());
+
+  function prevMonth() {
+    if (selMonth === 0) { setSelYear((y) => y - 1); setSelMonth(11); }
+    else setSelMonth((m) => m - 1);
+  }
+  function nextMonth() {
+    const isCurrentMonth = selYear === now.getFullYear() && selMonth === now.getMonth();
+    if (isCurrentMonth) return;
+    if (selMonth === 11) { setSelYear((y) => y + 1); setSelMonth(0); }
+    else setSelMonth((m) => m + 1);
+  }
+  const isCurrentMonth = selYear === now.getFullYear() && selMonth === now.getMonth();
+
   useEffect(() => {
     fetch("/cat-animation.json").then((r) => r.json()).then(setCatAnim).catch(() => {});
   }, []);
@@ -528,7 +545,7 @@ export default function IQPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const analysis = useMemo(() => movs.length ? buildAnalysis(movs) : null, [movs]);
+  const analysis = useMemo(() => movs.length ? buildAnalysis(movs, selYear, selMonth) : null, [movs, selYear, selMonth]);
 
   // Last 12 months (always available as options)
   const allMonths = useMemo((): MonthOption[] => {
@@ -567,17 +584,50 @@ export default function IQPage() {
         {analysis && <div style={{ marginLeft: "auto" }}><ScoreRing score={analysis.score} /></div>}
       </div>
 
-      {/* Stats pills */}
-      {analysis && (
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Pill label="Ingresos del mes" value={`€ ${analysis.curIngresos.toFixed(2)}`} color="#22c55e" />
-          <Pill label="Gastos del mes"   value={`€ ${analysis.curGastos.toFixed(2)}`}   color="#ef4444" />
-          <Pill label="Balance neto"     value={`€ ${analysis.curBalance.toFixed(2)}`}
-            color={analysis.curBalance >= 0 ? "#22c55e" : "#ef4444"} />
-          <Pill label="Margen"           value={`${analysis.curMargen.toFixed(1)}%`}
-            color={analysis.curMargen >= 20 ? "#22c55e" : analysis.curMargen >= 0 ? "#f59e0b" : "#ef4444"} />
+      {/* Month navigator + Stats pills */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Month navigation */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={prevMonth}
+            style={{
+              width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--t-border3)",
+              background: "var(--t-card)", color: "var(--t-text)", cursor: "pointer",
+              display: "grid", placeItems: "center", fontSize: 16, fontWeight: 700,
+              flexShrink: 0, transition: "background 0.15s",
+            }}
+            title="Mes anterior"
+          >‹</button>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--t-text)", minWidth: 160, textAlign: "center" }}>
+            {MONTH_NAMES[selMonth]} {selYear}
+            {isCurrentMonth && <span style={{ fontSize: 11, color: "var(--t-text3)", fontWeight: 500, marginLeft: 6 }}>(actual)</span>}
+          </span>
+          <button
+            onClick={nextMonth}
+            disabled={isCurrentMonth}
+            style={{
+              width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--t-border3)",
+              background: "var(--t-card)", color: isCurrentMonth ? "var(--t-text3)" : "var(--t-text)",
+              cursor: isCurrentMonth ? "not-allowed" : "pointer",
+              display: "grid", placeItems: "center", fontSize: 16, fontWeight: 700,
+              flexShrink: 0, opacity: isCurrentMonth ? 0.35 : 1, transition: "opacity 0.15s",
+            }}
+            title="Mes siguiente"
+          >›</button>
         </div>
-      )}
+
+        {/* Pills */}
+        {analysis && (
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <Pill label="Ingresos del mes" value={`€ ${analysis.curIngresos.toFixed(2)}`} color="#22c55e" />
+            <Pill label="Gastos del mes"   value={`€ ${analysis.curGastos.toFixed(2)}`}   color="#ef4444" />
+            <Pill label="Balance neto"     value={`€ ${analysis.curBalance.toFixed(2)}`}
+              color={analysis.curBalance >= 0 ? "#22c55e" : "#ef4444"} />
+            <Pill label="Margen"           value={`${analysis.curMargen.toFixed(1)}%`}
+              color={analysis.curMargen >= 20 ? "#22c55e" : analysis.curMargen >= 0 ? "#f59e0b" : "#ef4444"} />
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--t-text3)", fontSize: 15 }}>
