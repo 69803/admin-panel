@@ -43,20 +43,19 @@ export default function Sidebar() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
-  // Cargar foto de perfil al montar y cuando se emite profile-updated
+  // Cargar foto GLOBAL del negocio (misma para todos los usuarios)
   useEffect(() => {
-    function loadPhoto() {
-      const email = getEmailFromLS();
-      if (!email) return;
-      setUserEmail(email);
-      fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+    function loadGlobalPhoto() {
+      // Email solo para el tooltip del avatar
+      setUserEmail(getEmailFromLS());
+      fetch("/api/business-profile")
         .then((r) => r.json())
-        .then((d) => setPhotoUrl(d.photo_url ?? null))
+        .then((d) => setPhotoUrl(d.owner_photo_url ?? null))
         .catch(() => {});
     }
-    loadPhoto();
-    window.addEventListener("profile-updated", loadPhoto);
-    return () => window.removeEventListener("profile-updated", loadPhoto);
+    loadGlobalPhoto();
+    window.addEventListener("business-profile-updated", loadGlobalPhoto);
+    return () => window.removeEventListener("business-profile-updated", loadGlobalPhoto);
   }, []);
 
   function handleLogout() {

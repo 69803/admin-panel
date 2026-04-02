@@ -21,7 +21,8 @@ type Profile = {
 
 export default function ProfilePage() {
   const router  = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef    = useRef<HTMLInputElement>(null);
+  const globalRef  = useRef<HTMLInputElement>(null);
 
   const [profile,    setProfile]    = useState<Profile>({ nombre: "", apellido: "", email: "", photo_url: null });
   const [loading,    setLoading]    = useState(true);
@@ -29,10 +30,52 @@ export default function ProfilePage() {
   const [uploading,  setUploading]  = useState(false);
   const [uploadErr,  setUploadErr]  = useState("");
 
+  // ── Foto global del panel ─────────────────────────────────────────────────
+  const [globalPhoto,     setGlobalPhoto]     = useState<string | null>(null);
+  const [globalOwnerName, setGlobalOwnerName] = useState("");
+  const [globalUploading, setGlobalUploading] = useState(false);
+  const [globalMsg,       setGlobalMsg]       = useState<{ ok: boolean; text: string } | null>(null);
+
   const [currentPw,  setCurrentPw]  = useState("");
   const [newPw,      setNewPw]      = useState("");
   const [confirmPw,  setConfirmPw]  = useState("");
   const [pwMsg,      setPwMsg]      = useState<{ ok: boolean; text: string } | null>(null);
+
+  // ── Cargar foto global del negocio ──────────────────────────────────────
+  useEffect(() => {
+    fetch("/api/business-profile")
+      .then((r) => r.json())
+      .then((d) => {
+        setGlobalPhoto(d.owner_photo_url ?? null);
+        setGlobalOwnerName(d.owner_name ?? "");
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleGlobalPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setGlobalUploading(true);
+    setGlobalMsg(null);
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const res  = await fetch("/api/business-profile", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setGlobalMsg({ ok: false, text: data.error ?? "Error al subir" });
+      } else {
+        setGlobalPhoto(data.owner_photo_url);
+        setGlobalMsg({ ok: true, text: "Foto global actualizada. Todos los usuarios la verán." });
+        window.dispatchEvent(new Event("business-profile-updated"));
+      }
+    } catch (err: any) {
+      setGlobalMsg({ ok: false, text: err?.message ?? "Error desconocido" });
+    } finally {
+      setGlobalUploading(false);
+      if (globalRef.current) globalRef.current.value = "";
+    }
+  }
 
   // ── Cargar perfil desde API ──────────────────────────────────────────────
   useEffect(() => {
@@ -215,6 +258,56 @@ export default function ProfilePage() {
       </div>
 
       <div style={{ padding: "28px", maxWidth: 680, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {/* ── FOTO GLOBAL DEL PANEL (visible para todos) ── */}
+        <div style={{ ...card, border: "1px solid rgba(108,92,231,.35)", background: "rgba(108,92,231,.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>📸 Foto global del panel</div>
+            <span style={{ fontSize: 11, fontWeight: 700, background: "rgba(108,92,231,.15)", color: "#6C5CE7", border: "1px solid rgba(108,92,231,.3)", borderRadius: 999, padding: "2px 8px" }}>
+              Visible para todos los usuarios
+            </span>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--t-text2)", marginBottom: 18 }}>
+            Esta foto aparece en el navbar y la barra lateral para todos los usuarios del panel, sin importar quién esté logueado.
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: "50%", flexShrink: 0, overflow: "hidden",
+              background: globalPhoto ? "transparent" : "linear-gradient(135deg, #6C5CE7, #a29bfe)",
+              display: "grid", placeItems: "center",
+              border: "3px solid rgba(108,92,231,.4)",
+            }}>
+              {globalPhoto
+                ? <img src={globalPhoto} alt="Foto global" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: 28, fontWeight: 800, color: "#fff" }}>G</span>
+              }
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <input ref={globalRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleGlobalPhotoChange} />
+              <button
+                onClick={() => globalRef.current?.click()}
+                disabled={globalUploading}
+                style={{
+                  padding: "9px 18px", borderRadius: 10, border: "none",
+                  background: "#6C5CE7", color: "#fff", fontWeight: 700, fontSize: 13,
+                  cursor: globalUploading ? "default" : "pointer",
+                  opacity: globalUploading ? 0.6 : 1,
+                }}
+              >
+                {globalUploading ? "⏳ Subiendo..." : "📁 Cambiar foto global"}
+              </button>
+              {globalMsg && (
+                <div style={{
+                  fontSize: 12, fontWeight: 600,
+                  color: globalMsg.ok ? "#065F46" : "#DC2626",
+                }}>
+                  {globalMsg.ok ? "✓" : "⚠️"} {globalMsg.text}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: "var(--t-text3)" }}>JPG, PNG · Máx. 5 MB</div>
+            </div>
+          </div>
+        </div>
 
         {/* ── FOTO DE PERFIL ── */}
         <div style={card}>

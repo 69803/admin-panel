@@ -120,25 +120,20 @@ export default function AdminDashboardPage() {
     border: "1px solid var(--t-sborder)",
   };
 
-  // Carga foto y nombre desde la API (tabla profiles en Supabase)
+  // Carga foto y nombre GLOBAL del negocio (misma para todos los usuarios)
   useEffect(() => {
-    function loadProfile() {
-      try {
-        const raw = localStorage.getItem("admin_auth_v2");
-        const email = raw ? JSON.parse(raw)?.email : null;
-        if (!email) return;
-        fetch(`/api/profile?email=${encodeURIComponent(email)}`)
-          .then((r) => r.json())
-          .then((d) => {
-            setProfilePhoto(d.photo_url ?? null);
-            setProfileName(d.nombre ?? "");
-          })
-          .catch(() => {});
-      } catch {}
+    function loadGlobalProfile() {
+      fetch("/api/business-profile")
+        .then((r) => r.json())
+        .then((d) => {
+          setProfilePhoto(d.owner_photo_url ?? null);
+          setProfileName(d.owner_name ?? "");
+        })
+        .catch(() => {});
     }
-    loadProfile();
-    window.addEventListener("profile-updated", loadProfile);
-    return () => window.removeEventListener("profile-updated", loadProfile);
+    loadGlobalProfile();
+    window.addEventListener("business-profile-updated", loadGlobalProfile);
+    return () => window.removeEventListener("business-profile-updated", loadGlobalProfile);
   }, []);
 
   useEffect(() => {
