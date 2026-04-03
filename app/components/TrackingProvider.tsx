@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-const AUTH_KEY = "admin_auth_v2";
+const AUTH_KEY = "admin_auth_v3";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

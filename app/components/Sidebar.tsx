@@ -26,7 +26,7 @@ const devItems = [
   { href: "/dev/usuarios", icon: "👥", label: "Actividad de Usuarios" },
 ];
 
-const AUTH_KEY = "admin_auth_v2";
+const AUTH_KEY = "admin_auth_v3";
 
 function getEmailFromLS(): string {
   try {
@@ -59,7 +59,7 @@ export default function Sidebar() {
   }, []);
 
   function handleLogout() {
-    localStorage.removeItem("admin_auth_v2");
+    localStorage.removeItem("admin_auth_v3");
     router.replace("/login");
   }
 

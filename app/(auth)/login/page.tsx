@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const AUTH_KEY = "admin_auth_v2";
+const AUTH_KEY = "admin_auth_v3";
 
 // Contraseñas por correo — el resto de cuentas usan la contraseña por defecto
 const DEFAULT_PASSWORD = "1234";

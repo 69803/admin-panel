@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const AUTH_KEY = "admin_auth_v2";
+const AUTH_KEY = "admin_auth_v3";
 
 function getEmailFromLS(): string {
   try {

@@ -7,7 +7,7 @@ import { ACTIVO } from "../lib/license";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { TrackingProvider } from "./components/TrackingProvider";
 
-const AUTH_KEY = "admin_auth_v2";
+const AUTH_KEY = "admin_auth_v3";
 const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
 // Read synchronously — safe only after mount (no SSR)

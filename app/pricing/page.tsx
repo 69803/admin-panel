@@ -753,7 +753,7 @@ export default function PricingPage() {
         </div>
         <button
           onClick={() => {
-            localStorage.removeItem("admin_auth_v2");
+            localStorage.removeItem("admin_auth_v3");
             window.location.href = "/login";
           }}
           style={{
