@@ -24,6 +24,7 @@ const items: Item[] = [
 const devItems = [
   { href: "/dev/pagos", icon: "💳", label: "Panel de Pagos" },
   { href: "/dev/usuarios", icon: "👥", label: "Actividad de Usuarios" },
+  { href: "/admin/mobile-app", icon: "📱", label: "Mobile App" },
 ];
 
 const AUTH_KEY = "admin_auth_v3";
