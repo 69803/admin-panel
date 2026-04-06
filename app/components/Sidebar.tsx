@@ -40,6 +40,9 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [devOpen, setDevOpen] = useState(false);
+  const [devUnlocked, setDevUnlocked] = useState(false);
+  const [devPassword, setDevPassword] = useState("");
+  const [devError, setDevError] = useState(false);
   const devRef = useRef<HTMLDivElement>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
@@ -69,6 +72,9 @@ export default function Sidebar() {
     function onClickOutside(e: MouseEvent) {
       if (devRef.current && !devRef.current.contains(e.target as Node)) {
         setDevOpen(false);
+        setDevUnlocked(false);
+        setDevPassword("");
+        setDevError(false);
       }
     }
     if (devOpen) document.addEventListener("mousedown", onClickOutside);
@@ -149,7 +155,16 @@ export default function Sidebar() {
       {/* Botón desarrollador */}
       <div ref={devRef} style={{ position: "relative", width: "100%", padding: "0 8px", marginBottom: 6 }}>
         <button
-          onClick={() => setDevOpen((v) => !v)}
+          onClick={() => {
+            if (devOpen) {
+              setDevOpen(false);
+              setDevUnlocked(false);
+              setDevPassword("");
+              setDevError(false);
+            } else {
+              setDevOpen(true);
+            }
+          }}
           title="Herramientas de desarrollador"
           style={{
             width: "100%",
@@ -205,33 +220,106 @@ export default function Sidebar() {
               🔧 SOLO DESARROLLADORES
             </div>
 
-            {devItems.map((d) => (
-              <button
-                key={d.href}
-                onClick={() => { setDevOpen(false); router.push(d.href); }}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 12px",
-                  borderRadius: 9,
-                  border: "none",
-                  background: "transparent",
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  textAlign: "left",
-                  transition: "background 100ms",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                <span style={{ fontSize: 17 }}>{d.icon}</span>
-                {d.label}
-              </button>
-            ))}
+            {!devUnlocked ? (
+              /* Password prompt */
+              <div style={{ padding: "8px 10px 4px" }}>
+                <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 8px" }}>
+                  Ingresa la clave de acceso
+                </p>
+                <input
+                  type="password"
+                  autoFocus
+                  placeholder="Clave..."
+                  value={devPassword}
+                  onChange={(e) => { setDevPassword(e.target.value); setDevError(false); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (devPassword === "devpanel2026") {
+                        setDevUnlocked(true);
+                        setDevError(false);
+                        setDevPassword("");
+                      } else {
+                        setDevError(true);
+                        setDevPassword("");
+                      }
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: devError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.15)",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#fff",
+                    fontSize: 13,
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+                {devError && (
+                  <p style={{ fontSize: 11, color: "#ef4444", margin: "6px 0 0" }}>Clave incorrecta</p>
+                )}
+                <button
+                  onClick={() => {
+                    if (devPassword === "devpanel2026") {
+                      setDevUnlocked(true);
+                      setDevError(false);
+                      setDevPassword("");
+                    } else {
+                      setDevError(true);
+                      setDevPassword("");
+                    }
+                  }}
+                  style={{
+                    marginTop: 8,
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "rgba(59,130,246,0.35)",
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Entrar
+                </button>
+              </div>
+            ) : (
+              /* Menu items */
+              devItems.map((d) => (
+                <button
+                  key={d.href}
+                  onClick={() => {
+                    setDevOpen(false);
+                    setDevUnlocked(false);
+                    router.push(d.href);
+                  }}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 12px",
+                    borderRadius: 9,
+                    border: "none",
+                    background: "transparent",
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textAlign: "left",
+                    transition: "background 100ms",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span style={{ fontSize: 17 }}>{d.icon}</span>
+                  {d.label}
+                </button>
+              ))
+            )}
           </div>
         )}
       </div>
