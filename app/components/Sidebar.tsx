@@ -179,16 +179,16 @@ export default function Sidebar() {
         {devOpen && (
           <div
             style={{
-              position: "absolute",
-              bottom: 0,
-              left: "calc(100% + 10px)",
+              position: "fixed",
+              bottom: 60,
+              left: 78,
               background: "#1A1D2E",
               border: "1px solid rgba(59,130,246,0.35)",
               borderRadius: 14,
               padding: 8,
-              minWidth: 210,
+              minWidth: 220,
               boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
-              zIndex: 200,
+              zIndex: 9999,
             }}
           >
             <div
