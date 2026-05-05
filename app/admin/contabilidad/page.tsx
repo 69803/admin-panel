@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import XLSXStyle from "xlsx-js-style";
+import Lottie from "lottie-react";
+import ThinkingAnimation from "@/assets/Thinking.json";
 
 type Gasto = {
   id: number;
@@ -308,6 +310,10 @@ export default function ContabilidadPage() {
   const [opEdit, setOpEdit] = useState<null | { refType: "GASTO" | "MOV"; id: number }>(
     null
   );
+
+  // ✅ Modal de duplicado
+  const [dupModal, setDupModal] = useState<{ strong: boolean; onContinue: () => void } | null>(null);
+  const pendingSaveRef = useRef<(() => void) | null>(null);
 
   const [op, setOp] = useState<DiarioOperacionForm>({
     fecha: "",
@@ -756,6 +762,45 @@ export default function ContabilidadPage() {
       return;
     }
 
+    // ✅ Detección de duplicados solo en operaciones nuevas
+    if (!opEdit) {
+      const monto = opTipo === "GASTO" ? safeNum(op.monto_total) : safeNum(cierreTotalVenta);
+      const fecha = opTipo === "GASTO" ? toYMD(op.fecha) : toYMD(cierre.fecha);
+      const concepto = opTipo === "GASTO"
+        ? (op.productos_servicios ?? "").trim().toLowerCase()
+        : (cierre.concepto ?? "").trim().toLowerCase();
+
+      const allRows = [...gastosAll.map((g) => ({
+        fecha: g.fecha ?? "",
+        monto: safeNum(g.monto),
+        concepto: (g.concepto ?? "").trim().toLowerCase(),
+      })), ...movimientos.filter((m) => m.tipo === "INGRESO").map((m) => ({
+        fecha: m.fecha ?? "",
+        monto: safeNum(m.monto),
+        concepto: (m.concepto ?? "").trim().toLowerCase(),
+      }))];
+
+      const strongDup = allRows.some(
+        (r) => r.monto === monto && r.fecha === fecha && r.concepto === concepto && concepto !== ""
+      );
+      const softDup = !strongDup && allRows.some((r) => r.monto === monto && monto > 0);
+
+      if (strongDup || softDup) {
+        setDupModal({
+          strong: strongDup,
+          onContinue: () => {
+            setDupModal(null);
+            doSave();
+          },
+        });
+        return;
+      }
+    }
+
+    doSave();
+  }
+
+  async function doSave() {
     try {
       setOpSaving(true);
 
@@ -3066,6 +3111,41 @@ export default function ContabilidadPage() {
                 </button>
               </div>
             </div>
+
+            {/* ── Modal duplicado ── */}
+            {dupModal && (
+              <div style={{ position: "fixed", inset: 0, zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
+                <div style={{ background: "var(--t-card)", borderRadius: 20, padding: "32px 36px", maxWidth: 420, width: "90%", textAlign: "center", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}>
+                  <div style={{ width: 140, margin: "0 auto 8px" }}>
+                    <Lottie animationData={ThinkingAnimation} loop style={{ width: 140, height: 140 }} />
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, color: "var(--t-text)" }}>
+                    {dupModal.strong ? "⚠️ Posible duplicado exacto" : "⚠️ Monto ya registrado"}
+                  </div>
+                  <div style={{ fontSize: 14, color: "var(--t-text2)", marginBottom: 24, lineHeight: 1.5 }}>
+                    {dupModal.strong
+                      ? "Existe una operación con la misma fecha, monto y concepto. Esta operación puede estar duplicada."
+                      : "Ya existe una operación con el mismo monto. Esta operación puede estar duplicada."
+                    }
+                    <br /><strong>¿Quiere seguir con la operación?</strong>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                    <button
+                      onClick={() => setDupModal(null)}
+                      style={{ padding: "10px 28px", borderRadius: 10, border: "1px solid var(--t-border)", background: "var(--t-card2)", color: "var(--t-text)", fontWeight: 600, cursor: "pointer", fontSize: 15 }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={dupModal.onContinue}
+                      style={{ padding: "10px 28px", borderRadius: 10, border: "none", background: "#3b82f6", color: "#fff", fontWeight: 600, cursor: "pointer", fontSize: 15 }}
+                    >
+                      Continuar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {opOpen && (
               <div
