@@ -1577,6 +1577,195 @@ export default function ContabilidadPage() {
     });
   }, [libroRows, balanceMesSel]);
 
+  const exportBalanceMensualXLSX = () => {
+    const parseEUR = (s: string) => parseFloat((s ?? "").replace(/[^0-9.,-]/g, "").replace(",", ".")) || 0;
+    const fmtDate = (s: string) => s?.length >= 10 ? `${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}` : (s ?? "");
+    const MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    const fmtMes = (key: string) => {
+      const m = parseInt(key.slice(5,7)) - 1;
+      return `${MESES[m] ?? ""} ${key.slice(0,4)}`;
+    };
+
+    // Filtrar y agrupar ingresos por mes
+    const ingresosRows = libroRows.filter((r) => r.tipo === "INGRESO" && r.fecha);
+    const byMonth = new Map<string, typeof ingresosRows>();
+    for (const r of ingresosRows) {
+      const key = r.fecha!.slice(0, 7);
+      if (!byMonth.has(key)) byMonth.set(key, []);
+      byMonth.get(key)!.push(r);
+    }
+    const months = Array.from(byMonth.keys()).sort();
+
+    // Rango de fechas para el encabezado
+    const rangeLabel = months.length > 0
+      ? `${fmtMes(months[0])} - ${fmtMes(months[months.length - 1])}`
+      : "";
+
+    const COLS = 9;
+    const border = (style = "thin") => ({ style, color: { rgb: "CCCCCC" } });
+    const b = { top: border(), bottom: border(), left: border(), right: border() };
+    const bMed = { top: border("medium"), bottom: border("medium"), left: border(), right: border() };
+
+    const titleStyle = (sz = 14) => ({ font: { bold: true, sz }, alignment: { horizontal: "center" as const, vertical: "center" as const } });
+    const sectionStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFFF00" } },
+      font: { bold: true, sz: 11 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const, wrapText: true },
+      border: b,
+    };
+    const colHdrStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const, wrapText: true },
+      border: b,
+    };
+    const dataStyle = (yellow: boolean) => ({
+      fill: yellow ? { patternType: "solid" as const, fgColor: { rgb: "FFFF99" } } : undefined,
+      alignment: { vertical: "center" as const, wrapText: true },
+      border: b,
+    });
+    const monthHdrStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "D0E8FF" } },
+      font: { bold: true, sz: 10 },
+      alignment: { vertical: "center" as const },
+      border: b,
+    };
+    const subtotalStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FFA500" } },
+      font: { bold: true, sz: 10 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: bMed,
+    };
+    const totalStyle = {
+      fill: { patternType: "solid" as const, fgColor: { rgb: "FF8C00" } },
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center" as const, vertical: "center" as const },
+      border: bMed,
+    };
+    const numFmt = "#,##0.00";
+
+    const aoa: any[][] = [
+      Array(COLS).fill(""),
+      ["", "", "", "", "EL RINCON DE DOMINGO", "", "", "", ""],
+      ["", "", "", "", "Resumen Ingresos", "", "", "", ""],
+      ["", "", "", "", rangeLabel, "", "", "", ""],
+      Array(COLS).fill(""),
+      Array(COLS).fill(""),
+      Array(COLS).fill(""),
+      ["Ingresos Punto Venta y Efectivo - Gastos Menores", ...Array(COLS - 1).fill("")],
+      ["Mes","TPV Santander","TPV Caixabank","Total TPV","Efectivo Recibido","Sub-Total Venta","Gastos Menores","Total Ingresos","Observaciones/Note"],
+    ];
+
+    const ws: any = {};
+    const rowMeta: { type: "header"|"data"|"subtotal"|"total"|"title"; yellow?: boolean }[] = [
+      { type: "title" }, { type: "title" }, { type: "title" }, { type: "title" },
+      { type: "title" }, { type: "title" }, { type: "title" },
+      { type: "header" }, { type: "header" },
+    ];
+
+    const grandTotals = { tpvS: 0, tpvC: 0, tpv: 0, ef: 0, venta: 0, gastos: 0, total: 0 };
+    let dataRowIdx = 0;
+
+    for (const monthKey of months) {
+      const rows = byMonth.get(monthKey)!.sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+      const monthTotals = { tpvS: 0, tpvC: 0, tpv: 0, ef: 0, venta: 0, gastos: 0, total: 0 };
+
+      // Encabezado de mes
+      aoa.push([fmtMes(monthKey), ...Array(COLS - 1).fill("")]);
+      rowMeta.push({ type: "header" });
+
+      for (const r of rows) {
+        const f = parseCierreObs(r.meta?.observacion).fields;
+        const tpvS  = parseEUR(f["TPV Santander"] ?? "0");
+        const tpvC  = parseEUR(f["TPV Caixabank"] ?? "0");
+        const tpv   = parseEUR(f["Total TPV"] ?? "0");
+        const ef    = parseEUR(f["Efectivo recibido"] ?? "0");
+        const venta = parseEUR(f["Total venta diaria"] ?? String(r.monto));
+        const gast  = parseEUR(f["Gastos menores"] ?? "0");
+        const obs   = parseCierreObs(r.meta?.observacion).note || r.concepto || "";
+        const totalRow = venta - gast;
+
+        monthTotals.tpvS  += tpvS;  monthTotals.tpvC  += tpvC;  monthTotals.tpv   += tpv;
+        monthTotals.ef    += ef;    monthTotals.venta  += venta; monthTotals.gastos += gast;
+        monthTotals.total += totalRow;
+
+        const yellow = dataRowIdx % 4 === 3;
+        aoa.push([fmtDate(r.fecha ?? ""), tpvS || 0, tpvC || 0, tpv || 0, ef || 0, venta || 0, gast || 0, totalRow || 0, obs]);
+        rowMeta.push({ type: "data", yellow });
+        dataRowIdx++;
+      }
+
+      // Subtotal mes
+      aoa.push([`Sub-Total ${fmtMes(monthKey)}`, monthTotals.tpvS, monthTotals.tpvC, monthTotals.tpv, monthTotals.ef, monthTotals.venta, monthTotals.gastos, monthTotals.total, ""]);
+      rowMeta.push({ type: "subtotal" });
+
+      grandTotals.tpvS  += monthTotals.tpvS;  grandTotals.tpvC  += monthTotals.tpvC;
+      grandTotals.tpv   += monthTotals.tpv;   grandTotals.ef    += monthTotals.ef;
+      grandTotals.venta += monthTotals.venta; grandTotals.gastos += monthTotals.gastos;
+      grandTotals.total += monthTotals.total;
+    }
+
+    // Total general
+    aoa.push(["Sub-Total Ingresos", grandTotals.tpvS, grandTotals.tpvC, grandTotals.tpv, grandTotals.ef, grandTotals.venta, grandTotals.gastos, grandTotals.total, ""]);
+    rowMeta.push({ type: "total" });
+
+    // Construir worksheet
+    const wsData = XLSXStyle.utils.aoa_to_sheet(aoa);
+    Object.assign(ws, wsData);
+
+    ws["!merges"] = [
+      { s: { r: 1, c: 4 }, e: { r: 1, c: 8 } },
+      { s: { r: 2, c: 4 }, e: { r: 2, c: 8 } },
+      { s: { r: 3, c: 4 }, e: { r: 3, c: 8 } },
+      { s: { r: 7, c: 0 }, e: { r: 7, c: 8 } },
+    ];
+
+    ws["!cols"] = [
+      { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+      { wch: 17 }, { wch: 16 }, { wch: 15 }, { wch: 15 }, { wch: 55 },
+    ];
+
+    ws["!rows"] = rowMeta.map((m) => {
+      if (m.type === "header") return { hpt: 28 };
+      if (m.type === "subtotal" || m.type === "total") return { hpt: 22 };
+      if (m.type === "data") return { hpt: 42 };
+      return { hpt: 18 };
+    });
+
+    const applyStyle = (r: number, c: number, s: any) => {
+      const ref = XLSXStyle.utils.encode_cell({ r, c });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = s;
+    };
+
+    // Títulos
+    [1, 2, 3].forEach((row) => applyStyle(row, 4, titleStyle(row === 1 ? 16 : row === 3 ? 12 : 13)));
+    // Sección header
+    for (let c = 0; c < COLS; c++) applyStyle(7, c, sectionStyle);
+    // Col headers
+    for (let c = 0; c < COLS; c++) applyStyle(8, c, colHdrStyle);
+
+    // Filas de datos con estilos
+    for (let i = 9; i < aoa.length; i++) {
+      const meta = rowMeta[i];
+      for (let c = 0; c < COLS; c++) {
+        const ref = XLSXStyle.utils.encode_cell({ r: i, c });
+        if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+        if (meta.type === "total") ws[ref].s = totalStyle;
+        else if (meta.type === "subtotal") ws[ref].s = subtotalStyle;
+        else if (meta.type === "header") ws[ref].s = monthHdrStyle;
+        else ws[ref].s = dataStyle(meta.yellow ?? false);
+        if ((c >= 1 && c <= 7) && typeof ws[ref].v === "number") ws[ref].z = numFmt;
+      }
+    }
+
+    ws["!ref"] = XLSXStyle.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: aoa.length - 1, c: COLS - 1 } });
+
+    const wb = XLSXStyle.utils.book_new();
+    XLSXStyle.utils.book_append_sheet(wb, ws, "Resumen Mensual");
+    XLSXStyle.writeFile(wb, `resumen_mensual_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   const exportBalanceCSV = () => {
     const lines = [
       ["Mes", "Ingresos", "Gastos", "Balance"].join(","),
@@ -2683,6 +2872,7 @@ export default function ContabilidadPage() {
               </div>
               <div style={s.row}>
                 <button onClick={fetchLibroAll} style={s.btn} disabled={lLoading}>🔄 Refrescar</button>
+                <button onClick={exportBalanceMensualXLSX} style={s.btn} disabled={lLoading || balanceFromLibro.length === 0}>📥 Excel Resumen</button>
                 <button onClick={printBalance} style={s.btn} disabled={lLoading || balanceFromLibro.length === 0}>🖨️ PDF / Imprimir</button>
               </div>
             </div>
