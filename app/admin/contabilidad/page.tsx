@@ -1796,10 +1796,11 @@ export default function ContabilidadPage() {
       alignment: { horizontal: "center" as const, vertical: "center" as const, wrapText: true },
       border: { top: border(), bottom: border(), left: border(), right: border() },
     };
-    const dataStyle = {
-      alignment: { vertical: "center" as const },
+    const dataStyle = (yellow: boolean) => ({
+      fill: yellow ? { patternType: "solid" as const, fgColor: { rgb: "FFFF99" } } : undefined,
+      alignment: { vertical: "center" as const, wrapText: true },
       border: { top: border(), bottom: border(), left: border(), right: border() },
-    };
+    });
     const cerradoStyle = {
       fill: { patternType: "solid" as const, fgColor: { rgb: "87CEEB" } },
       font: { bold: true },
@@ -1865,12 +1866,15 @@ export default function ContabilidadPage() {
     // Anchos de columna
     ws["!cols"] = [
       { wch: 13 }, { wch: 27 }, { wch: 15 }, { wch: 15 },
-      { wch: 13 }, { wch: 17 }, { wch: 19 }, { wch: 15 }, { wch: 42 },
+      { wch: 13 }, { wch: 17 }, { wch: 19 }, { wch: 15 }, { wch: 60 },
     ];
 
     // Altura de filas
-    ws["!rows"] = Array(aoa.length).fill({ hpt: 18 });
-    ws["!rows"][8] = { hpt: 30 }; // header row taller
+    ws["!rows"] = Array(aoa.length).fill(null).map(() => ({ hpt: 18 }));
+    ws["!rows"][8] = { hpt: 30 };
+    for (let i = 0; i < ingresos.length; i++) {
+      ws["!rows"][9 + i] = { hpt: 42 };
+    }
 
     // Función para asegurar que la celda existe y aplicar estilo
     const applyStyle = (r: number, c: number, s: any) => {
@@ -1896,10 +1900,11 @@ export default function ContabilidadPage() {
     for (let i = 0; i < ingresos.length; i++) {
       const r = ingresos[i];
       const isCerrado = (r.concepto ?? "").toUpperCase().includes("CERRADO");
+      const yellow = i % 4 === 3;
       for (let c = 0; c < COLS; c++) {
         const ref = XLSXStyle.utils.encode_cell({ r: DATA_START + i, c });
         if (!ws[ref]) ws[ref] = { v: "", t: "s" };
-        ws[ref].s = isCerrado ? cerradoStyle : dataStyle;
+        ws[ref].s = isCerrado ? cerradoStyle : dataStyle(yellow);
         if (c >= 2 && c <= 7 && typeof ws[ref].v === "number") ws[ref].z = numFmt;
       }
     }
