@@ -310,6 +310,7 @@ export default function ContabilidadPage() {
   const [opEdit, setOpEdit] = useState<null | { refType: "GASTO" | "MOV"; id: number }>(
     null
   );
+  const [tabBeforeEdit, setTabBeforeEdit] = useState<"gastos" | "ingresos" | "balance" | "libro">("libro");
 
   // ✅ Modal de duplicado
   const [dupModal, setDupModal] = useState<{ strong: boolean; onContinue: () => void } | null>(null);
@@ -608,6 +609,9 @@ export default function ContabilidadPage() {
 
   function openEditFromDetail(row: any) {
     if (!row?.refType || !row?.meta) return;
+
+    setTabBeforeEdit(tab);
+    setTab("libro");
 
     const id = Number(String(row.ref).split("#")[1]);
 
@@ -916,9 +920,11 @@ export default function ContabilidadPage() {
 
       setOpOpen(false);
       opReset();
+      setTab(tabBeforeEdit);
 
       void fetchMovimientos(1000);
-      if (tab === "libro") void fetchLibroGastos();
+      void fetchGastos();
+      void fetchLibroAll();
 
       alert(isEditing ? "✅ Operación actualizada" : "✅ Operación guardada");
     } catch (err: any) {
@@ -1038,7 +1044,7 @@ export default function ContabilidadPage() {
 
       if (editingId === id) cancelEdit();
       await fetchGastos();
-      if (tab === "libro") await fetchLibroAll();
+      void fetchLibroAll();
     } catch (e: any) {
       setGError(e?.message ?? "Error borrando gasto");
     } finally {
@@ -1065,8 +1071,8 @@ export default function ContabilidadPage() {
       setMovimientos((prev) => prev.filter((m) => m.id !== id));
 
       void fetchMovimientos(1000);
-      if (tab === "gastos") void fetchGastos();
-      if (tab === "libro") void fetchLibroAll();
+      void fetchGastos();
+      void fetchLibroAll();
     } catch (e: any) {
       console.error(e);
       alert(e?.message ?? "Error borrando movimiento");
@@ -2500,6 +2506,7 @@ export default function ContabilidadPage() {
                       </th>
                     ))}
                     <th style={s.th}>Categoría</th>
+                    <th style={s.th}></th>
                   </tr>
                 </thead>
 
@@ -2558,13 +2565,22 @@ export default function ContabilidadPage() {
                           )}
                         </td>
 
+                        <td style={s.td} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); if (g._fromMov) deleteMovimiento(g.id); else deleteGasto(g.id); }}
+                            style={s.btnDanger}
+                            title="Eliminar"
+                            disabled={gBusy}
+                          >🗑️</button>
+                        </td>
+
                       </tr>
                     );
                   })}
 
                   {gastosAll.length === 0 && !gLoading && (
                     <tr>
-                      <td colSpan={5} style={{ ...s.td, opacity: 0.8 }}>
+                      <td colSpan={6} style={{ ...s.td, opacity: 0.8 }}>
                         No hay gastos todavía.
                       </td>
                     </tr>
@@ -2745,12 +2761,13 @@ export default function ContabilidadPage() {
                         {iSortCol === col ? (iSortDir === "desc" ? " ↓" : " ↑") : " ↕"}
                       </th>
                     ))}
+                    <th style={s.th}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {lLoading && (
                     <tr>
-                      <td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--t-text2)", padding: 24 }}>
+                      <td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--t-text2)", padding: 24 }}>
                         Cargando...
                       </td>
                     </tr>
@@ -2763,11 +2780,19 @@ export default function ContabilidadPage() {
                       <td style={s.td}><span style={s.badgeIngreso}>{up(m.categoria) || "INGRESOS"}</span></td>
                       <td style={{ ...s.td, whiteSpace: "nowrap" }}><span style={{ fontWeight: 1000 }}>€ {safeNum(m.monto).toFixed(2)}</span></td>
                       <td style={s.td}><span style={{ opacity: 0.8 }}>{m.modo_pago ?? "—"}</span></td>
+                      <td style={s.td} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteMovimiento(m.id); }}
+                          style={s.btnDanger}
+                          title="Eliminar"
+                          disabled={gBusy}
+                        >🗑️</button>
+                      </td>
                     </tr>
                   ))}
                   {!lLoading && ingresosAll.length === 0 && (
                     <tr>
-                      <td colSpan={6} style={{ ...s.td, color: "var(--t-text2)" }}>
+                      <td colSpan={7} style={{ ...s.td, color: "var(--t-text2)" }}>
                         No hay ingresos todavía.
                       </td>
                     </tr>
@@ -3182,6 +3207,7 @@ export default function ContabilidadPage() {
                         setProveedorQuery("");
                         setShowProveedorDropdown(false);
                         setProveedorActiveIndex(-1);
+                        setTab(tabBeforeEdit);
                       }}
                       style={s.btn}
                       type="button"
@@ -3532,6 +3558,7 @@ export default function ContabilidadPage() {
                           setProveedorQuery("");
                           setShowProveedorDropdown(false);
                           setProveedorActiveIndex(-1);
+                          setTab(tabBeforeEdit);
                         }}
                         style={s.btn}
                         disabled={opSaving}
