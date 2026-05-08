@@ -5,6 +5,12 @@ export const runtime = "nodejs";
 
 const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 
+// Temporal: clientes con pago manual confirmado que aún no tienen registro en Supabase
+// TODO: revisar webhook de Paddle y eliminar cada email una vez que el registro exista en subscriptions
+const MANUAL_PAID: string[] = [
+  "gusmeliab@gmail.com",
+];
+
 function getSupabase() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -26,6 +32,11 @@ export async function GET(req: NextRequest) {
   // Owner bypass — always allow regardless of subscription
   if (email.toLowerCase().trim() === OWNER_EMAIL) {
     return NextResponse.json({ allowed: true, reason: "owner" });
+  }
+
+  // Manual paid bypass — confirmed payment but no Supabase record yet
+  if (MANUAL_PAID.includes(email.toLowerCase().trim())) {
+    return NextResponse.json({ allowed: true, reason: "manual_paid" });
   }
 
   try {
