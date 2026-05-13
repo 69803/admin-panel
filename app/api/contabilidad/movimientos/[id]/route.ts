@@ -11,9 +11,10 @@ function getSupabase() {
 }
 
 // PUT /api/contabilidad/movimientos/[id]
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
     if (!Number.isFinite(id)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
@@ -60,9 +61,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE /api/contabilidad/movimientos/[id]
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
     if (!Number.isFinite(id)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
