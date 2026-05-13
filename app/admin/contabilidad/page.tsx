@@ -77,18 +77,6 @@ type Movimiento = {
   created_at?: string;
 };
 
-function normalizeApiUrl(raw?: string) {
-  if (!raw) return null;
-  let url = raw.trim();
-  if (url.startsWith("//")) url = `https:${url}`;
-
-  const isLocal =
-    url.includes("localhost") || url.includes("127.0.0.1") || url.includes("0.0.0.0");
-
-  if (!isLocal) url = url.replace(/^http:\/\//i, "https://");
-  url = url.replace(/\/+$/, "");
-  return url;
-}
 
 function up(s?: string) {
   return (s ?? "").trim().toUpperCase();
@@ -297,8 +285,6 @@ function toYMD(dateValue: string) {
 }
 
 export default function ContabilidadPage() {
-  const baseUrl = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
-
   const [tab, setTab] = useState<"gastos" | "ingresos" | "balance" | "libro">("gastos");
 
   // ✅ Modal NUEVA OPERACION (Libro diario)
@@ -667,11 +653,6 @@ export default function ContabilidadPage() {
   }
 
   const fetchGastos = async () => {
-    if (!baseUrl) {
-      setGError("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
-      return;
-    }
-
     setGLoading(true);
     setGError(null);
 
@@ -682,7 +663,7 @@ export default function ContabilidadPage() {
       // concepto search is filtered client-side
       qs.set("limit", "1000");
 
-      const res = await fetch(`${baseUrl}/gastos?${qs.toString()}`, { cache: "no-store" });
+      const res = await fetch(`/api/gastos?${qs.toString()}`, { cache: "no-store" });
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
@@ -700,13 +681,11 @@ export default function ContabilidadPage() {
   };
 
   const fetchLibroGastos = async () => {
-    if (!baseUrl) throw new Error("Falta NEXT_PUBLIC_API_URL en Vercel / .env.local");
-
     // Sin filtros de fecha/categoría: trae TODOS los gastos para libro y balance
     const qs = new URLSearchParams();
     qs.set("limit", "1000");
 
-    const res = await fetch(`${baseUrl}/gastos?${qs.toString()}`, { cache: "no-store" });
+    const res = await fetch(`/api/gastos?${qs.toString()}`, { cache: "no-store" });
 
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
@@ -718,9 +697,8 @@ export default function ContabilidadPage() {
   };
 
   const fetchMovimientos = async (limit = 200) => {
-    if (!baseUrl) return;
     try {
-      const r = await fetch(`${baseUrl}/contabilidad/movimientos?limit=${limit}`, {
+      const r = await fetch(`/api/contabilidad/movimientos?limit=${limit}`, {
         cache: "no-store",
       });
       if (!r.ok) {
@@ -751,11 +729,6 @@ export default function ContabilidadPage() {
   // ✅ Guardar operación (GASTO/MOV) o CIERRE (INGRESO)
   async function opSaveUIOnly(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!baseUrl) {
-      alert("Falta NEXT_PUBLIC_API_URL");
-      return;
-    }
 
     if (!opCanSave) {
       if (opTipo === "GASTO") {
@@ -809,7 +782,7 @@ export default function ContabilidadPage() {
       setOpSaving(true);
 
       const isEditing = !!opEdit;
-      let url = `${baseUrl}/contabilidad/movimientos`;
+      let url = `/api/contabilidad/movimientos`;
       let method: "POST" | "PUT" = "POST";
       let body: any = null;
 
@@ -836,7 +809,7 @@ export default function ContabilidadPage() {
 
         // ✅ si edita GASTO: va a /gastos/:id (BODY SEGURO: solo 4 campos)
         if (opEdit?.refType === "GASTO") {
-          url = `${baseUrl}/gastos/${opEdit.id}`;
+          url = `/api/gastos/${opEdit.id}`;
           method = "PUT";
           body = {
             fecha: payload.fecha,
@@ -847,7 +820,7 @@ export default function ContabilidadPage() {
         } else {
           // ✅ MOV (nuevo o editar)
           if (opEdit?.refType === "MOV") {
-            url = `${baseUrl}/contabilidad/movimientos/${opEdit.id}`;
+            url = `/api/contabilidad/movimientos/${opEdit.id}`;
             method = "PUT";
           }
           body = payload;
@@ -903,7 +876,7 @@ export default function ContabilidadPage() {
         };
 
         if (opEdit?.refType === "MOV") {
-          url = `${baseUrl}/contabilidad/movimientos/${opEdit.id}`;
+          url = `/api/contabilidad/movimientos/${opEdit.id}`;
           method = "PUT";
         }
         body = payload;
@@ -936,8 +909,6 @@ export default function ContabilidadPage() {
   }
 
   const createGasto = async () => {
-    if (!baseUrl) return;
-
     const concepto = newConcepto.trim();
     const montoNum = Number(newMonto);
     const categoria = up(newCategoria) || "OTROS";
@@ -950,7 +921,7 @@ export default function ContabilidadPage() {
     setGError(null);
 
     try {
-      const res = await fetch(`${baseUrl}/gastos`, {
+      const res = await fetch(`/api/gastos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fecha, concepto, monto: montoNum, categoria }),
@@ -992,8 +963,6 @@ export default function ContabilidadPage() {
   };
 
   const saveEdit = async (id: number) => {
-    if (!baseUrl) return;
-
     const concepto = editConcepto.trim();
     const montoNum = Number(editMonto);
     const categoria = up(editCategoria) || "OTROS";
@@ -1006,7 +975,7 @@ export default function ContabilidadPage() {
     setGError(null);
 
     try {
-      const res = await fetch(`${baseUrl}/gastos/${id}`, {
+      const res = await fetch(`/api/gastos/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fecha, concepto, monto: montoNum, categoria }),
@@ -1028,7 +997,6 @@ export default function ContabilidadPage() {
   };
 
   const deleteGasto = async (id: number) => {
-    if (!baseUrl) return;
     const ok = confirm(`¿Borrar gasto ID ${id}?`);
     if (!ok) return;
 
@@ -1036,7 +1004,7 @@ export default function ContabilidadPage() {
     setGError(null);
 
     try {
-      const res = await fetch(`${baseUrl}/gastos/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/gastos/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`DELETE /gastos/${id} (HTTP ${res.status}) ${txt}`);
@@ -1053,14 +1021,12 @@ export default function ContabilidadPage() {
   };
 
   const deleteMovimiento = async (id: number) => {
-    if (!baseUrl) return alert("Falta NEXT_PUBLIC_API_URL");
-
     const ok = confirm(`¿Borrar movimiento ID ${id}?`);
     if (!ok) return;
 
     setGBusy(true);
     try {
-      const res = await fetch(`${baseUrl}/contabilidad/movimientos/${id}`, {
+      const res = await fetch(`/api/contabilidad/movimientos/${id}`, {
         method: "DELETE",
         cache: "no-store",
       });
@@ -1082,14 +1048,12 @@ export default function ContabilidadPage() {
   };
 
   const deleteGastoFromLibro = async (id: number) => {
-    if (!baseUrl) return alert("Falta NEXT_PUBLIC_API_URL");
-
     const ok = confirm(`¿Borrar gasto ID ${id}?`);
     if (!ok) return;
 
     setGBusy(true);
     try {
-      const res = await fetch(`${baseUrl}/gastos/${id}`, {
+      const res = await fetch(`/api/gastos/${id}`, {
         method: "DELETE",
         cache: "no-store",
       });
@@ -2344,7 +2308,7 @@ export default function ContabilidadPage() {
           <div>
             <div style={{ fontSize: 22, fontWeight: 1000 }}>💰 Contabilidad</div>
             <div style={{ color: "var(--t-text2)", fontSize: 13, marginTop: 4 }}>
-              API: <span style={{ fontWeight: 900 }}>{baseUrl ?? "(no definido)"}</span>
+              Contabilidad — Supabase
             </div>
           </div>
 
