@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
         productos_servicios: body.productos_servicios ?? null,
         modo_pago: body.modo_pago ?? "Transferencia",
         observacion: body.observacion ?? null,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();
