@@ -1108,6 +1108,9 @@ export default function ContabilidadPage() {
   const gastosAll = useMemo<GastoRow[]>(() => {
     const fromGastos: GastoRow[] = gastos
       .filter((g) => {
+        const gFecha = g.fecha ?? "";
+        if (desde.trim() && gFecha && gFecha < desde.trim()) return false;
+        if (hasta.trim() && gFecha && gFecha > hasta.trim()) return false;
         if (cat.trim() && !up(g.concepto ?? "").includes(up(cat))) return false;
         if (gProv.trim()) return false; // legacy gastos no tienen proveedor
         return true;
@@ -1601,8 +1604,13 @@ export default function ContabilidadPage() {
       return `${MESES[m] ?? ""} ${key.slice(0,4)}`;
     };
 
-    // Filtrar y agrupar ingresos por mes
-    const ingresosRows = libroRows.filter((r) => r.tipo === "INGRESO" && r.fecha);
+    // Filtrar y agrupar ingresos por mes (respeta filtros bDesde/bHasta del tab Balance)
+    const ingresosRows = libroRows.filter((r) => {
+      if (r.tipo !== "INGRESO" || !r.fecha) return false;
+      if (bDesde && r.fecha < bDesde) return false;
+      if (bHasta && r.fecha > bHasta) return false;
+      return true;
+    });
     const byMonth = new Map<string, typeof ingresosRows>();
     for (const r of ingresosRows) {
       const key = r.fecha!.slice(0, 7);
@@ -1973,11 +1981,11 @@ export default function ContabilidadPage() {
     const parseEUR = (s: string) => parseFloat((s ?? "").replace(/[^0-9.,-]/g, "").replace(",", ".")) || 0;
 
     const fmtDate = (s: string) => s?.length >= 10 ? `${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}` : (s ?? "");
-    const ingresos = libroRows.filter((r) => r.tipo === "INGRESO").sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+    const ingresos = [...ingresosAll].sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
 
     // Calcular mes para el encabezado
     const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
-    let mesLabel = lDesde || lHasta || (ingresos[ingresos.length - 1]?.fecha ?? "");
+    let mesLabel = iDesde || iHasta || (ingresos[ingresos.length - 1]?.fecha ?? "");
     const mesStr = mesLabel.length >= 7
       ? `${meses[parseInt(mesLabel.slice(5, 7)) - 1] ?? ""} ${mesLabel.slice(0, 4)}`
       : "";
@@ -2035,15 +2043,15 @@ export default function ContabilidadPage() {
     const totals = { tpvS: 0, tpvC: 0, tpv: 0, ef: 0, venta: 0, gastos: 0 };
 
     for (const r of ingresos) {
-      const f = parseCierreObs(r.meta?.observacion).fields;
+      const f = parseCierreObs(r.observacion).fields;
       const tpvS   = parseEUR(f["TPV Santander"] ?? "0");
       const tpvC   = parseEUR(f["TPV Caixabank"] ?? "0");
       const tpv    = parseEUR(f["Total TPV"] ?? "0");
       const ef     = parseEUR(f["Efectivo recibido"] ?? "0");
       const venta  = parseEUR(f["Total venta diaria"] ?? String(r.monto));
       const gastos = parseEUR(f["Gastos menores"] ?? "0");
-      const obs    = parseCierreObs(r.meta?.observacion).note || r.concepto || "";
-      const nro    = r.meta?.factura_no ?? "";
+      const obs    = parseCierreObs(r.observacion).note || r.concepto || "";
+      const nro    = r.factura_no ?? "";
 
       totals.tpvS   += tpvS;
       totals.tpvC   += tpvC;
