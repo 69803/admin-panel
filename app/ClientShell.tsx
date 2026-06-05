@@ -139,8 +139,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const currentEmail = readEmailFromLS();
   const authed = !!currentEmail;
 
-  // ── 2. /login is the only public route ───────────────────────────
-  if (isLoginRoute) return <>{children}</>;
+  // ── 2. /login and /pricing are public routes ─────────────────────
+  if (isLoginRoute || isPricingRoute) return <>{children}</>;
 
   // ── 3. Not logged in → /login (catches /pricing too) ─────────────
   if (!authed) {
