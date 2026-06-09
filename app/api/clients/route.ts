@@ -12,6 +12,7 @@ const FALLBACK_ALLOWED = [
   "kristianbarrios8@gmail.com",
   "gusmeliab@gmail.com",
   "compipana2@gmail.com",
+  "test@test.com",
 ];
 
 function getSupabase() {
