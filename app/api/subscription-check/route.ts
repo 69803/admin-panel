@@ -9,6 +9,7 @@ const OWNER_EMAIL = "kristianbarrios8@gmail.com";
 // TODO: revisar webhook de Paddle y eliminar cada email una vez que el registro exista en subscriptions
 const MANUAL_PAID: string[] = [
   "gusmeliab@gmail.com",
+  "test@test.com",
 ];
 
 function getSupabase() {
