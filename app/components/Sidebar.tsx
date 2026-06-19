@@ -152,8 +152,8 @@ export default function Sidebar() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Botón desarrollador — oculto temporalmente, descomentar para restaurar */}
-      {false && <div ref={devRef} style={{ position: "relative", width: "100%", padding: "0 8px", marginBottom: 6 }}>
+      {/* Botón desarrollador */}
+      <div ref={devRef} style={{ position: "relative", width: "100%", padding: "0 8px", marginBottom: 6 }}>
         <button
           onClick={() => {
             if (devOpen) {
@@ -322,7 +322,7 @@ export default function Sidebar() {
             )}
           </div>
         )}
-      </div>}
+      </div>
 
       {/* Logout rápido */}
       <button
