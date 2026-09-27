@@ -578,7 +578,7 @@ export default function IQPage() {
           boxShadow: "0 4px 14px rgba(99,102,241,0.35)",
         }}>🧠</div>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--t-text)" }}>IQ Financiero</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--t-text)" }}>Política de Privacidad de Bloomu</h1>
           <p style={{ margin: 0, fontSize: 13, color: "var(--t-text2)" }}>Análisis inteligente basado en tus datos de contabilidad</p>
         </div>
         {analysis && <div style={{ marginLeft: "auto" }}><ScoreRing score={analysis.score} /></div>}
