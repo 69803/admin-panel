@@ -398,24 +398,6 @@ export default function AdminDashboardPage() {
                   );
                 })}
 
-                <div style={{ height: 1, background: "var(--t-border)", margin: "4px 0" }} />
-                <div
-                  style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "11px 16px", cursor: "pointer",
-                    fontSize: 13, color: "#DC2626", fontWeight: 600,
-                    transition: "background 100ms ease",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#FEF2F2")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  onClick={() => {
-                    setProfileOpen(false);
-                    localStorage.removeItem("admin_auth_v1");
-                    window.location.href = "/login";
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>🚪</span> Cerrar sesión
-                </div>
               </div>
             )}
           </div>

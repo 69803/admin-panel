@@ -59,11 +59,6 @@ export default function Sidebar() {
     return () => window.removeEventListener("business-profile-updated", loadGlobalPhoto);
   }, []);
 
-  function handleLogout() {
-    localStorage.removeItem("admin_auth_v3");
-    router.replace("/login");
-  }
-
   // Cerrar popup al click fuera
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -239,28 +234,6 @@ export default function Sidebar() {
           </div>
         )}
       </div>
-
-      {/* Logout rápido */}
-      <button
-        onClick={handleLogout}
-        title="Cerrar sesión"
-        style={{
-          width: 46,
-          height: 46,
-          borderRadius: 10,
-          display: "grid",
-          placeItems: "center",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          fontSize: 19,
-          transition: "background 120ms ease",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
-        🔒
-      </button>
 
       <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>v1</div>
     </aside>
