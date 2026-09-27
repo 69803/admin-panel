@@ -23,7 +23,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   // App totalmente pública: sin login ni suscripción
   const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/");
-  const isBareRoute = pathname === "/hello" || pathname?.startsWith("/hello/") || pathname === "/pricing";
+  const isBareRoute = pathname === "/hello" || pathname?.startsWith("/hello/") || pathname === "/pricing"
+                    || pathname === "/admin/iq";
 
   useEffect(() => {
     setMounted(true);
