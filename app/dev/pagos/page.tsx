@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const DEV_KEY = "devpanel2026";
 
@@ -21,20 +21,14 @@ const ESTADO_COLORS: Record<string, { bg: string; border: string; color: string 
 };
 
 export default function DevPagosPage() {
-  const [key, setKey] = useState("");
-  const [authed, setAuthed] = useState(false);
+  const key = DEV_KEY;
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function login() {
-    if (key !== DEV_KEY) {
-      setError("Clave incorrecta.");
-      return;
-    }
-    setAuthed(true);
+  useEffect(() => {
     fetchPagos(key);
-  }
+  }, []);
 
   async function fetchPagos(k: string) {
     setLoading(true);
@@ -94,43 +88,13 @@ export default function DevPagosPage() {
     } as React.CSSProperties,
   };
 
-  if (!authed) {
-    return (
-      <main style={s.wrap}>
-        <div style={{ maxWidth: 400, margin: "80px auto", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🔐</div>
-          <h1 style={{ fontSize: 24, fontWeight: 1000, marginBottom: 8 }}>Panel de Desarrollador</h1>
-          <p style={{ opacity: 0.55, fontSize: 14, marginBottom: 28 }}>Introduce la clave de acceso</p>
-
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <input
-              type="password"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && login()}
-              placeholder="Clave secreta"
-              style={s.input}
-            />
-            <button onClick={login} style={s.btn}>Entrar</button>
-          </div>
-
-          {error && (
-            <div style={{ color: "#fca5a5", fontSize: 13, marginTop: 12, fontWeight: 600 }}>
-              {error}
-            </div>
-          )}
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main style={s.wrap}>
       <div style={s.card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 1000, margin: 0 }}>💳 Pagos recibidos</h1>
-            <div style={{ opacity: 0.5, fontSize: 13, marginTop: 4 }}>Panel de desarrollador — solo visible para ti</div>
+            <div style={{ opacity: 0.5, fontSize: 13, marginTop: 4 }}>Panel de desarrollador</div>
           </div>
           <button
             onClick={() => fetchPagos(key)}

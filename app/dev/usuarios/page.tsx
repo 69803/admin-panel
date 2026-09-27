@@ -433,8 +433,7 @@ function DayDetailModal({
 // ── Página principal ──────────────────────────────────────────────────────────
 
 export default function DevUsuariosPage() {
-  const [key, setKey]         = useState("");
-  const [authed, setAuthed]   = useState(false);
+  const key = DEV_KEY;
   const [usuarios, setUsuarios] = useState<UserActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -472,11 +471,9 @@ export default function DevUsuariosPage() {
     }
   }
 
-  async function login() {
-    if (key !== DEV_KEY) { setError("Clave incorrecta."); return; }
-    setAuthed(true);
+  useEffect(() => {
     fetchUsuarios(key);
-  }
+  }, []);
 
   async function fetchUsuarios(k: string) {
     setLoading(true);
@@ -526,30 +523,6 @@ export default function DevUsuariosPage() {
       cursor: "pointer",
     } as React.CSSProperties,
   };
-
-  if (!authed) {
-    return (
-      <main style={s.wrap}>
-        <div style={{ maxWidth: 400, margin: "80px auto", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>👥</div>
-          <h1 style={{ fontSize: 24, fontWeight: 1000, marginBottom: 8 }}>Actividad de Usuarios</h1>
-          <p style={{ color: "var(--t-text2)", fontSize: 14, marginBottom: 28 }}>Introduce la clave de acceso</p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <input
-              type="password"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && login()}
-              placeholder="Clave secreta"
-              style={s.input}
-            />
-            <button onClick={login} style={s.btn}>Entrar</button>
-          </div>
-          {error && <div style={{ color: "#ef4444", fontSize: 13, marginTop: 12, fontWeight: 600 }}>{error}</div>}
-        </div>
-      </main>
-    );
-  }
 
   return (
     <>
