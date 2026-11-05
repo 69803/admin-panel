@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bloomu",
   description: "Bloomu",
+  // Verificación del dominio krisonroad.com en Meta (portfolio comercial).
+  other: {
+    "facebook-domain-verification": "h4l0xqllky11v4dhepae47w764axmq",
+  },
 };
 
 export default function RootLayout({
