@@ -1,7 +1,7 @@
 import { Press_Start_2P } from "next/font/google";
 
 // Sección del videojuego Nova Boy en la portada: escena animada solo con CSS
-// (Nova corre, salta un obstáculo, dispara a un enemigo y Froggy le habla),
+// (Nova vuela en su nave, dispara a un enemigo y Froggy le habla),
 // más la descripción y el cartel "en construcción".
 const pixel = Press_Start_2P({ subsets: ["latin"], weight: "400", variable: "--font-pixel" });
 
@@ -46,67 +46,68 @@ const CSS = `
     animation:inherit;}
   @keyframes nbGround{to{background-position:-48px 0,-48px 0}}
 
-  /* Nova */
-  .nova{position:absolute; z-index:4; left:16%; bottom:21%; width:clamp(76px,10.5vw,124px);
-    animation:nbJump 6s cubic-bezier(.3,.7,.4,1) infinite;}
-  /* animación de correr: tira de 6 cuadros (nova-run.png, cada cuadro 150×183) */
-  .nova .run{width:100%; aspect-ratio:150/183; background:url(/novaboy/nova-run.png) 0 0/600% 100% no-repeat;
-    image-rendering:pixelated; animation:nbRun .6s steps(6) infinite;
-    filter:drop-shadow(0 0 14px rgba(255,140,40,0.55));}
-  @keyframes nbRun{to{background-position:120% 0}}
-  @keyframes nbJump{
-    0%,12%{transform:translateY(0) scale(1)}
-    13%{transform:translateY(0) scale(1.08,0.9)}
-    22%{transform:translateY(-130%) scale(0.95,1.06)}
-    31%{transform:translateY(0) scale(1)}
-    33%{transform:translateY(0) scale(1.1,0.88)}
-    36%,54%{transform:translateY(0) scale(1)}
-    56%{transform:translateX(-6px)}
-    60%,100%{transform:translateX(0)}}
-  .shadow{position:absolute; z-index:3; left:16%; bottom:20.5%; width:clamp(64px,9vw,104px); height:10px; border-radius:50%;
-    background:rgba(0,0,0,0.45); filter:blur(2px); animation:nbShadow 6s infinite;}
-  @keyframes nbShadow{0%,12%,31%,100%{transform:scaleX(1); opacity:.6} 22%{transform:scaleX(.45); opacity:.25}}
+  /* Nova en su nave: vuela por la escena con un recorrido "al azar" (12 s) */
+  .ship{position:absolute; z-index:4; left:14%; bottom:34%; width:clamp(150px,19vw,230px);
+    animation:nbFly 12s ease-in-out infinite;}
+  .ship .body{position:relative; animation:nbHover 1.3s ease-in-out infinite alternate;}
+  .ship img{display:block; width:100%; image-rendering:pixelated; filter:drop-shadow(0 0 16px rgba(255,140,40,0.5));}
+  @keyframes nbHover{from{transform:translateY(-4px)} to{transform:translateY(5px)}}
+  @keyframes nbFly{
+    0%{left:14%; bottom:34%; rotate:0deg}
+    9%{left:20%; bottom:46%; rotate:-4deg}
+    18%{left:26%; bottom:30%; rotate:5deg}
+    28%{left:6%; bottom:50%; rotate:-7deg}
+    38%{left:3%; bottom:28%; rotate:4deg}
+    46%,54%{left:24%; bottom:36%; rotate:0deg}
+    64%{left:50%; bottom:34%; rotate:6deg}
+    72%{left:54%; bottom:26%; rotate:2deg}
+    82%{left:34%; bottom:42%; rotate:-6deg}
+    92%{left:18%; bottom:28%; rotate:3deg}
+    100%{left:14%; bottom:34%; rotate:0deg}}
+  /* fuego del propulsor y estela */
+  .ship .fire{position:absolute; left:-6%; top:66%; width:22%; height:18%; border-radius:50%;
+    background:radial-gradient(closest-side,#fff,#38f3ff 45%,rgba(56,243,255,0) 75%);
+    filter:blur(2px); animation:nbFire .12s steps(2) infinite;}
+  @keyframes nbFire{50%{transform:scale(1.25,0.8); opacity:.7}}
+  .ship .trail i{position:absolute; left:-4%; top:71%; width:8px; height:8px; background:#38f3ff; box-shadow:0 0 10px #38f3ff;
+    opacity:0; animation:nbTrail .9s linear infinite;}
+  .ship .trail i:nth-child(2){animation-delay:.3s; top:76%} .ship .trail i:nth-child(3){animation-delay:.6s; top:67%}
+  @keyframes nbTrail{0%{opacity:1; transform:translateX(0) scale(1)} 100%{opacity:0; transform:translateX(-120px) scale(.3)}}
 
-  /* destello del disparo + láser */
-  .flash{position:absolute; z-index:5; left:calc(16% + clamp(58px,8.4vw,98px)); bottom:calc(22% + clamp(30px,4.2vw,50px));
-    width:26px; height:26px; border-radius:50%; background:radial-gradient(#fff,#38f3ff 40%,transparent 70%);
-    opacity:0; animation:nbFlash 6s infinite;}
-  @keyframes nbFlash{0%,55%{opacity:0; transform:scale(.4)} 56%{opacity:1; transform:scale(1.3)} 59%,100%{opacity:0; transform:scale(.4)}}
-  .laser{position:absolute; z-index:5; left:calc(16% + clamp(64px,9vw,104px)); bottom:calc(22% + clamp(34px,4.6vw,54px));
-    width:44px; height:8px; border-radius:4px; background:linear-gradient(90deg,transparent,#38f3ff 30%,#fff);
-    box-shadow:0 0 14px #38f3ff, 0 0 30px #38f3ff; opacity:0; animation:nbLaser 6s linear infinite;}
-  @keyframes nbLaser{0%,55.9%{opacity:0; transform:translateX(0)} 56%{opacity:1; transform:translateX(0)}
-    67%{opacity:1; transform:translateX(min(44vw,520px))} 67.1%,100%{opacity:0; transform:translateX(min(44vw,520px))}}
+  /* disparo: sale de la punta de la nave cuando se queda quieta (46–54 %) */
+  .laser{position:absolute; z-index:5; bottom:calc(36% + clamp(150px,19vw,230px) * 0.2); width:54px; height:8px; border-radius:4px;
+    background:linear-gradient(90deg,transparent,#38f3ff 30%,#fff); box-shadow:0 0 14px #38f3ff, 0 0 30px #38f3ff;
+    opacity:0; animation:nbLaser 12s linear infinite;}
+  @keyframes nbLaser{0%,47.9%{opacity:0; left:calc(24% + clamp(150px,19vw,230px))}
+    48%{opacity:1; left:calc(24% + clamp(150px,19vw,230px))} 53.9%{opacity:1; left:61%} 54%,100%{opacity:0; left:61%}}
+  .flash{position:absolute; z-index:5; left:calc(24% + clamp(150px,19vw,230px) - 14px); bottom:calc(36% + clamp(150px,19vw,230px) * 0.2 - 10px);
+    width:30px; height:30px; border-radius:50%; background:radial-gradient(#fff,#38f3ff 40%,transparent 70%);
+    opacity:0; animation:nbFlash 12s infinite;}
+  @keyframes nbFlash{0%,47.9%{opacity:0; transform:scale(.4)} 48%{opacity:1; transform:scale(1.4)} 50%,100%{opacity:0; transform:scale(.4)}}
 
-  /* obstáculo (roca con pinchos) que Nova salta */
-  .spike{position:absolute; z-index:3; bottom:22%; width:clamp(34px,4.5vw,52px); height:clamp(26px,3.4vw,40px);
-    clip-path:polygon(0 100%,18% 30%,32% 70%,50% 0,68% 70%,82% 30%,100% 100%);
-    background:#7b8299; box-shadow:inset 0 -6px 0 #4e5368; animation:nbSpike 6s linear infinite;}
-  @keyframes nbSpike{0%{left:75%; opacity:1} 32%{left:-12%; opacity:1} 32.1%,100%{left:-12%; opacity:0}}
-
-  /* enemigo slime */
-  .slime{position:absolute; z-index:3; bottom:22%; width:clamp(48px,6vw,70px); height:clamp(38px,4.8vw,56px);
-    animation:nbSlimeMove 6s linear infinite;}
-  .slime b{position:absolute; inset:0; border-radius:50% 50% 14% 14% / 70% 70% 14% 14%;
+  /* enemigo: medusa espacial que llega volando */
+  .slime{position:absolute; z-index:3; bottom:calc(36% + clamp(150px,19vw,230px) * 0.2 - 22px); width:clamp(48px,6vw,70px); height:clamp(38px,4.8vw,56px);
+    animation:nbSlimeMove 12s linear infinite;}
+  .slime b{position:absolute; inset:0; border-radius:50% 50% 30% 30% / 70% 70% 30% 30%;
     background:radial-gradient(circle at 35% 30%,#d58bff 0 12%,#9a3cf0 13% 60%,#5f1aa8 61%);
     box-shadow:inset 0 -5px 0 #3e0e74, 0 0 22px rgba(170,80,255,0.6); animation:nbSquish .5s ease-in-out infinite;}
   .slime b::before,.slime b::after{content:""; position:absolute; top:36%; width:16%; height:22%; background:#fff;
     border-radius:2px; box-shadow:inset 3px 0 0 #160530;}
   .slime b::before{left:24%} .slime b::after{left:56%}
-  @keyframes nbSquish{50%{transform:scale(1.08,.9) translateY(4%)}}
-  @keyframes nbSlimeMove{0%,40%{left:104%; opacity:1; transform:scale(1)} 67%{left:62%; opacity:1; transform:scale(1)}
-    68%{left:62%; transform:scale(1.35); filter:brightness(3)} 72%{left:62%; opacity:0; transform:scale(.2)}
-    72.1%,100%{left:104%; opacity:0}}
-  .boom{position:absolute; z-index:6; left:63%; bottom:28%; width:10px; height:10px; opacity:0; animation:nbBoom 6s infinite;}
+  @keyframes nbSquish{50%{transform:scale(1.08,.9) translateY(-8%)}}
+  @keyframes nbSlimeMove{0%,30%{left:104%; opacity:1; transform:scale(1)} 54%{left:61%; opacity:1; transform:scale(1)}
+    55%{left:61%; transform:scale(1.35); filter:brightness(3)} 59%{left:61%; opacity:0; transform:scale(.2)}
+    59.1%,100%{left:104%; opacity:0}}
+  .boom{position:absolute; z-index:6; left:63%; bottom:calc(36% + clamp(150px,19vw,230px) * 0.2); width:10px; height:10px; opacity:0; animation:nbBoom 12s infinite;}
   .boom i{position:absolute; width:8px; height:8px; background:#ffe27a; box-shadow:0 0 10px #ffb347;}
-  .boom i:nth-child(1){--x:-50px; --y:-40px} .boom i:nth-child(2){--x:44px; --y:-52px} .boom i:nth-child(3){--x:-36px; --y:20px}
-  .boom i:nth-child(4){--x:52px; --y:14px} .boom i:nth-child(5){--x:4px; --y:-70px} .boom i:nth-child(6){--x:-62px; --y:-8px}
-  @keyframes nbBoom{0%,67.5%{opacity:0} 68%{opacity:1} 76%{opacity:0} 100%{opacity:0}}
-  .boom i{animation:nbShard 6s ease-out infinite;}
-  @keyframes nbShard{0%,67.5%{transform:translate(0,0) scale(1)} 76%,100%{transform:translate(var(--x),var(--y)) scale(.3)}}
-  .score{position:absolute; z-index:6; left:60%; bottom:40%; font-family:var(--font-pixel),monospace; font-size:0.8rem; color:#ffe27a;
-    text-shadow:2px 2px 0 #8a2a00; opacity:0; animation:nbScore 6s infinite;}
-  @keyframes nbScore{0%,68%{opacity:0; transform:translateY(0)} 70%{opacity:1} 82%{opacity:0; transform:translateY(-40px)} 100%{opacity:0}}
+  .boom i:nth-child(1){--x:-50px; --y:-40px} .boom i:nth-child(2){--x:44px; --y:-52px} .boom i:nth-child(3){--x:-36px; --y:30px}
+  .boom i:nth-child(4){--x:52px; --y:24px} .boom i:nth-child(5){--x:4px; --y:-70px} .boom i:nth-child(6){--x:-62px; --y:-8px}
+  @keyframes nbBoom{0%,54.5%{opacity:0} 55%{opacity:1} 61%{opacity:0} 100%{opacity:0}}
+  .boom i{animation:nbShard 12s ease-out infinite;}
+  @keyframes nbShard{0%,54.5%{transform:translate(0,0) scale(1)} 61%,100%{transform:translate(var(--x),var(--y)) scale(.3)}}
+  .score{position:absolute; z-index:6; left:60%; bottom:calc(36% + clamp(150px,19vw,230px) * 0.2 + 30px); font-family:var(--font-pixel),monospace;
+    font-size:0.8rem; color:#ffe27a; text-shadow:2px 2px 0 #8a2a00; opacity:0; animation:nbScore 12s infinite;}
+  @keyframes nbScore{0%,55%{opacity:0; transform:translateY(0)} 56%{opacity:1} 63%{opacity:0; transform:translateY(-40px)} 100%{opacity:0}}
 
   /* HUD */
   .hud{position:absolute; z-index:7; top:16px; left:18px; right:18px; display:flex; justify-content:space-between; align-items:center;
@@ -175,7 +176,7 @@ export default function NovaBoy() {
         </p>
 
         {/* Escena animada */}
-        <div className="stage-nb reveal" role="img" aria-label="Nova corre, salta un obstáculo y dispara a un enemigo mientras Froggy le habla">
+        <div className="stage-nb reveal" role="img" aria-label="Nova vuela en su nave por la escena y dispara a un enemigo mientras Froggy le habla">
           <div className="sky-shade" />
           <div className="fireflies" aria-hidden="true">
             {flies.map(([l, t, d], i) => (
@@ -195,13 +196,18 @@ export default function NovaBoy() {
             </div>
             <span className="nx">▼</span>
           </div>
-          <div className="spike" />
           <div className="slime">
             <b />
           </div>
-          <div className="shadow" />
-          <div className="nova">
-            <div className="run" />
+          <div className="ship">
+            <div className="body">
+              <span className="trail" aria-hidden="true">
+                <i /><i /><i />
+              </span>
+              <span className="fire" aria-hidden="true" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/novaboy/nave.png" alt="" />
+            </div>
           </div>
           <div className="flash" />
           <div className="laser" />
