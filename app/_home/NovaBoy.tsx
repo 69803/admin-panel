@@ -1,4 +1,4 @@
-﻿import { Press_Start_2P } from "next/font/google";
+import { Press_Start_2P } from "next/font/google";
 
 // Sección del videojuego Nova Boy en la portada: escena animada solo con CSS
 // (Nova vuela en su nave, dispara a un enemigo y Froggy le habla),
