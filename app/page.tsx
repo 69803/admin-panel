@@ -208,11 +208,11 @@ const CSS = `
     border:1px solid var(--line); background:
       radial-gradient(circle at 0% 0%, rgba(255,46,136,0.25), transparent 50%),
       radial-gradient(circle at 100% 100%, rgba(56,243,255,0.18), transparent 50%), var(--night-2);}
-  .chat{margin-top:30px; max-width:640px; display:grid; gap:14px;}
-  .bubble{max-width:85%; padding:14px 18px; border-radius:20px; line-height:1.5;}
-  .bubble.them{background:rgba(255,255,255,0.07); border:1px solid var(--line); border-bottom-left-radius:6px;}
-  .bubble.me{justify-self:end; background:linear-gradient(135deg,var(--sun),var(--pink)); color:#1a0420;
-    border-bottom-right-radius:6px; white-space:pre-wrap; word-break:break-word;}
+  .chat{margin-top:30px; max-width:640px; display:flex; flex-direction:column; gap:14px;}
+  .bubble{max-width:85%; padding:14px 18px; border-radius:20px; line-height:1.5; overflow-wrap:break-word;}
+  .bubble.them{align-self:flex-start; background:rgba(255,255,255,0.07); border:1px solid var(--line); border-bottom-left-radius:6px;}
+  .bubble.mine{align-self:flex-end; background:linear-gradient(135deg,var(--sun),var(--pink)); color:#1a0420;
+    border-bottom-right-radius:6px; white-space:pre-wrap;}
   .bubble small{display:block; font-size:0.75rem; opacity:0.7; margin-bottom:4px;}
   .typing{display:inline-flex; gap:5px;}
   .typing i{width:7px; height:7px; border-radius:50%; background:var(--ink-soft); animation:blink 1s infinite;}

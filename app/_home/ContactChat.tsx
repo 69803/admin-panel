@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 // Chat de contacto de la portada: lo que escribe el visitante se manda con
 // Web3Forms, que lo reenvía al correo asociado a esta clave. La clave es
@@ -59,13 +59,13 @@ export default function ContactChat() {
       </div>
 
       {sent.map((m, i) => (
-        <div key={i} style={{ display: "contents" }}>
-          <div className="bubble me">{m.text}</div>
+        <Fragment key={i}>
+          <div className="bubble mine">{m.text}</div>
           <div className="bubble them">
             <small>Krisonroad</small>
             ¡Recibido, gracias! Lo leemos todo{email ? " y te respondemos a tu correo" : ""}.
           </div>
-        </div>
+        </Fragment>
       ))}
 
       {sending && (
