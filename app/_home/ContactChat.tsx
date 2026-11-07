@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
-// Chat de contacto de la portada: lo que escribe el visitante se manda a
-// /api/contacto, que lo reenvía por correo. El correo de destino no aparece
-// en la página.
+// Chat de contacto de la portada: lo que escribe el visitante se manda con
+// Web3Forms, que lo reenvía al correo asociado a esta clave. La clave es
+// pública (Web3Forms la diseña para usarse en el navegador) y el correo de
+// destino no aparece en la página.
+const WEB3FORMS_KEY = "a6ff0155-569d-4549-8bd7-c46b5d63a5c5";
 type Sent = { text: string };
 
 export default function ContactChat() {
@@ -25,12 +27,21 @@ export default function ContactChat() {
     setError("");
     const text = message.trim();
     try {
-      const res = await fetch("/api/contacto", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message: text, website }),
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: "Nuevo mensaje desde krisonroad.com",
+          from_name: "krisonroad.com",
+          botcheck: website ? true : "",
+          name: name.trim() || "(sin nombre)",
+          email: email.trim() || undefined,
+          message: text,
+        }),
       });
-      if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) throw new Error();
       setSent((s) => [...s, { text }]);
       setMessage("");
     } catch {
