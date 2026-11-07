@@ -18,7 +18,8 @@ export default function ContactChat() {
   const [sent, setSent] = useState<Sent[]>([]);
   const [error, setError] = useState("");
 
-  const canSend = message.trim().length >= 2 && !sending;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canSend = message.trim().length >= 2 && emailOk && !sending;
 
   async function send(e: { preventDefault(): void }) {
     e.preventDefault();
@@ -36,7 +37,7 @@ export default function ContactChat() {
           from_name: "krisonroad.com",
           botcheck: website ? true : "",
           name: name.trim() || "(sin nombre)",
-          email: email.trim() || undefined,
+          email: email.trim(),
           message: text,
         }),
       });
@@ -55,7 +56,7 @@ export default function ContactChat() {
     <div className="chat">
       <div className="bubble them">
         <small>Krisonroad</small>
-        ¡Hola! 👋 Cuéntanos tu sugerencia, idea o problema. Si quieres respuesta, déjanos tu correo.
+        ¡Hola! 👋 Cuéntanos tu sugerencia, idea o problema y déjanos tu correo para responderte.
       </div>
 
       {sent.map((m, i) => (
@@ -63,7 +64,7 @@ export default function ContactChat() {
           <div className="bubble mine">{m.text}</div>
           <div className="bubble them">
             <small>Krisonroad</small>
-            ¡Recibido, gracias! Lo leemos todo{email ? " y te respondemos a tu correo" : ""}.
+            ¡Recibido, gracias! Te responderemos a tu correo.
           </div>
         </Fragment>
       ))}
@@ -90,7 +91,8 @@ export default function ContactChat() {
           />
           <input
             type="email"
-            placeholder="Tu correo (opcional)"
+            placeholder="Tu correo *"
+            required
             value={email}
             maxLength={200}
             onChange={(e) => setEmail(e.target.value)}
