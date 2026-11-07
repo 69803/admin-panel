@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import NightRoad from "./_home/NightRoad";
 import ContactChat from "./_home/ContactChat";
+import NovaBoy from "./_home/NovaBoy";
 
 // Portada pública de krisonroad.com: presentación del estudio, sus apps y
 // un chat de contacto que manda los mensajes por correo.
@@ -55,7 +56,7 @@ const CSS = `
   .nav-links{display:flex; gap:clamp(12px,3vw,28px); font-size:0.9rem;}
   .nav-links a{text-decoration:none; color:var(--ink-soft);}
   .nav-links a:hover{color:var(--ink);}
-  @media (max-width:480px){ .nav-links a:nth-child(2){display:none;} }
+  @media (max-width:480px){ .nav-links a:nth-child(3){display:none;} }
   .hero-copy{position:absolute; left:0; right:0; top:12%; text-align:center; padding:0 16px;}
   .eyebrow{display:inline-flex; gap:10px; align-items:center; font-size:0.72rem; letter-spacing:0.28em;
     text-transform:uppercase; color:var(--cyan); padding:7px 14px; border:1px solid rgba(56,243,255,0.35);
@@ -250,7 +251,7 @@ const CSS = `
 
 export default function Home() {
   const year = new Date().getFullYear();
-  const words = ["NUTRICIÓN", "MOVILIDAD", "TIEMPO REAL", "ANDROID", "PRIVACIDAD PRIMERO", "SUGERENCIAS BIENVENIDAS"];
+  const words = ["NUTRICIÓN", "MOVILIDAD", "TIEMPO REAL", "ANDROID", "VIDEOJUEGOS", "NOVA BOY", "SUGERENCIAS BIENVENIDAS"];
   const band = [...words, ...words];
 
   return (
@@ -267,6 +268,7 @@ export default function Home() {
           </Link>
           <div className="nav-links">
             <a href="#apps">Apps</a>
+            <a href="#novaboy">Nova Boy</a>
             <a href="#estudio">Estudio</a>
             <a href="#contacto">Contacto</a>
           </div>
@@ -274,18 +276,18 @@ export default function Home() {
 
         <div className="hero-copy">
           <span className="eyebrow">
-            <i /> Estudio de apps · Atenas
+            <i /> Apps y videojuegos
           </span>
           <h1 className="title display">KRISONROAD</h1>
           <p className="tagline">
-            Construimos <b>apps que viajan contigo</b>: del plato a la calle, cada día.
+            Construimos <b>apps y juegos que viajan contigo</b>: del plato a la calle… y hasta otros mundos.
           </p>
           <div className="cta">
             <a className="btn btn-hot" href="#apps">
               Ver nuestras apps →
             </a>
-            <a className="btn btn-ghost" href="#contacto">
-              Contacto
+            <a className="btn btn-ghost" href="#novaboy">
+              Nova Boy 🎮
             </a>
           </div>
         </div>
@@ -476,8 +478,11 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ============ VIDEOJUEGO ============ */}
+        <NovaBoy />
+
         {/* ============ ESTUDIO ============ */}
-        <section className="section" id="estudio" style={{ paddingTop: 0 }}>
+        <section className="section" id="estudio">
           <p className="kicker reveal">El estudio</p>
           <h2 className="h2 reveal">Pequeño, obsesivo y en camino.</h2>
           <p className="lead reveal">
@@ -488,7 +493,7 @@ export default function Home() {
             <div className="value reveal" style={{ ["--c" as string]: "#ff2e88" }}>
               <p className="big">2</p>
               <h3>Apps en camino</h3>
-              <p>Bloomu y ParkFinder, para Android.</p>
+              <p>Bloomu y ParkFinder, para Android. Y Nova Boy, nuestro primer videojuego.</p>
             </div>
             <div className="value reveal" style={{ ["--c" as string]: "#ffb347" }}>
               <p className="big">24/7</p>
