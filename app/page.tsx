@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import NightRoad from "./_home/NightRoad";
+import ContactChat from "./_home/ContactChat";
 
 // Portada pública de krisonroad.com: presentación del estudio, sus apps y
-// dónde están sus páginas legales (la revisa Meta al verificar el negocio).
+// un chat de contacto que manda los mensajes por correo.
 const display = Unbounded({ subsets: ["latin"], weight: ["400", "700", "900"], variable: "--font-display" });
 
 export const metadata: Metadata = {
@@ -117,10 +118,6 @@ const CSS = `
   .feats b{color:var(--ink); font-weight:600;}
   .dot{flex:none; width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:0.95rem;
     background:var(--glass); border:1px solid var(--line);}
-  .legal{display:flex; flex-wrap:wrap; gap:10px;}
-  .chip{font-size:0.85rem; text-decoration:none; padding:8px 14px; border-radius:999px; border:1px solid var(--line);
-    background:var(--glass); transition:border-color .2s, background .2s;}
-  .chip:hover{border-color:var(--pink); background:rgba(255,46,136,0.08);}
 
   /* ---------- TELÉFONOS ---------- */
   .phone{position:relative; width:min(290px,72vw); aspect-ratio:9/19; border-radius:44px; padding:12px;
@@ -211,16 +208,32 @@ const CSS = `
     border:1px solid var(--line); background:
       radial-gradient(circle at 0% 0%, rgba(255,46,136,0.25), transparent 50%),
       radial-gradient(circle at 100% 100%, rgba(56,243,255,0.18), transparent 50%), var(--night-2);}
-  .contact-grid{display:grid; grid-template-columns:1.2fr 1fr; gap:40px; margin-top:30px;}
-  @media (max-width:760px){ .contact-grid{grid-template-columns:1fr;} }
-  .contact dl{display:grid; grid-template-columns:max-content 1fr; gap:14px 22px; margin:0; align-content:start;}
-  .contact dt{color:var(--ink-faint); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.12em; padding-top:2px;}
-  .contact dd{margin:0;}
-  @media (max-width:480px){ .contact dl{grid-template-columns:1fr; gap:2px;} .contact dd{margin-bottom:12px;} }
-  .contact h3{margin:0 0 12px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--ink-faint); font-weight:500;}
-  .linklist{list-style:none; padding:0; margin:0 0 20px; display:grid; gap:6px;}
-  .linklist a{text-decoration:none; color:var(--ink-soft);}
-  .linklist a:hover{color:var(--pink);}
+  .chat{margin-top:30px; max-width:640px; display:grid; gap:14px;}
+  .bubble{max-width:85%; padding:14px 18px; border-radius:20px; line-height:1.5;}
+  .bubble.them{background:rgba(255,255,255,0.07); border:1px solid var(--line); border-bottom-left-radius:6px;}
+  .bubble.me{justify-self:end; background:linear-gradient(135deg,var(--sun),var(--pink)); color:#1a0420;
+    border-bottom-right-radius:6px; white-space:pre-wrap; word-break:break-word;}
+  .bubble small{display:block; font-size:0.75rem; opacity:0.7; margin-bottom:4px;}
+  .typing{display:inline-flex; gap:5px;}
+  .typing i{width:7px; height:7px; border-radius:50%; background:var(--ink-soft); animation:blink 1s infinite;}
+  .typing i:nth-child(2){animation-delay:.15s} .typing i:nth-child(3){animation-delay:.3s}
+  .composer{display:grid; gap:10px; padding:14px; border-radius:22px; border:1px solid var(--line);
+    background:rgba(5,4,13,0.55); backdrop-filter:blur(8px);}
+  .composer .row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:560px){ .composer .row{grid-template-columns:1fr;} }
+  .composer input, .composer textarea{width:100%; font:inherit; color:var(--ink); background:rgba(255,255,255,0.05);
+    border:1px solid var(--line); border-radius:14px; padding:12px 14px; outline:none; transition:border-color .2s;}
+  .composer textarea{resize:vertical; min-height:96px;}
+  .composer input:focus, .composer textarea:focus{border-color:var(--pink);}
+  .composer input::placeholder, .composer textarea::placeholder{color:var(--ink-faint);}
+  .composer .send{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
+  .composer .hint{font-size:0.8rem; color:var(--ink-faint);}
+  .composer button{border:0; cursor:pointer; font:inherit; font-weight:700; padding:12px 22px; border-radius:999px;
+    background:linear-gradient(135deg,var(--sun),var(--pink)); color:#1a0420; transition:transform .2s, opacity .2s;}
+  .composer button:hover{transform:translateY(-2px);}
+  .composer button:disabled{opacity:0.5; cursor:default; transform:none;}
+  .hp{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;}
+  .err{color:#ff8fa3; font-size:0.9rem; margin:0;}
 
   footer.foot{padding:40px 0 50px; color:var(--ink-faint); font-size:0.85rem; display:flex; justify-content:space-between;
     gap:16px; flex-wrap:wrap; border-top:1px solid var(--line); margin-top:clamp(70px,10vw,120px);}
@@ -237,7 +250,7 @@ const CSS = `
 
 export default function Home() {
   const year = new Date().getFullYear();
-  const words = ["NUTRICIÓN", "MOVILIDAD", "TIEMPO REAL", "ANDROID", "PRIVACIDAD PRIMERO", "HECHO EN ATENAS"];
+  const words = ["NUTRICIÓN", "MOVILIDAD", "TIEMPO REAL", "ANDROID", "PRIVACIDAD PRIMERO", "SUGERENCIAS BIENVENIDAS"];
   const band = [...words, ...words];
 
   return (
@@ -387,14 +400,6 @@ export default function Home() {
                   </span>
                 </li>
               </ul>
-              <div className="legal">
-                <Link className="chip" href="/admin/iq">
-                  Política de privacidad
-                </Link>
-                <Link className="chip" href="/admin/iq#eliminar-cuenta">
-                  Eliminar mi cuenta
-                </Link>
-              </div>
             </div>
           </div>
 
@@ -467,17 +472,6 @@ export default function Home() {
                   </span>
                 </li>
               </ul>
-              <div className="legal">
-                <Link className="chip" href="/parkfinder">
-                  Más información
-                </Link>
-                <Link className="chip" href="/parkfinder/privacidad">
-                  Política de privacidad
-                </Link>
-                <Link className="chip" href="/parkfinder/eliminar-datos">
-                  Eliminar mis datos
-                </Link>
-              </div>
             </div>
           </div>
         </section>
@@ -487,7 +481,7 @@ export default function Home() {
           <p className="kicker reveal">El estudio</p>
           <h2 className="h2 reveal">Pequeño, obsesivo y en camino.</h2>
           <p className="lead reveal">
-            Krisonroad es el estudio de Kristian Emilio Barrios Bastidas. Diseñamos, programamos y probamos
+            Krisonroad es un estudio independiente de apps móviles. Diseñamos, programamos y probamos
             cada app en la calle, con datos reales, antes de que llegue a tus manos.
           </p>
           <div className="values">
@@ -495,11 +489,6 @@ export default function Home() {
               <p className="big">2</p>
               <h3>Apps en camino</h3>
               <p>Bloomu y ParkFinder, para Android.</p>
-            </div>
-            <div className="value reveal" style={{ ["--c" as string]: "#38f3ff" }}>
-              <p className="big">0</p>
-              <h3>Datos vendidos</h3>
-              <p>Nunca vendemos tu información a terceros.</p>
             </div>
             <div className="value reveal" style={{ ["--c" as string]: "#ffb347" }}>
               <p className="big">24/7</p>
@@ -516,44 +505,15 @@ export default function Home() {
             <h2 className="h2" style={{ marginBottom: 0 }}>
               ¿Hablamos?
             </h2>
-            <div className="contact-grid">
-              <dl>
-                <dt>Responsable</dt>
-                <dd>Kristian Emilio Barrios Bastidas</dd>
-                <dt>Dirección</dt>
-                <dd>Epameinonda 5, 16121 Kaisariani, Atenas, Grecia</dd>
-                <dt>Correo</dt>
-                <dd>
-                  <a href="mailto:compipana1@gmail.com">compipana1@gmail.com</a>
-                </dd>
-              </dl>
-              <div>
-                <h3>Bloomu (Life Plus)</h3>
-                <ul className="linklist">
-                  <li>
-                    <Link href="/admin/iq">Política de privacidad</Link>
-                  </li>
-                  <li>
-                    <Link href="/admin/iq#eliminar-cuenta">Eliminar mi cuenta</Link>
-                  </li>
-                </ul>
-                <h3>ParkFinder</h3>
-                <ul className="linklist">
-                  <li>
-                    <Link href="/parkfinder/privacidad">Política de privacidad</Link>
-                  </li>
-                  <li>
-                    <Link href="/parkfinder/eliminar-datos">Eliminar mis datos</Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
+            <p className="lead" style={{ marginTop: 14 }}>
+              ¿Una idea, una sugerencia o algo que no funciona? Escríbenos aquí y te leemos.
+            </p>
+            <ContactChat />
           </div>
         </section>
 
         <footer className="foot">
-          <span>© {year} Krisonroad · Kristian Emilio Barrios Bastidas</span>
-          <span>Hecho en Atenas, Grecia</span>
+          <span>© {year} Krisonroad</span>
         </footer>
       </main>
     </div>
