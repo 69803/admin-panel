@@ -48,18 +48,18 @@ export default function ContactChat() {
     try {
       if (website) throw new Error(); // bot
       const params = {
-        name: name.trim() || "Visitante",
+        name: name.trim() || "Visitor",
         email: email.trim(),
         message: text,
-        title: "Nuevo mensaje de krisonroad.com",
-        time: new Date().toLocaleString("es"),
+        title: "New message from krisonroad.com",
+        time: new Date().toLocaleString("en-GB"),
       };
       await sendEmail(EMAILJS.toOwner, params);
       await sendEmail(EMAILJS.autoReply, params).catch(() => {});
       setSent((s) => [...s, { text }]);
       setMessage("");
     } catch {
-      setError("No se pudo enviar. Inténtalo de nuevo en un momento.");
+      setError("Could not send your message. Please try again in a moment.");
     } finally {
       setSending(false);
     }
@@ -69,7 +69,7 @@ export default function ContactChat() {
     <div className="chat">
       <div className="bubble them">
         <small>Krisonroad</small>
-        ¡Hola! 👋 Cuéntanos tu sugerencia, idea o problema y déjanos tu correo para responderte.
+        Hi! 👋 Tell us your suggestion, idea or problem, and leave your email so we can reply.
       </div>
 
       {sent.map((m, i) => (
@@ -77,14 +77,14 @@ export default function ContactChat() {
           <div className="bubble mine">{m.text}</div>
           <div className="bubble them">
             <small>Krisonroad</small>
-            ¡Recibido, gracias! Te enviamos una confirmación a tu correo y te responderemos pronto.
+            Got it, thank you! We sent a confirmation to your email and will reply soon.
           </div>
         </Fragment>
       ))}
 
       {sending && (
         <div className="bubble them" aria-live="polite">
-          <span className="typing" aria-label="Enviando">
+          <span className="typing" aria-label="Sending">
             <i />
             <i />
             <i />
@@ -96,42 +96,42 @@ export default function ContactChat() {
         <div className="row">
           <input
             type="text"
-            placeholder="Tu nombre (opcional)"
+            placeholder="Your name (optional)"
             value={name}
             maxLength={100}
             onChange={(e) => setName(e.target.value)}
-            aria-label="Tu nombre"
+            aria-label="Your name"
           />
           <input
             type="email"
-            placeholder="Tu correo *"
+            placeholder="Your email *"
             required
             value={email}
             maxLength={200}
             onChange={(e) => setEmail(e.target.value)}
-            aria-label="Tu correo"
+            aria-label="Your email"
           />
         </div>
         <textarea
-          placeholder="Escribe tu mensaje…"
+          placeholder="Write your message…"
           value={message}
           maxLength={4000}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send(e);
           }}
-          aria-label="Tu mensaje"
+          aria-label="Your message"
           required
         />
         <label className="hp" aria-hidden="true">
-          No llenar
+          Leave empty
           <input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
         </label>
         {error && <p className="err">{error}</p>}
         <div className="send">
-          <span className="hint">Ctrl + Enter para enviar</span>
+          <span className="hint">Ctrl + Enter to send</span>
           <button type="submit" disabled={!canSend}>
-            {sending ? "Enviando…" : "Enviar ➤"}
+            {sending ? "Sending…" : "Send ➤"}
           </button>
         </div>
       </form>

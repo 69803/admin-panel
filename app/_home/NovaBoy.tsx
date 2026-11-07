@@ -1,4 +1,4 @@
-import { Press_Start_2P } from "next/font/google";
+﻿import { Press_Start_2P } from "next/font/google";
 
 // Sección del videojuego Nova Boy en la portada: escena animada solo con CSS
 // (Nova vuela en su nave, dispara a un enemigo y Froggy le habla),
@@ -116,17 +116,21 @@ const CSS = `
   .hud .lvl{background:rgba(0,0,0,0.45); padding:7px 10px; border:2px solid #fff; border-radius:4px;}
 
   /* diálogo de Froggy */
-  .dlg{position:absolute; z-index:8; right:clamp(10px,2.5vw,26px); top:clamp(54px,7vw,70px); width:min(58%,420px);
+  .dlg{position:absolute; z-index:8; right:clamp(10px,2.5vw,26px); top:clamp(54px,7vw,70px); width:min(66%,560px);
     display:flex; gap:12px; align-items:center; padding:12px; border:3px solid #fff; border-radius:8px;
     background:rgba(8,14,32,0.88); box-shadow:6px 6px 0 rgba(0,0,0,0.5); animation:nbDlg 6s steps(1) infinite;}
   @keyframes nbDlg{0%,74%{opacity:1} 75%,100%{opacity:1}}
   .dlg img{width:clamp(46px,6vw,68px); height:clamp(46px,6vw,68px); border-radius:6px; border:2px solid #3fb43a; flex:none; object-fit:cover;}
   .dlg .nm{font-family:var(--font-pixel),monospace; font-size:clamp(0.5rem,1vw,0.68rem); color:#ffd84a; margin:0 0 8px;}
   .dlg .tx{font-family:var(--font-pixel),monospace; font-size:clamp(0.48rem,1vw,0.66rem); line-height:1.7; color:#fff; margin:0;
-    overflow:hidden; white-space:nowrap; width:0; animation:nbType 6s steps(30) infinite;}
-  @keyframes nbType{0%,5%{width:0} 45%,100%{width:30ch}}
+  }
+  .dlg .tx span{display:block; overflow:hidden; white-space:nowrap; width:0;}
+  .dlg .tx .l1{animation:nbType1 7s steps(41) infinite;}
+  .dlg .tx .l2{animation:nbType2 7s steps(28) infinite;}
+  @keyframes nbType1{0%,4%{width:0} 34%,100%{width:41ch}}
+  @keyframes nbType2{0%,36%{width:0} 58%,100%{width:28ch}}
   .dlg .nx{position:absolute; right:10px; bottom:6px; color:#ffd84a; font-size:0.7rem; animation:blink .8s steps(1) infinite;}
-  @media (max-width:640px){ .dlg .tx{white-space:normal; width:auto; animation:none;} }
+  @media (max-width:640px){ .dlg .tx span{display:inline; white-space:normal; width:auto; animation:none;} }
 
   /* ---------- Info + construcción ---------- */
   .nb-grid{display:grid; grid-template-columns:1.15fr 0.85fr; gap:clamp(28px,5vw,64px); align-items:start;}
@@ -153,7 +157,7 @@ const CSS = `
   @keyframes nbPoster{50%{transform:rotate(1deg) translateY(-12px)}}
   .nb-controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; font-size:0.85rem; color:#b9b3d6;}
   .key{font-family:var(--font-pixel),monospace; font-size:0.55rem; padding:6px 8px; border:2px solid #fff; border-bottom-width:4px; border-radius:4px; color:#fff;}
-  @media (prefers-reduced-motion: reduce){ .nb *{animation:none !important;} .dlg .tx{width:auto;} }
+  @media (prefers-reduced-motion: reduce){ .nb *{animation:none !important;} .dlg .tx span{width:auto;} }
 `;
 
 const flies = [
@@ -165,18 +169,18 @@ export default function NovaBoy() {
     <section className={`nb ${pixel.variable}`} id="novaboy" aria-labelledby="nb-title">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="nb-in">
-        <p className="nb-kicker reveal">▶ NUESTRO VIDEOJUEGO</p>
+        <p className="nb-kicker reveal">▶ OUR VIDEO GAME</p>
         <h2 className="nb-title reveal" id="nb-title">
           NOVA BOY
         </h2>
         <p className="nb-lead reveal">
-          Un pequeño astronauta, un mundo desconocido y una sola misión: <b>encontrar a su amor</b>. Corre, salta y
-          dispara a través de acantilados flotantes, plataformas que se mueven y criaturas extrañas, con la ayuda de
-          amigos como Froggy.
+          A little astronaut, an unknown world and a single mission: <b>find his love</b>. Run, jump and shoot
+          your way across floating cliffs, moving platforms and strange creatures, with help from friends like
+          Froggy.
         </p>
 
         {/* Escena animada */}
-        <div className="stage-nb reveal" role="img" aria-label="Nova vuela en su nave por la escena y dispara a un enemigo mientras Froggy le habla">
+        <div className="stage-nb reveal" role="img" aria-label="Nova flies his ship across the scene and shoots an enemy while Froggy talks to him">
           <div className="sky-shade" />
           <div className="fireflies" aria-hidden="true">
             {flies.map(([l, t, d], i) => (
@@ -185,14 +189,17 @@ export default function NovaBoy() {
           </div>
           <div className="hud" aria-hidden="true">
             <span className="hearts">♥♥♥</span>
-            <span className="lvl">MUNDO 1-1</span>
+            <span className="lvl">WORLD 1-1</span>
           </div>
           <div className="dlg" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/novaboy/froggy.webp" alt="" />
             <div>
               <p className="nm">FROGGY</p>
-              <p className="tx">¡Suerte encontrando a tu amor!</p>
+              <p className="tx">
+                <span className="l1">Kris! Let&apos;s hurry and build the game,</span>{" "}
+                <span className="l2">we don&apos;t have enough time!</span>
+              </p>
             </div>
             <span className="nx">▼</span>
           </div>
@@ -221,38 +228,38 @@ export default function NovaBoy() {
         <div className="nb-grid">
           <div className="reveal">
             <ul className="chips">
-              <li>PLATAFORMAS 2D</li>
+              <li>2D PLATFORMER</li>
               <li>PIXEL ART</li>
-              <li>HISTORIA</li>
-              <li>PLATAFORMAS MÓVILES</li>
-              <li>ZONAS DE LEVITACIÓN</li>
-              <li>DIÁLOGOS</li>
+              <li>STORY</li>
+              <li>MOVING PLATFORMS</li>
+              <li>LEVITATION ZONES</li>
+              <li>DIALOGUES</li>
               <li>CHECKPOINTS</li>
             </ul>
             <div className="build">
               <div className="tape" />
-              <h4>🚧 EN CONSTRUCCIÓN</h4>
+              <h4>🚧 UNDER CONSTRUCTION</h4>
               <p>
-                Estamos construyendo los primeros mundos de Nova Boy: niveles, enemigos, personajes y toda la historia.
-                Muy pronto podrás jugarlo.
+                We are building the first worlds of Nova Boy: levels, enemies, characters and the whole story.
+                You will be able to play it very soon.
               </p>
               <div className="bar">
                 <i />
               </div>
               <div className="bar-l">
-                <span>CARGANDO…</span>
+                <span>LOADING…</span>
                 <span>WIP</span>
               </div>
             </div>
-            <div className="nb-controls" aria-label="Controles">
-              <span className="key">← →</span> correr <span className="key">ESPACIO</span> saltar{" "}
-              <span className="key">CLIC</span> disparar
+            <div className="nb-controls" aria-label="Controls">
+              <span className="key">← →</span> run <span className="key">SPACE</span> jump{" "}
+              <span className="key">CLICK</span> shoot
             </div>
           </div>
           <div className="poster reveal">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/novaboy/poster.webp" alt="Portada de Nova Boy: Nova al borde de un acantilado mirando un sol entre nubes" />
-            <span>PRÓXIMAMENTE</span>
+            <img src="/novaboy/poster.webp" alt="Nova Boy cover art: Nova on the edge of a cliff looking at a sun behind the clouds" />
+            <span>COMING SOON</span>
           </div>
         </div>
       </div>

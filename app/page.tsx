@@ -10,9 +10,9 @@ import NovaBoy from "./_home/NovaBoy";
 const display = Unbounded({ subsets: ["latin"], weight: ["400", "700", "900"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: "Krisonroad — Apps que viajan contigo",
+  title: "Krisonroad — Apps that travel with you",
   description:
-    "Krisonroad es un estudio de apps móviles en Atenas. Creamos Bloomu (Life Plus) y ParkFinder.",
+    "Krisonroad is an independent studio making mobile apps and games: Bloomu (Life Plus), ParkFinder and Nova Boy.",
 };
 
 const CSS = `
@@ -251,11 +251,11 @@ const CSS = `
 
 export default function Home() {
   const year = new Date().getFullYear();
-  const words = ["NUTRICIÓN", "MOVILIDAD", "TIEMPO REAL", "ANDROID", "VIDEOJUEGOS", "NOVA BOY", "SUGERENCIAS BIENVENIDAS"];
+  const words = ["NUTRITION", "MOBILITY", "REAL TIME", "ANDROID", "VIDEO GAMES", "NOVA BOY", "IDEAS WELCOME"];
   const band = [...words, ...words];
 
   return (
-    <div className={display.variable}>
+    <div className={display.variable} lang="en">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* ============ HERO ============ */}
@@ -269,22 +269,22 @@ export default function Home() {
           <div className="nav-links">
             <a href="#apps">Apps</a>
             <a href="#novaboy">Nova Boy</a>
-            <a href="#estudio">Estudio</a>
-            <a href="#contacto">Contacto</a>
+            <a href="#estudio">Studio</a>
+            <a href="#contacto">Contact</a>
           </div>
         </nav>
 
         <div className="hero-copy">
           <span className="eyebrow">
-            <i /> Apps y videojuegos
+            <i /> Apps &amp; video games
           </span>
           <h1 className="title display">KRISONROAD</h1>
           <p className="tagline">
-            Construimos <b>apps y juegos que viajan contigo</b>: del plato a la calle… y hasta otros mundos.
+            We build <b>apps and games that travel with you</b>: from your plate to the street… and on to other worlds.
           </p>
           <div className="cta">
             <a className="btn btn-hot" href="#apps">
-              Ver nuestras apps →
+              See our apps →
             </a>
             <a className="btn btn-ghost" href="#novaboy">
               Nova Boy 🎮
@@ -293,7 +293,7 @@ export default function Home() {
         </div>
 
         <div className="scroll-hint" aria-hidden="true">
-          Baja
+          Scroll
           <span />
         </div>
       </header>
@@ -313,46 +313,46 @@ export default function Home() {
       <main className="wrap">
         {/* ============ APPS ============ */}
         <section className="section" id="apps">
-          <p className="kicker reveal">Nuestras apps</p>
-          <h2 className="h2 reveal">Dos apps. Un mismo camino.</h2>
+          <p className="kicker reveal">Our apps</p>
+          <h2 className="h2 reveal">Two apps. One road.</h2>
           <p className="lead reveal">
-            Cuidamos lo que comes y te ayudamos a encontrar dónde estacionar. Apps simples por fuera, muy
-            pensadas por dentro.
+            We take care of what you eat and help you find a place to park. Simple on the outside, deeply
+            thought out on the inside.
           </p>
 
           {/* Bloomu */}
           <div className="showcase">
             <div className="stage reveal">
               <div className="halo" style={{ background: "radial-gradient(circle,#8fe62d,#2b6a00 60%,transparent 70%)" }} />
-              <div className="phone bloomu" role="img" aria-label="Pantalla de Bloomu con el resumen de calorías del día">
+              <div className="phone bloomu" role="img" aria-label="Bloomu screen with the daily calorie summary">
                 <div className="notch" />
                 <div className="screen">
                   <div className="s-top">
-                    <span>Hoy</span>
-                    <span className="pill">🔥 12 días</span>
+                    <span>Today</span>
+                    <span className="pill">🔥 12 days</span>
                   </div>
                   <div className="ring">
                     <div className="ring-in">
                       <div>
-                        <b>1 420</b>
-                        <small>de 2 000 kcal</small>
+                        <b>1,420</b>
+                        <small>of 2,000 kcal</small>
                       </div>
                     </div>
                   </div>
                   <div className="macro">
-                    Proteína
+                    Protein
                     <div className="bar">
                       <i style={{ width: "78%", background: "#4c8f00" }} />
                     </div>
                   </div>
                   <div className="macro">
-                    Carbos
+                    Carbs
                     <div className="bar">
                       <i style={{ width: "56%", background: "#f2a93b", animationDelay: ".2s" }} />
                     </div>
                   </div>
                   <div className="macro">
-                    Grasas
+                    Fat
                     <div className="bar">
                       <i style={{ width: "42%", background: "#e5484d", animationDelay: ".4s" }} />
                     </div>
@@ -365,8 +365,8 @@ export default function Home() {
                   <div className="meal">
                     <span className="em">🥑</span>
                     <div>
-                      <b>Tostada de aguacate</b>
-                      <small>320 kcal · analizada con IA</small>
+                      <b>Avocado toast</b>
+                      <small>320 kcal · analyzed by AI</small>
                     </div>
                   </div>
                 </div>
@@ -374,31 +374,31 @@ export default function Home() {
             </div>
 
             <div className="reveal">
-              <p className="app-sub">Nutrición y bienestar</p>
+              <p className="app-sub">Nutrition &amp; wellness</p>
               <h3 className="app-name" style={{ color: "var(--lime)" }}>
                 Bloomu
               </h3>
               <p className="lead">
-                También conocida como <b>Life Plus</b>. Tu diario de comidas, medidas y progreso, con
-                especialistas de verdad a tu lado.
+                Also known as <b>Life Plus</b>. Your journal of meals, measurements and progress, with real
+                specialists by your side.
               </p>
               <ul className="feats">
                 <li>
                   <span className="dot">📸</span>
                   <span>
-                    <b>Foto al plato</b>, y la IA estima calorías y nutrientes.
+                    <b>Snap your plate</b> and AI estimates calories and nutrients.
                   </span>
                 </li>
                 <li>
                   <span className="dot">📈</span>
                   <span>
-                    <b>Tu progreso</b> en peso, medidas, fotos, agua, sueño y ayuno.
+                    <b>Your progress</b> in weight, measurements, photos, water, sleep and fasting.
                   </span>
                 </li>
                 <li>
                   <span className="dot">🧑‍⚕️</span>
                   <span>
-                    <b>Especialistas</b> en nutrición que siguen tu evolución.
+                    <b>Nutrition specialists</b> who follow your journey.
                   </span>
                 </li>
               </ul>
@@ -409,7 +409,7 @@ export default function Home() {
           <div className="showcase flip">
             <div className="stage reveal">
               <div className="halo" style={{ background: "radial-gradient(circle,#38f3ff,#1747c9 60%,transparent 70%)" }} />
-              <div className="phone park" role="img" aria-label="Mapa de ParkFinder con lugares de estacionamiento liberados">
+              <div className="phone park" role="img" aria-label="ParkFinder map with freed parking spots">
                 <div className="notch" />
                 <div className="screen">
                   <div className="map" />
@@ -417,7 +417,7 @@ export default function Home() {
                     <path d="M50 118 C 45 100, 30 92, 28 72" fill="none" stroke="#38f3ff" strokeWidth="1.4" />
                   </svg>
                   <div className="pf-head">
-                    ParkFinder <span>● 3 lugares cerca</span>
+                    ParkFinder <span>● 3 spots nearby</span>
                   </div>
                   <span className="pin g" style={{ left: "22%", top: "33%" }}>
                     <b>P</b>
@@ -437,8 +437,8 @@ export default function Home() {
                       <b>P</b>
                     </span>
                     <div>
-                      <b>Lugar libre</b>
-                      <small>a 120 m · liberado hace 2 min</small>
+                      <b>Free spot</b>
+                      <small>120 m away · freed 2 min ago</small>
                     </div>
                   </div>
                 </div>
@@ -446,31 +446,31 @@ export default function Home() {
             </div>
 
             <div className="reveal">
-              <p className="app-sub">Estacionamiento en tiempo real</p>
+              <p className="app-sub">Real-time parking</p>
               <h3 className="app-name" style={{ color: "var(--cyan)" }}>
                 ParkFinder
               </h3>
               <p className="lead">
-                Sabe dónde dejaste tu carro y, cuando te vas, avisa a los conductores cercanos de que el lugar
-                quedó libre. Sin tocar nada.
+                It knows where you left your car and, when you drive off, tells nearby drivers the spot is free.
+                No taps needed.
               </p>
               <ul className="feats">
                 <li>
                   <span className="dot">🚗</span>
                   <span>
-                    <b>Detección automática</b> de dónde estacionas, con GPS y el Bluetooth de tu carro.
+                    <b>Automatic detection</b> of where you park, using GPS and your car&apos;s Bluetooth.
                   </span>
                 </li>
                 <li>
                   <span className="dot">🟢</span>
                   <span>
-                    <b>Lugares liberados</b> en el mapa, al momento, cerca de ti.
+                    <b>Freed spots</b> on the map, instantly, near you.
                   </span>
                 </li>
                 <li>
                   <span className="dot">🔒</span>
                   <span>
-                    <b>Tus recorridos se quedan en tu teléfono.</b> Solo se comparte el lugar que liberas.
+                    <b>Your trips stay on your phone.</b> Only the spot you free up is shared.
                   </span>
                 </li>
               </ul>
@@ -483,22 +483,22 @@ export default function Home() {
 
         {/* ============ ESTUDIO ============ */}
         <section className="section" id="estudio">
-          <p className="kicker reveal">El estudio</p>
-          <h2 className="h2 reveal">Pequeño, obsesivo y en camino.</h2>
+          <p className="kicker reveal">The studio</p>
+          <h2 className="h2 reveal">Small, obsessive and on the road.</h2>
           <p className="lead reveal">
-            Krisonroad es un estudio independiente de apps móviles. Diseñamos, programamos y probamos
-            cada app en la calle, con datos reales, antes de que llegue a tus manos.
+            Krisonroad is an independent studio for mobile apps and games. We design, build and test every
+            app out on the street, with real data, before it reaches your hands.
           </p>
           <div className="values">
             <div className="value reveal" style={{ ["--c" as string]: "#ff2e88" }}>
               <p className="big">2</p>
-              <h3>Apps en camino</h3>
-              <p>Bloomu y ParkFinder, para Android. Y Nova Boy, nuestro primer videojuego.</p>
+              <h3>Apps on the way</h3>
+              <p>Bloomu and ParkFinder for Android. Plus Nova Boy, our first video game.</p>
             </div>
             <div className="value reveal" style={{ ["--c" as string]: "#ffb347" }}>
               <p className="big">24/7</p>
-              <h3>Funcionan solas</h3>
-              <p>ParkFinder detecta y avisa en segundo plano, sin que abras la app.</p>
+              <h3>They run on their own</h3>
+              <p>ParkFinder detects and notifies in the background, without you opening the app.</p>
             </div>
           </div>
         </section>
@@ -506,12 +506,12 @@ export default function Home() {
         {/* ============ CONTACTO ============ */}
         <section id="contacto">
           <div className="contact reveal">
-            <p className="kicker">Contacto</p>
+            <p className="kicker">Contact</p>
             <h2 className="h2" style={{ marginBottom: 0 }}>
-              ¿Hablamos?
+              Let&apos;s talk
             </h2>
             <p className="lead" style={{ marginTop: 14 }}>
-              ¿Una idea, una sugerencia o algo que no funciona? Escríbenos aquí y te leemos.
+              Got an idea, a suggestion or something that isn&apos;t working? Write to us here, we read everything.
             </p>
             <ContactChat />
           </div>
