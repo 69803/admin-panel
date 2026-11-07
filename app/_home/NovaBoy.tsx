@@ -47,11 +47,13 @@ const CSS = `
   @keyframes nbGround{to{background-position:-48px 0,-48px 0}}
 
   /* Nova */
-  .nova{position:absolute; z-index:4; left:16%; bottom:22%; width:clamp(64px,9vw,104px);
+  .nova{position:absolute; z-index:4; left:16%; bottom:21%; width:clamp(76px,10.5vw,124px);
     animation:nbJump 6s cubic-bezier(.3,.7,.4,1) infinite;}
-  .nova img{display:block; width:100%; image-rendering:pixelated; animation:nbRun .3s steps(2) infinite;
+  /* animación de correr: tira de 6 cuadros (nova-run.png, cada cuadro 150×183) */
+  .nova .run{width:100%; aspect-ratio:150/183; background:url(/novaboy/nova-run.png) 0 0/600% 100% no-repeat;
+    image-rendering:pixelated; animation:nbRun .6s steps(6) infinite;
     filter:drop-shadow(0 0 14px rgba(255,140,40,0.55));}
-  @keyframes nbRun{50%{transform:translateY(-4px) rotate(-2deg)}}
+  @keyframes nbRun{to{background-position:120% 0}}
   @keyframes nbJump{
     0%,12%{transform:translateY(0) scale(1)}
     13%{transform:translateY(0) scale(1.08,0.9)}
@@ -199,8 +201,7 @@ export default function NovaBoy() {
           </div>
           <div className="shadow" />
           <div className="nova">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/novaboy/nova.png" alt="" />
+            <div className="run" />
           </div>
           <div className="flash" />
           <div className="laser" />
