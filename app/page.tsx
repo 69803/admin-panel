@@ -12,7 +12,7 @@ const display = Unbounded({ subsets: ["latin"], weight: ["400", "700", "900"], v
 export const metadata: Metadata = {
   title: "Krisonroad — Apps that travel with you",
   description:
-    "Krisonroad is an independent studio making mobile apps and games: Bloomu (Life Plus), ParkFinder and Nova Boy.",
+    "Krisonroad is an independent studio making mobile apps and games: Bloomu (Life Plus), Spotbase and Nova Boy.",
 };
 
 const CSS = `
@@ -155,7 +155,7 @@ const CSS = `
   .meal .em{font-size:1.3rem;}
   .meal small{display:block; color:#8b9382;}
 
-  /* ParkFinder */
+  /* Spotbase */
   .park{--glow:rgba(56,243,255,0.5);}
   .park .screen{padding:0; background:#1b2233;}
   .map{position:absolute; inset:0;
@@ -405,11 +405,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ParkFinder */}
+          {/* Spotbase */}
           <div className="showcase flip">
             <div className="stage reveal">
               <div className="halo" style={{ background: "radial-gradient(circle,#38f3ff,#1747c9 60%,transparent 70%)" }} />
-              <div className="phone park" role="img" aria-label="ParkFinder map with freed parking spots">
+              <div className="phone park" role="img" aria-label="Spotbase map with freed parking spots">
                 <div className="notch" />
                 <div className="screen">
                   <div className="map" />
@@ -417,7 +417,7 @@ export default function Home() {
                     <path d="M50 118 C 45 100, 30 92, 28 72" fill="none" stroke="#38f3ff" strokeWidth="1.4" />
                   </svg>
                   <div className="pf-head">
-                    ParkFinder <span>● 3 spots nearby</span>
+                    Spotbase <span>● 3 spots nearby</span>
                   </div>
                   <span className="pin g" style={{ left: "22%", top: "33%" }}>
                     <b>P</b>
@@ -448,7 +448,7 @@ export default function Home() {
             <div className="reveal">
               <p className="app-sub">Real-time parking</p>
               <h3 className="app-name" style={{ color: "var(--cyan)" }}>
-                ParkFinder
+                Spotbase
               </h3>
               <p className="lead">
                 It knows where you left your car and, when you drive off, tells nearby drivers the spot is free.
@@ -493,12 +493,12 @@ export default function Home() {
             <div className="value reveal" style={{ ["--c" as string]: "#ff2e88" }}>
               <p className="big">2</p>
               <h3>Apps on the way</h3>
-              <p>Bloomu and ParkFinder for Android. Plus Nova Boy, our first video game.</p>
+              <p>Bloomu and Spotbase for Android. Plus Nova Boy, our first video game.</p>
             </div>
             <div className="value reveal" style={{ ["--c" as string]: "#ffb347" }}>
               <p className="big">24/7</p>
               <h3>They run on their own</h3>
-              <p>ParkFinder detects and notifies in the background, without you opening the app.</p>
+              <p>Spotbase detects and notifies in the background, without you opening the app.</p>
             </div>
           </div>
         </section>

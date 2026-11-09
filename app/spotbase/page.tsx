@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "ParkFinder",
-  description: "ParkFinder: encuentra y comparte estacionamientos en tiempo real.",
+  title: "Spotbase",
+  description: "Spotbase: encuentra y comparte estacionamientos en tiempo real.",
 };
 
-export default function ParkFinderHome() {
+export default function SpotbaseHome() {
   return (
     <main>
       <h1>Encuentra y comparte estacionamientos en tiempo real</h1>
       <p className="dek">
-        ParkFinder detecta automáticamente dónde estacionas tu carro y, cuando te vas, avisa a los
+        Spotbase detecta automáticamente dónde estacionas tu carro y, cuando te vas, avisa a los
         conductores cercanos que ese lugar quedó libre.
       </p>
 
@@ -35,13 +35,13 @@ export default function ParkFinderHome() {
       <section>
         <h2>Cuenta</h2>
         <p>
-          Para usar ParkFinder entras con tu cuenta de Google o de Facebook. En el mapa, los lugares que
+          Para usar Spotbase entras con tu cuenta de Google o de Facebook. En el mapa, los lugares que
           liberas muestran tu nombre y foto públicos.
         </p>
         <div className="card">
           <p>
-            Lee nuestra <Link href="/parkfinder/privacidad">Política de Privacidad</Link> o aprende cómo{" "}
-            <Link href="/parkfinder/eliminar-datos">eliminar tu cuenta y tus datos</Link>.
+            Lee nuestra <Link href="/spotbase/privacidad">Política de Privacidad</Link> o aprende cómo{" "}
+            <Link href="/spotbase/eliminar-datos">eliminar tu cuenta y tus datos</Link>.
           </p>
         </div>
       </section>

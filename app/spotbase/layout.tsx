@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-// Páginas públicas de ParkFinder (las piden Google y Meta para el inicio de
-// sesión): /parkfinder, /parkfinder/privacidad y /parkfinder/eliminar-datos.
+// Páginas públicas de Spotbase (las piden Google y Meta para el inicio de
+// sesión): /spotbase, /spotbase/privacidad y /spotbase/eliminar-datos.
 const CSS = `
   :root{
     --paper:#F6F8FC;
@@ -60,24 +60,26 @@ const CSS = `
     font-size:0.85rem; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;}
 `;
 
-export default function ParkFinderLayout({ children }: { children: React.ReactNode }) {
+export default function SpotbaseLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="pf">
         <header>
-          <Link href="/parkfinder" className="brand">
-            <span className="p">P</span>ParkFinder
+          <Link href="/spotbase" className="brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/spotbase-logo.png" alt="" width={30} height={34} />
+            Spotbase
           </Link>
           <nav>
-            <Link href="/parkfinder">Inicio</Link>
-            <Link href="/parkfinder/privacidad">Privacidad</Link>
-            <Link href="/parkfinder/eliminar-datos">Eliminar mis datos</Link>
+            <Link href="/spotbase">Inicio</Link>
+            <Link href="/spotbase/privacidad">Privacidad</Link>
+            <Link href="/spotbase/eliminar-datos">Eliminar mis datos</Link>
           </nav>
         </header>
         {children}
         <footer>
-          <span>ParkFinder — encuentra y comparte estacionamientos</span>
+          <span>Spotbase — encuentra y comparte estacionamientos</span>
           <span>
             Contacto: <a href="mailto:kristianbarrios8@gmail.com">kristianbarrios8@gmail.com</a>
           </span>

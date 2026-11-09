@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad de ParkFinder",
-  description: "Qué datos recopila ParkFinder, para qué los usa y con quién los comparte.",
+  title: "Política de Privacidad de Spotbase",
+  description: "Qué datos recopila Spotbase, para qué los usa y con quién los comparte.",
 };
 
-export default function ParkFinderPrivacy() {
+export default function SpotbasePrivacy() {
   return (
     <main>
-      <h1>Política de Privacidad de ParkFinder</h1>
+      <h1>Política de Privacidad de Spotbase</h1>
       <p className="dek">
-        ParkFinder detecta dónde estacionas y avisa a otros conductores cuando liberas tu lugar. Esta
+        Spotbase detecta dónde estacionas y avisa a otros conductores cuando liberas tu lugar. Esta
         página explica, sin letra chica, qué datos usamos, para qué y con quién los compartimos.
       </p>
-      <p className="meta">Vigente desde: 3 de noviembre de 2026 · Aplica a: la app ParkFinder (Android)</p>
+      <p className="meta">Vigente desde: 3 de noviembre de 2026 · Aplica a: la app Spotbase (Android)</p>
 
       <section>
         <h2>1. Información que recopilamos</h2>
@@ -149,14 +149,14 @@ export default function ParkFinderPrivacy() {
         </p>
         <p>
           Puedes pedir que eliminemos tu cuenta y todos tus datos en cualquier momento: mira{" "}
-          <Link href="/parkfinder/eliminar-datos">cómo eliminar tus datos</Link>.
+          <Link href="/spotbase/eliminar-datos">cómo eliminar tus datos</Link>.
         </p>
       </section>
 
       <section>
         <h2>7. Menores de edad</h2>
         <p>
-          ParkFinder está pensada para conductores y no está dirigida a menores de 18 años. Si crees que un
+          Spotbase está pensada para conductores y no está dirigida a menores de 18 años. Si crees que un
           menor nos dio datos personales, escríbenos para eliminarlos.
         </p>
       </section>

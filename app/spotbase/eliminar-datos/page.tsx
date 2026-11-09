@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Eliminar tus datos de ParkFinder",
-  description: "Cómo pedir que eliminemos tu cuenta de ParkFinder y todos tus datos.",
+  title: "Eliminar tus datos de Spotbase",
+  description: "Cómo pedir que eliminemos tu cuenta de Spotbase y todos tus datos.",
 };
 
-export default function ParkFinderDeleteData() {
+export default function SpotbaseDeleteData() {
   return (
     <main>
       <h1>Eliminar tu cuenta y tus datos</h1>
       <p className="dek">
-        Puedes pedir en cualquier momento que eliminemos tu cuenta de ParkFinder y todos los datos
+        Puedes pedir en cualquier momento que eliminemos tu cuenta de Spotbase y todos los datos
         asociados, hayas entrado con Google o con Facebook.
       </p>
 
@@ -19,13 +19,13 @@ export default function ParkFinderDeleteData() {
         <ol>
           <li>
             Escríbenos a{" "}
-            <a href="mailto:kristianbarrios8@gmail.com?subject=Eliminar%20cuenta%20ParkFinder">
+            <a href="mailto:kristianbarrios8@gmail.com?subject=Eliminar%20cuenta%20Spotbase">
               <strong>kristianbarrios8@gmail.com</strong>
             </a>{" "}
             desde el correo de tu cuenta de Google o Facebook.
           </li>
           <li>
-            En el asunto escribe <strong>&quot;Eliminar cuenta ParkFinder&quot;</strong>. Si lo sabes, incluye
+            En el asunto escribe <strong>&quot;Eliminar cuenta Spotbase&quot;</strong>. Si lo sabes, incluye
             tu identificador público (por ejemplo, CM4587), que aparece en la app en <em>Mi cuenta</em>.
           </li>
           <li>
@@ -57,9 +57,9 @@ export default function ParkFinderDeleteData() {
         <h2>Si entraste con Facebook</h2>
         <div className="card">
           <p>
-            También puedes quitar el acceso de ParkFinder a tu cuenta desde Facebook:{" "}
-            <em>Configuración y privacidad → Configuración → Apps y sitios web → ParkFinder → Eliminar</em>.
-            Eso corta el acceso, pero para borrar tus datos de ParkFinder sigue los pasos de arriba.
+            También puedes quitar el acceso de Spotbase a tu cuenta desde Facebook:{" "}
+            <em>Configuración y privacidad → Configuración → Apps y sitios web → Spotbase → Eliminar</em>.
+            Eso corta el acceso, pero para borrar tus datos de Spotbase sigue los pasos de arriba.
           </p>
         </div>
       </section>
