@@ -42,7 +42,8 @@ export default function NovastarHome() {
         <h2>Tu privacidad</h2>
         <div className="card">
           <p>
-            NOVASTAR no tiene cuentas, ni anuncios, ni recopila datos personales. Lee la{" "}
+            NOVASTAR no tiene cuentas ni recopila datos personales. Es gratis y muestra anuncios de Google
+            AdMob (en Europa, solo con tu consentimiento). Lee la{" "}
             <Link href="/novastar/privacidad">Política de Privacidad</Link> y los{" "}
             <Link href="/novastar/terminos">Términos de uso</Link>.
           </p>

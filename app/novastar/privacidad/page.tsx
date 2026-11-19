@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad de NOVASTAR",
-  description: "NOVASTAR no recopila, no guarda y no comparte datos personales.",
+  description:
+    "NOVASTAR no tiene cuentas ni guarda datos personales. Muestra anuncios de Google AdMob, con tu consentimiento en Europa.",
 };
 
 export default function NovastarPrivacy() {
@@ -12,20 +13,21 @@ export default function NovastarPrivacy() {
       <h1>Política de Privacidad de NOVASTAR</h1>
       <p className="dek">
         NOVASTAR es un juego que se juega por completo en tu teléfono. Esta página explica, sin letra
-        chica, qué pasa con tus datos: <strong>no recopilamos ninguno</strong>.
+        chica, qué pasa con tus datos: <strong>nosotros no recopilamos ninguno</strong>, pero el juego
+        muestra anuncios de Google AdMob, y Google trata algunos datos para mostrarlos.
       </p>
-      <p className="meta">Vigente desde: 16 de noviembre de 2026 · Aplica a: el juego NOVASTAR (Android)</p>
+      <p className="meta">Vigente desde: 20 de noviembre de 2026 · Aplica a: el juego NOVASTAR (Android)</p>
 
       <section>
-        <h2>1. Información que recopilamos</h2>
+        <h2>1. Información que recopilamos nosotros</h2>
         <p>
-          <strong>Ninguna.</strong> NOVASTAR no te pide crear una cuenta ni iniciar sesión, y no recopila,
-          guarda ni envía a ningún servidor información personal: ni tu nombre, ni tu correo, ni tu
+          <strong>Ninguna.</strong> NOVASTAR no te pide crear una cuenta ni iniciar sesión, y nosotros no
+          recopilamos, guardamos ni recibimos información personal: ni tu nombre, ni tu correo, ni tu
           ubicación, ni tus contactos, fotos o archivos.
         </p>
         <ul>
           <li>El juego no solicita permisos especiales del teléfono (ubicación, cámara, micrófono, contactos…).</li>
-          <li>No contiene publicidad ni herramientas de analítica o seguimiento.</li>
+          <li>Muestra anuncios de Google AdMob (ver el punto 3).</li>
           <li>No incluye compras dentro de la app.</li>
         </ul>
       </section>
@@ -39,8 +41,48 @@ export default function NovastarPrivacy() {
       </section>
 
       <section>
-        <h2>3. Con quién la compartimos</h2>
-        <p>Con nadie: como no recopilamos datos, no tenemos nada que compartir ni vender.</p>
+        <h2>3. Publicidad (Google AdMob)</h2>
+        <p>
+          El juego es gratuito y muestra anuncios mediante <strong>Google AdMob</strong>, un servicio de
+          Google Ireland Limited / Google LLC. Para mostrar los anuncios, medir su rendimiento y evitar el
+          fraude, Google puede recoger y tratar:
+        </p>
+        <ul>
+          <li>el identificador de publicidad de tu dispositivo,</li>
+          <li>la dirección IP y una ubicación aproximada que se deduce de ella,</li>
+          <li>información técnica del dispositivo (modelo, sistema, idioma),</li>
+          <li>tus interacciones con los anuncios (impresiones y clics).</li>
+        </ul>
+        <p>
+          <strong>Si estás en el Espacio Económico Europeo, el Reino Unido o Suiza</strong>, antes de mostrar
+          anuncios el juego te pide tu consentimiento con el formulario de Google. Puedes aceptar,
+          rechazar o elegir tus opciones, y cambiar tu decisión más tarde desde las opciones de privacidad
+          del juego. Si no das tu consentimiento puedes seguir jugando igual; en su caso verás anuncios no
+          personalizados.
+        </p>
+        <p>
+          <strong>Anuncios con recompensa:</strong> algunos anuncios son opcionales. Solo si decides verlos
+          enteros recibes una recompensa en el juego (por ejemplo, recuperar un corazón). Verlos es siempre
+          voluntario.
+        </p>
+        <div className="card">
+          <p>
+            Más información sobre cómo usa Google los datos:{" "}
+            <a href="https://policies.google.com/technologies/partner-sites">
+              policies.google.com/technologies/partner-sites
+            </a>{" "}
+            y su <a href="https://policies.google.com/privacy">política de privacidad</a>. También puedes
+            restablecer o desactivar el identificador de publicidad en los ajustes de tu teléfono.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>4. Con quién compartimos datos</h2>
+        <p>
+          Nosotros no recopilamos datos, así que no tenemos nada que compartir ni vender. Los datos de
+          publicidad los trata directamente Google (punto 3).
+        </p>
         <div className="card">
           <p>
             <strong>Google Play</strong>, la tienda desde donde descargas el juego, puede recopilar datos
@@ -52,40 +94,54 @@ export default function NovastarPrivacy() {
       </section>
 
       <section>
-        <h2>4. Seguridad</h2>
+        <h2>5. Base legal (RGPD)</h2>
         <p>
-          Al no recopilar ni enviar datos personales, no hay información tuya que pueda filtrarse desde
-          nuestros sistemas.
+          Los anuncios personalizados se basan en tu consentimiento (art. 6.1.a del RGPD). La medición de
+          los anuncios y la prevención del fraude se basan en el interés legítimo de ofrecer el juego
+          gratis y de forma segura (art. 6.1.f del RGPD).
         </p>
       </section>
 
       <section>
-        <h2>5. Retención y eliminación</h2>
+        <h2>6. Tus derechos</h2>
         <p>
-          No guardamos datos tuyos, así que no hay nada que eliminar de nuestra parte. Si desinstalas el
-          juego, todo lo relacionado con él desaparece de tu teléfono.
+          Tienes derecho a acceder a tus datos, rectificarlos, suprimirlos, limitar u oponerte a su
+          tratamiento, a la portabilidad y a retirar tu consentimiento en cualquier momento. Como nosotros
+          no guardamos datos personales, las solicitudes sobre los datos de publicidad las gestiona Google.
+          Puedes reclamar ante la Autoridad Helénica de Protección de Datos (
+          <a href="https://www.dpa.gr">www.dpa.gr</a>) o la autoridad de tu país.
         </p>
       </section>
 
       <section>
-        <h2>6. Menores de edad</h2>
+        <h2>7. Seguridad, retención y eliminación</h2>
         <p>
-          NOVASTAR no recopila datos personales de nadie, incluidos menores de edad. El juego incluye
-          combate con criaturas fantásticas; revisa la clasificación por edades que aparece en Google Play.
+          No guardamos datos tuyos en nuestros sistemas, así que no hay nada que pueda filtrarse ni que
+          eliminar de nuestra parte. Si desinstalas el juego, todo lo relacionado con él desaparece de tu
+          teléfono.
         </p>
       </section>
 
       <section>
-        <h2>7. Cambios a esta política</h2>
+        <h2>8. Menores de edad</h2>
         <p>
-          Si en una versión futura el juego empezara a usar algún dato (por ejemplo, para guardar tu
-          progreso en línea), actualizaremos esta página antes de que ocurra. La fecha de arriba siempre
-          indica la versión vigente.
+          NOVASTAR no está dirigido a menores de 13 años y no recopilamos a sabiendas datos de menores. El
+          juego incluye combate con criaturas fantásticas; revisa la clasificación por edades que aparece
+          en Google Play.
         </p>
       </section>
 
       <section>
-        <h2>8. Contacto</h2>
+        <h2>9. Cambios a esta política</h2>
+        <p>
+          Si el juego empezara a usar otros datos (por ejemplo, para guardar tu progreso en línea),
+          actualizaremos esta página antes de que ocurra. La fecha de arriba siempre indica la versión
+          vigente.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. Contacto</h2>
         <div className="card">
           <p>
             Para cualquier pregunta sobre esta política, escríbenos a{" "}
